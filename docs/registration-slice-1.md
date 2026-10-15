@@ -367,3 +367,11 @@ identical). Findings and what was done:
 8. Full-parity reads the manifests' absolute paths into `.build/pins-full` of the generating checkout; the case counts are now
    asserted.
 9. The apps-parity harness did not exist at `eb042aa`; it landed in `3f744ca` and passed.
+
+### 2026-10-15 16:03 CEST, after the slice-1a mutants
+
+35 mutants of section 7 on `eb042aa` (`docs/slice-1-mutants-2026-10-15.md`): 28 caught by the committed gate, M24 by the full
+set only (committed since `f51d1f8`), M1 (Double chirp unreduced), M5 (a radix-5 constant off by 7e-15) and M32 (the overflow
+guard) caught by no test, M1f and M4d equivalent (argued there). Added: `doubleFFTIsAtRoundoffOnOneAxis` (1009 × 1 at 1e-14,
+5 × 1 and 125 × 1 at 2e-15 of the maximum: **test bands at roundoff, tighter than section 3's registered 1e-12**, measured
+unmutated at 1.9e-15, 2.5e-16, 6.2e-16) and `micrographRefusesASizeThatWrapsToItsPixelCount`; M1, M5, M32 and M24 are now caught.

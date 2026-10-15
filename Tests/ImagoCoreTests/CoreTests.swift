@@ -104,3 +104,25 @@ func floatFFTIsWithinItsBandOfTheDirectDFT(_ k: Int) throws {
     #expect(LengthUnit.frequencySampling(nil) == (1, "1/px"))
     #expect(LengthUnit.realSampling(AxisCalibration(scale: -1, unit: "nm")) == (1, "px"))
 }
+
+/// At roundoff on one axis (added after the slice-1a mutants, amendment 6): a prime Bluestein length and radix-5 lengths,
+/// where the registered 1e-12 is too loose to see a chirp without its mod-2N reduction (3e-13 at 1009) or a radix-5
+/// constant off by 7e-15. Measured unmutated: 1.9e-15 (1009), 2.5e-16 (5), 6.2e-16 (125).
+@Test(arguments: [(1009, 1e-14), (5, 2e-15), (125, 2e-15)])
+func doubleFFTIsAtRoundoffOnOneAxis(_ n: Int, _ band: Double) throws {
+    let fft = try #require(FFT2DDouble(nx: n, ny: 1))
+    let re0 = signal(n, seed: UInt64(n)), im0 = signal(n, seed: UInt64(n + 7))
+    var re = re0, im = im0
+    fft.transform(re: &re, im: &im, forward: true)
+    let (wantRe, wantIm) = directDFT(re0, im0, nx: n, ny: 1)
+    let top = zip(wantRe, wantIm).map { ($0 * $0 + $1 * $1).squareRoot() }.max()!
+    let worst = (0..<n).map { ((re[$0] - wantRe[$0]) * (re[$0] - wantRe[$0]) + (im[$0] - wantIm[$0]) * (im[$0] - wantIm[$0])).squareRoot() }.max()!
+    #expect(worst <= band * top, "\(n): \(worst / top) of the maximum, band \(band)")
+}
+
+@Test func micrographRefusesASizeThatWrapsToItsPixelCount() {
+    // 2³² × 2³² wraps to 0 in Int; without the overflow guard it would match an empty pixel array.
+    #expect(throws: MicrographError.pixelCount(expected: Int.max, actual: 0)) {
+        try Micrograph(width: 1 << 32, height: 1 << 32, pixels: [])
+    }
+}
