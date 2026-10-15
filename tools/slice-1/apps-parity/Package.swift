@@ -23,6 +23,7 @@ let package = Package(
             "MacTEMRef",
             .product(name: "ImagoCore", package: kit),
             .product(name: "ImagoFFT", package: kit),
+            .product(name: "ImagoFilters", package: kit),
         ]),
     ],
     swiftLanguageModes: [.v6]

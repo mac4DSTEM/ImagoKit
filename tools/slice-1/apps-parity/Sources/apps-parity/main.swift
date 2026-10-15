@@ -3,6 +3,7 @@
 import Foundation
 import ImagoCore
 import ImagoFFT
+import ImagoFilters
 import MacTEMRef
 
 typealias RefImage = MacTEMRef.CalibratedImage
@@ -130,6 +131,11 @@ func compareProfile(_ t: inout Tally, _ cs: String, _ a: RefProfile?, _ kitResul
     }
 }
 
+// Every family runs twice in one process and the SECOND pass is the one reported: on this OS (macOS 27, vDSP) the first
+// call of a transform size in a process can return different bits from every later call, in either library (measured
+// 2026-10-15: the same compute() called kit-first or ref-first differs from its own repeat on p128x96). The first
+// (cold) pass is printed as a diagnostic.
+func runAll() -> (tallies: [Tally], angleSpots: Int) {
 // ---- fft family: spectrum and profile ----
 let fftBase = pins + "/fft/ref"
 let fftManifest = json(fftBase + "/manifest.json")
@@ -233,9 +239,82 @@ for case let c as [String: Any] in angleManifest["cases"] as! [Any] {
     }
 }
 
+// ---- ifft family (slice 1b): MaskedInverseFFT, Float32, with and without the Friedel partners ----
+typealias RefMasked = MacTEMRef.MaskedInverseFFT
+typealias KitMasked = ImagoFFT.MaskedInverseFFT
+var ifftT = Tally(name: "ifft (MaskedInverseFFT.compute, float32, Friedel partners on and off)")
+var ifftSpotsT = Tally(name: "ifft spots echoed back (extra)")
+for case let c as [String: Any] in fftManifest["cases"] as! [Any] {
+    guard (c["kind"] as! String) == "ifft" else { continue }
+    let name = c["name"] as! String
+    let img = load(c, base: kitRoot)
+    let sp = (c["spots"] as! [[String: Any]]).map { (kx: num($0["kx"]), ky: num($0["ky"]), r: num($0["r"]), e: num($0["e"])) }
+    let refSpots = sp.map { RefMasked.Spot(kx: $0.kx, ky: $0.ky, radius: $0.r, edge: $0.e) }
+    let kitSpots = sp.map { KitMasked.Spot(kx: $0.kx, ky: $0.ky, radius: $0.r, edge: $0.e) }
+    for friedel in [true, false] {
+        let cs = "\(name)\(friedel ? "" : " [no Friedel]")"
+        ifftT.cases += 1
+        let a = try! RefMasked.compute(img.ref, spots: refSpots, includeFriedelPartners: friedel)
+        let b = try! KitMasked.compute(img.kit, spots: kitSpots, includeFriedelPartners: friedel, precision: .float32)
+        ifftT.int(cs, "width", a.width, b.width); ifftT.int(cs, "height", a.height, b.height)
+        guard case .float32(let bi) = b.image else { ifftT.diffs.append("\(cs) kit image not float32"); continue }
+        ifftT.f32(cs, "image", a.image, bi)
+        ifftT.f64(cs, "imaginaryMax", a.imaginaryMax, b.imaginaryMax)
+        ifftSpotsT.cases += 1
+        ifftSpotsT.bool(cs, "spots-count", a.spots.count == b.spots.count, true)
+        for (i, (x, y)) in zip(a.spots, b.spots).enumerated() {
+            ifftSpotsT.bool(cs, "spot[\(i)]", x.kx == y.kx && x.ky == y.ky && x.radius == y.radius && x.edge == y.edge, true)
+        }
+    }
+}
+
+// ---- hrtem family (slice 1b): HRTEMFilter.filter, Float32 ----
+typealias RefHRTEM = MacTEMRef.HRTEMFilter
+typealias KitHRTEM = ImagoFilters.HRTEMFilter
+var hrtemT = Tally(name: "hrtem (HRTEMFilter.filter, float32)")
+let hrtemBase = pins + "/hrtem/ref"
+let hrtemManifest = json(hrtemBase + "/manifest.json")
+for case let c as [String: Any] in hrtemManifest["cases"] as! [Any] {
+    let name = c["name"] as! String, n = inte(c["n"])
+    let p = c["params"] as! [String: Any]
+    let px = readF32(hrtemBase + "/" + (c["input"] as! String), count: n * n)
+    var rp = RefHRTEM.Parameters(), kp = KitHRTEM.Parameters()
+    rp.delta = num(p["delta"]); rp.step = num(p["step"]); rp.cycles = inte(p["cycles"]); rp.smoothing = (p["smoothing"] as! NSNumber).boolValue
+    rp.order = inte(p["order"]); rp.ro = num(p["ro"]); rp.lowFrequencyPercent = num(p["pct"])
+    kp.delta = rp.delta; kp.step = rp.step; kp.cycles = rp.cycles; kp.smoothing = rp.smoothing
+    kp.order = rp.order; kp.ro = rp.ro; kp.lowFrequencyPercent = rp.lowFrequencyPercent
+    hrtemT.cases += 1
+    let a = try! RefHRTEM.filter(pixels: px, width: n, height: n, parameters: rp)
+    let b = try! KitHRTEM.filter(pixels: px, width: n, height: n, parameters: kp, precision: .float32)
+    hrtemT.int(name, "n", a.n, b.n)
+    if case .float32(let v) = b.absf { hrtemT.f32(name, "absf", a.absf, v) } else { hrtemT.diffs.append("\(name) kit absf not float32") }
+    if case .float32(let v) = b.wiener { hrtemT.f32(name, "wiener", a.wiener, v) } else { hrtemT.diffs.append("\(name) kit wiener not float32") }
+    hrtemT.f64(name, "initialBackground", a.initialBackground, b.initialBackground)
+    hrtemT.f64(name, "median", a.median, b.median)
+    hrtemT.f64(name, "firstPassC", a.firstPassC, b.firstPassC)
+    hrtemT.f64(name, "background", a.background, b.background)
+    hrtemT.f64(name, "spectrum", a.spectrum, b.spectrum)
+    hrtemT.f64(name, "absfMask", a.absfMask, b.absfMask)
+    hrtemT.f64(name, "wienerMask", a.wienerMask, b.wienerMask)
+    hrtemT.int(name, "flagged.count", a.flagged.count, b.flagged.count)
+    if a.flagged.count == b.flagged.count { for i in 0..<a.flagged.count { hrtemT.bool(name, "flagged[\(i)]", a.flagged[i], b.flagged[i]) } }
+    hrtemT.ints(name, "firstFlaggedPass", a.firstFlaggedPass, b.firstFlaggedPass)
+    hrtemT.int(name, "passes", a.passes, b.passes)
+    hrtemT.ints(name, "flagsPerPass", a.flagsPerPass, b.flagsPerPass)
+    hrtemT.f64(name, "finalDelta", a.finalDelta, b.finalDelta)
+}
+
+    return ([spectrumT, profileT, profileDefT, probeT, spotT, angleT, ifftT, ifftSpotsT, hrtemT], angleSpots)
+}
+
+let cold = runAll()
+print("cold pass (diagnostic, first call of each size in this process): differing \(cold.tallies.reduce(0) { $0 + $1.diffs.count })")
+for t in cold.tallies where !t.diffs.isEmpty { print("   cold: \(t.name): \(t.diffs.count) differing values") }
+let warm = runAll()
+let angleSpots = warm.angleSpots
 // ---- report ----
 var total = 0, totalIdentical = 0, totalDiffs = 0
-for t in [spectrumT, profileT, profileDefT, probeT, spotT, angleT] {
+for t in warm.tallies {
     print("== \(t.name)")
     print("   cases \(t.cases), values compared \(t.compared), identical \(t.identical), differing \(t.compared - t.identical)")
     print("   strings compared \(t.stringsCompared), differing \(t.stringDiffs.count)")

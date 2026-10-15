@@ -391,3 +391,21 @@ The HRTEM tests apply macTEM's harness checks as section 3 states them (outputs,
 "undefined where W off the DC is roundoff" exception, the DC ratio, the flags rule with δ = 3 × pass 1's largest |Δc| over
 the disk at the first pass where any bin differs, the energy check for the noisy tiers at the defaults). On the Float64 path
 the flag rule's δ is `max(3 × |Δc|, 1e-9)` points and the pass count must equal the reference's when no bin differs.
+
+### 2026-10-15 16:47 CEST, slice 1b checked: apps parity, mutants, and a vDSP first-call finding
+
+- **Apps parity** (`tools/slice-1/apps-parity`, extended by a Sonnet lane): the Float32 `MaskedInverseFFT` (Friedel partners on
+  and off) and `HRTEMFilter` (both outputs and every stage, the flags, passes and flags per pass) equal macTEM `3d17311`'s
+  bit for bit on every case of the full set: 19,773,475 values over all families, 0 differing.
+- **Mutants**: `docs/slice-1-mutants-2026-10-15.md` (1b): 26 of 27 caught by the committed gate after `120ba8c`, H13 equivalent,
+  H15 caught by apps parity. `MaskedInverseFFT`'s mask now calls `Spot.weight` (the same arithmetic; one formula).
+- **Finding: vDSP is not bit-reproducible at the first call of a size in a process.** The apps-parity lane saw the families of
+  slice 1a differ on a cold first pass (6 to 34,627 values, varying with unrelated heap allocation) and agree on every warm
+  pass, in macTEM's code and the kit's alike. Reproduced in the kit alone (`scratchpad/align-probe`): a fresh `FFT2D` per
+  trial, the same input, 30–40 trials: on 127 × 50 (Bluestein over `vDSP_fft_zip`) and 128 × 96 (radix-2 and the vDSP DFT) one
+  early trial differs, intermittently, by up to **7.9e-8 of the maximum** (one Float32 ulp); 125 × 243 (the kit's own radix-3/5
+  plans) and 128 × 128 (`vDSP_fft2d_zip`) never did. The cause is unproven (a lazily chosen kernel inside Accelerate is the
+  hypothesis): **Gate D open**. Consequences, registered: every Float32 band of section 3 is unaffected (1e-5 against 8e-8);
+  the bit-for-bit claim against macTEM holds in steady state, and the apps-parity harness gates on a warm second pass and
+  prints the cold pass as a diagnostic; no claim is made that two runs of a Float32 product are bit-identical. The Float64
+  path was not probed for it.

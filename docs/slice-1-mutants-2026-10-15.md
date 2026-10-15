@@ -54,3 +54,26 @@ before `amendment 6`'s commit. Unmutated baseline at `eb042aa`: 18 test function
 
 Result: every new test of slice 1a is broken by at least one mutant; 33 of 35 campaign mutants and 5 of 5 follow-ups are
 caught by the committed gate, the other two argued equivalent above.
+
+## Slice 1b (on `81ab1b7`, then the follow-ups on `120ba8c`)
+
+A Sonnet lane (`scratchpad/mutants-1b/`), 26 mutants of section 7 plus one: unmutated 33 functions, 168 cases, green.
+
+| Mutant | Change | Caught at `81ab1b7` by | After `120ba8c` |
+|---|---|---|---|
+| M1–M4, M4-d | no Friedel partner; hard edge; partner at −k−1; inverse unscaled (Float32 / Float64) | `maskedInverseMatchesNumPy` (M1 and M4-d also `aMeasuredSpotBecomesAMaskSpot`) | — |
+| M5 | union as sum | **not caught** (no pinned spots overlap) | `maskIsTheMaximumOfTheSpotsOnAnOddHeight` |
+| M6 | centred row index (h + 1)/2 | **not caught** (every pinned height is even) | `maskIsTheMaximumOfTheSpotsOnAnOddHeight` (h = 63) |
+| M7 | `Spot.weight`'s cosine sign | **not caught** (probed only at r + e/2; `compute` had its own inline copy) | the mask now calls `Spot.weight`: `maskWeightClosedForms` (r + e/4, r + 3e/4), `maskedInverseMatchesNumPy` |
+| M7b | the same in the inline copy | `maskedInverseMatchesNumPy` | (the copy is gone) |
+| M8 | `maskSpot` with the width for ky | `aMeasuredSpotBecomesAMaskSpot` | — |
+| H1–H5, H8–H10, H12 | ABSF sign; edge window exponent 12; 5 × 5 median; 256 angles; Butterworth exponent; threshold comparison; DC not added back; W from the windowed image; Wiener from the untapered a | `filtersMatchTheFloat64Reading` (H5 also `stepClosedForms`; H12 only on `pct5-128`) | — |
+| H6 | cycle cap `<=` | full set only (`cycles3-*`) | `theCycleCapStopsTheLoop` |
+| H7 | taper radius rounded down | full set only (`pct20-*`) | `theTaperRadiusRoundsHalfAwayFromZero` |
+| H11 | flag disk `<=` | full set only (26 cases) | `nothingIsFlaggedOnTheDiskEdge` |
+| H13 | the bilinear sample's upper clamp removed | **equivalent**: `bilinear` is called only with ρ ≤ n/2 − 1, so row = n/2 + ρ cos θ ≤ n − 1 and the clamp never binds | — |
+| H14 | `delta` range to 60 | `refusalsByName` | — |
+| H15 | the Float32 path's windowed image not rounded to Float32 | **no test can catch it** (a one-ulp input change, far inside the Float32 bands); its catcher is the apps-parity check, bit for bit against macTEM | — |
+
+Result for 1b: every new test broken at least once; 26 of 27 mutants caught by the committed gate after `120ba8c` (the six
+follow-ups verified on a clone), H13 equivalent, H15 caught by apps-parity.
