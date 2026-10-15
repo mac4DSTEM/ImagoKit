@@ -1,5 +1,5 @@
-// ImagoKit consumer check: every symbol named here must be `public`. Slice 1 adds the spectrum, profile, spot, masked
-// inverse and filter calls an app makes, each with a value it checks; the skeleton names each module's scope.
+// ImagoKit consumer check: every symbol named here must be `public`, and each call is checked against a value a
+// stranger's app could compute by hand (a planted lattice, a closed form).
 import Foundation
 import ImagoAlignment
 import ImagoCore
@@ -13,8 +13,55 @@ var failures = 0
     if !condition { failures += 1; print("FAIL  \(label)") }
 }
 
-check(ImagoCoreScope.registration == "docs/registration-slice-1.md", "ImagoCore names its registration")
-check(ImagoFFTScope.registration == "docs/registration-slice-1.md", "ImagoFFT names its registration")
+// A 128 × 96 lattice, 0.0123 nm by 0.0246 nm pixels: one wave at (kx, ky) = (10, −7) bins on DC 5, and one at (−4, 9).
+let (w, h) = (128, 96)
+let (dx, dy) = (0.0123, 0.0246)
+var pixels = [Float](repeating: 0, count: w * h)
+for r in 0..<h { for c in 0..<w {
+    let a = 2 * Double.pi * (10 * Double(c) / Double(w) - 7 * Double(r) / Double(h))
+    let b = 2 * Double.pi * (-4 * Double(c) / Double(w) + 9 * Double(r) / Double(h))
+    pixels[r * w + c] = Float(5 + cos(a) + cos(b))
+} }
+let image = try Micrograph(width: w, height: h, pixels: pixels,
+                           x: AxisCalibration(scale: dx, unit: "nm"), y: AxisCalibration(scale: dy, unit: "nm"))
+
+// ImagoCore: the engines and the units.
+let fft: FFT2D = try { guard let f = FFT2D(nx: w, ny: h) else { throw MicrographError.emptySize(width: w, height: h) }; return f }()
+let fftD: FFT2DDouble? = FFT2DDouble(nx: w, ny: h)
+check(fft.nx == w && fftD?.ny == h, "FFT2D and FFT2DDouble are made for any size")
+check(FFT2D.fftfreq(3, 4) == -0.25, "fftfreq is NumPy's")
+check(LengthUnit.nanometres(per: "Å") == 0.1, "Å is 0.1 nm")
+check(image.cropped(PixelCrop(row: 0, col: 0, height: 32, width: 32))?.width == 32, "a crop")
+
+// ImagoFFT: the spectrum, its axes, the profile, two spots, their spacings and angle.
+for precision in Precision.allCases {
+    let s = try PowerSpectrum.compute(image, precision: precision)
+    check(s.power.precision == precision && s.unitsX == "1/nm", "\(precision): the spectrum's unit")
+    check(s.spacingX == 1 / (Double(w) * dx), "\(precision): Δq_x = 1/(w·dx)")
+    let dc = s.power[(h / 2) * w + w / 2]
+    check(abs(dc / pow(5 * Double(w * h), 2) - 1) < 1e-6, "\(precision): the DC bin holds (DC·w·h)²")
+    let peak = s.power[(h / 2 - 7) * w + w / 2 + 10]
+    check(abs(peak / pow(Double(w * h) / 2, 2) - 1) < 1e-5, "\(precision): a bin-centred wave holds (w·h/2)²")
+    let profile = try RadialProfile.compute(s)
+    check(profile.count.reduce(0, +) == w * h && !profile.points.isEmpty, "\(precision): the profile counts every pixel")
+    let a = try SpotMeasurement.measure(image, clickRow: h / 2 - 7, clickColumn: w / 2 + 10, precision: precision)
+    let b = try SpotMeasurement.measure(image, clickRow: h / 2 + 9, clickColumn: w / 2 - 4, precision: precision)
+    let qa = (10 / (Double(w) * dx), -7 / (Double(h) * dy)), qb = (-4 / (Double(w) * dx), 9 / (Double(h) * dy))
+    check(abs(a.d * (qa.0 * qa.0 + qa.1 * qa.1).squareRoot() - 1) < 2e-3, "\(precision): spot a's d is 1/|q|")
+    check(a.dNanometres == a.d && a.qPerNanometre == a.q, "\(precision): nm units")
+    let pair = try LatticePair.measure(a, b)
+    let planted = try SpotMeasurement.angle(qa: qa, qb: qb)
+    check(abs(pair.angle - planted) < 0.1, "\(precision): the angle between the spots is the planted one")
+    check(abs(pair.ratio - a.d / b.d) == 0, "\(precision): the spacing ratio")
+}
+do {
+    _ = try SpotMeasurement.measure(image, clickRow: h / 2, clickColumn: w / 2)   // the ±2 snap stays within 2.83 bins
+    check(false, "a click at the centre is refused")
+} catch SpotMeasurementError.nearDC {
+    check(true, "a click at the centre is refused")
+}
+
+// The modules still to come name their registration.
 check(ImagoFiltersScope.registration == "docs/registration-slice-1.md", "ImagoFilters names its registration")
 check(ImagoAlignmentScope.registration.hasPrefix("docs/registration-slice-2.md"), "ImagoAlignment names its registration")
 

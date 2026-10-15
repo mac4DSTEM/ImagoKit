@@ -1,0 +1,110 @@
+// The slice-1a pins (tools/slice-1/pins.py; registration-slice-1.md sections 2 and 11): the committed subset in
+// Fixtures/slice-1a-pins.json, or — when IMAGOKIT_PINS_FULL names a folder (tools/slice-1/full-parity.sh sets it to
+// .build/pins-full) — every case, read from the harness manifests there.
+import Foundation
+import ImagoCore
+
+struct CropPin: Decodable, Sendable { let row, col, height, width: Int }
+
+struct FFTPin: Decodable, Sendable, CustomStringConvertible {
+    let name, kind, input, units: String
+    let width, height: Int
+    let scale_x, scale_y: Double
+    let crop: CropPin?
+    let power, axis_x, axis_y, axis_units, pmean, pcount, cropped_input: String?
+    let bin_width: Double?
+    let bin_width_given: Double?
+    let ring_bin: Int?
+    let peaks: [[Int]]?
+    var description: String { name }
+}
+
+struct SpotPin: Decodable, Sendable, CustomStringConvertible {
+    let name, input, units, kind, tier: String
+    let width, height, click_row, click_col, snapped_row, snapped_col: Int
+    let scale_x, scale_y, d0: Double
+    let centroid_row, centroid_col, d: Double?
+    let neighbour: Bool
+    let error: String?
+    var description: String { name }
+}
+
+struct AngleSpotPin: Decodable, Sendable {
+    let planted_kx, planted_ky: Double
+    let click_row, click_col, snapped_row, snapped_col: Int
+    let centroid_row, centroid_col, qx, qy, d: Double
+}
+
+struct AnglePin: Decodable, Sendable, CustomStringConvertible {
+    let name, input, units, tier: String
+    let width, height: Int
+    let scale_x, scale_y, theta0, theta_numpy, ratio0, ratio_numpy: Double
+    let spots: [AngleSpotPin]
+    var description: String { name }
+}
+
+enum Pins {
+    static let fixtures = URL(fileURLWithPath: #filePath).deletingLastPathComponent().appendingPathComponent("Fixtures")
+    static let repository = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
+        .deletingLastPathComponent()
+    static let full: URL? = ProcessInfo.processInfo.environment["IMAGOKIT_PINS_FULL"].map { URL(fileURLWithPath: $0) }
+
+    private struct Committed: Decodable { let fft: [FFTPin]; let spot: [SpotPin]; let angle: [AnglePin] }
+    private struct Harness<C: Decodable>: Decodable { let cases: [C] }
+
+    private static let committed: Committed = {
+        let data = try! Data(contentsOf: fixtures.appendingPathComponent("slice-1a-pins.json"))
+        return try! JSONDecoder().decode(Committed.self, from: data)
+    }()
+
+    private static func harness<C: Decodable>(_ path: String) -> [C] {
+        let data = try! Data(contentsOf: full!.appendingPathComponent(path))
+        return try! JSONDecoder().decode(Harness<C>.self, from: data).cases
+    }
+
+    static let fft: [FFTPin] = full == nil ? committed.fft
+        : (harness("fft/ref/manifest.json") as [FFTPin]).filter { $0.kind == "spectrum" || $0.kind == "profile" }
+    static let spot: [SpotPin] = full == nil ? committed.spot : harness("spot/ref/manifest.json")
+    static let angle: [AnglePin] = full == nil ? committed.angle : harness("angle/manifest.json")
+
+    /// A file a pin names: absolute; or in the committed fixtures' section folder; or in the full set's section folders;
+    /// or relative to the repository (the spot harness writes paths relative to it).
+    static func url(_ name: String, section: String) -> URL {
+        if name.hasPrefix("/") { return URL(fileURLWithPath: name) }
+        var candidates = [fixtures.appendingPathComponent(section).appendingPathComponent(name)]
+        if let full {
+            candidates += [full.appendingPathComponent(section).appendingPathComponent(name),
+                           full.appendingPathComponent(section).appendingPathComponent("ref").appendingPathComponent(name)]
+        }
+        candidates.append(repository.appendingPathComponent(name))
+        return candidates.first { FileManager.default.fileExists(atPath: $0.path) } ?? candidates[0]
+    }
+
+    static func floats(_ name: String, section: String) -> [Float] {
+        let data = try! Data(contentsOf: url(name, section: section))
+        return data.withUnsafeBytes { Array($0.bindMemory(to: Float.self)) }
+    }
+
+    static func doubles(_ name: String, section: String) -> [Double] {
+        let data = try! Data(contentsOf: url(name, section: section))
+        return data.withUnsafeBytes { Array($0.bindMemory(to: Double.self)) }
+    }
+
+    static func ints(_ name: String, section: String) -> [Int] {
+        let data = try! Data(contentsOf: url(name, section: section))
+        return data.withUnsafeBytes { $0.bindMemory(to: Int64.self).map(Int.init) }
+    }
+
+    static func image(_ pixels: [Float], width: Int, height: Int, scaleX: Double, scaleY: Double, units: String) -> Micrograph {
+        try! Micrograph(width: width, height: height, pixels: pixels,
+                        x: AxisCalibration(scale: scaleX, unit: units), y: AxisCalibration(scale: scaleY, unit: units))
+    }
+
+    /// max |got − want| / max |want|.
+    static func relativeToMaximum(_ got: [Double], _ want: [Double]) -> Double {
+        precondition(got.count == want.count)
+        let top = want.map(abs).max() ?? 0
+        let worst = zip(got, want).map { abs($0 - $1) }.max() ?? 0
+        return top > 0 ? worst / top : worst
+    }
+}

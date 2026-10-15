@@ -39,7 +39,9 @@ let package = Package(
         // Slice 2 (registered in scope only, docs/registration-slice-1.md section 10): phase cross-correlation, drift
         // and stack alignment, shifted sums. Empty until registered.
         .target(name: "ImagoAlignment", dependencies: ["ImagoCore"], swiftSettings: settings),
-        .testTarget(name: "ImagoCoreTests", dependencies: ["ImagoCore", "ImagoFFT", "ImagoFilters", "ImagoAlignment"],
+        .testTarget(name: "ImagoCoreTests", dependencies: ["ImagoCore", "ImagoFilters", "ImagoAlignment"],
+                    swiftSettings: settings),
+        .testTarget(name: "ImagoFFTTests", dependencies: ["ImagoCore", "ImagoFFT"], exclude: ["Fixtures"],
                     swiftSettings: settings),
     ],
     swiftLanguageModes: [.v6]
