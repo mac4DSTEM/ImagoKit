@@ -1,9 +1,27 @@
 # ImagoKit status
 
-## Now (2026-10-15 16:31 CEST): slice 1 done, 0.0.2 candidate; slice 2 registered
+## Now (2026-10-15 17:16 CEST): slice 2 at its green checkpoint, paused (owner: the apps' move first)
 
-- **Public** at github.com/mac4DSTEM/ImagoKit (the owner, 16:10); BSD-3-Clause accepted (coordinator, 16:10). The owner's
-  push stopped at `465c473`; the commits after it are local until the owner pushes.
+- **Released:** 0.0.2 tagged at `2cc5f07` (slice 1), public; CI green on the runner (run 38753074813: Xcode 26.6, Swift 6.3.3,
+  39 tests, consumer check 45, README consumer).
+- **Slice 2** (`docs/registration-slice-2.md`, amendments 1 and 2), local commits `ba70a20` (pins), `900fb9c` (code and tests),
+  `f2764f2` (consumer check 84, README program, parity rows), implemented by a Sonnet lane: `ImagoAlignment` with
+  `PhaseCorrelation`, `ImageShift` (orders 0 and 1, seven modes, Fourier shift), `DriftSeries`, `AlignedSum`, on Float32 and
+  Float64. Gate green and stamped at `f2764f2` (81 test functions, 0 warnings); `tools/slice-2/full-parity.sh` green on 330
+  cases; Float64 shifts equal scikit-image's on all 330. **Not yet done for slice 2: the mutants and the Gate B refuter**
+  (paused by the owner's priority, 16:44).
+- **For the refuter, from amendments 1 and 2 (deviations from the registration):** the plant's continuum was replaced (the
+  registered one made phase correlation fail at σ 5); the `.mean` drift band is 0.20 px, not 0.05 (scikit-image itself errs
+  0.185 px there) — a band set after measuring, to be argued; the near-tie rule became a per-case measured-noise rule (117
+  of 330 Float32 cases flagged and held to their tie box); error and phase bands scale with each case's measured noise; the
+  public Float64 call returns a `Micrograph` (Float32), so the 1e-12 band holds on the engine and 6.5e-8 on the call; the
+  sources existed uncommitted while the pins were finalised (no source changed after the first test run). The 96² drift
+  stack sits at 0.93–0.94 of its bands.
+- **Slice 1** as at 0.0.2: see below and `docs/registration-slice-1.md` (amendments 1–9).
+
+### Slice 1 (0.0.2)
+
+- **Public** at github.com/mac4DSTEM/ImagoKit (the owner, 16:10); BSD-3-Clause accepted (coordinator, 16:10).
 - **Slice 1** (tier 1, `docs/registration-slice-1.md`, amendments 1–9):
   - `ImagoCore`: `Micrograph`, `AxisCalibration`, `PixelCrop`, `LengthUnit`, `Precision`, `FFT2D` (vDSP Float32),
     `FFT2DDouble` (the reference path).
@@ -35,18 +53,15 @@
 
 ## Next
 
-1. The owner pushes; CI on the runner (Xcode 26.6) must go green — `35e0dcf` fixed the first run's type-check timeout; any
-   further runner-only failure is tier 3.
-2. Slice 2's pins (`tools/slice-2/pins.py`) and code, then 0.1.0 with the API pass (amendments 5 item 7 and 9 item 6) and
-   macTEM's switch in macTEM's session.
+1. Slice 2's mutants (registration-slice-2 section 5) on a copy of `f2764f2` and one Gate B refuter (the deviations above).
+2. 0.1.0: the API pass (slice-1 amendments 5 item 7 and 9 item 6), CI pinned to Xcode 26.6, `docs/consumers-0.1.0.md`;
+   macTEM's switch (a patch prepared for macTEM's session in the coordinator's notes folder, `imagokit-mactem-switch.patch`).
 3. Gate D on the vDSP first-call finding (amendment 8).
 4. The real-data check when a raw HRTEM image exists (amendment 4).
 
 ## Waiting on the owner
 
-- Push `main` (8 commits after `465c473` at closeout).
-- Tag **0.0.2 at the closeout head** once its CI run is green, and skip 0.0.1: `5a40748` fails on the runner's Xcode 26.6
-  (the type-check timeout fixed in `35e0dcf`). `git tag -a 0.0.2 <head> -m "ImagoKit 0.0.2: slice 1" && git push origin 0.0.2`.
+- Push `main` (slice 2's local commits; not a tag candidate until its refuter).
 - Submit the URL to the Swift Package Index.
 - A raw HRTEM image (Velox `.emd` or DM4, counts) in `data/tem/` for the real-data check (the HRTEM TIFFs are 8-bit renders).
 
