@@ -35,7 +35,8 @@ Kept in macTEM: `CalibratedImage` (the reader's image with its file metadata) wi
 rules: the region, a click's bin, the chart, the drawn aspect, the units shown — UI rules, no reference); `SpectrumDisplay`,
 `FFTExport` and the room. `FFTMask.spot` and `MaskedInverseFFT`, `HRTEMFilter` wait for slice 1b.
 
-One string differs, never a number: `SpotMeasurement.reciprocalUnits` of an image whose axis unit is already reciprocal
+Behaviour differences, none numeric (registration amendment 5, item 6): `RadialProfile.compute` throws instead of
+returning nil; refusal payloads carry the units; `mixedUnits` compares unit strings as written. One string differs: `SpotMeasurement.reciprocalUnits` of an image whose axis unit is already reciprocal
 ("1/nm", a diffraction pattern) is "nm", where macTEM's `SpotMeasure` wrote "1/1/nm". No planted case exercises it.
 
 ## mac4DSTEM (at 7a0f727f)

@@ -332,3 +332,38 @@ Section 2 named `$MACEM_DATA/tem/Camera Ceta 1623 1.05 Mx 20260605 Ceta.tif`. Re
 exist only as such TIFFs). A spectrum of a render is not a check of anything a user measures, so the real-data check is not
 run on it. It runs when the owner adds a raw HRTEM image (Velox `.emd` or DM4, counts) to `data/tem/`; it stays agreement only,
 outside the repository, skipped by name when absent. Nothing else in slice 1 depends on it.
+
+### 2026-10-15 15:58 CEST, after the Gate B refuter on `eb042aa` (slice 1a)
+
+The refuter (a Sonnet subagent, independent; logs in the session's scratchpad `refuter-1a/`) **upheld slice 1a with
+findings, no wrong number**. Its independent numbers on 47 images the pins do not cover (251 × 97, 1999 × 1531, 2048², 1 × N,
+N × 1, 1 × 1, DC 1e6, anisotropic Å, crops on the last row and column): Float64 power within 1.3e-15 of the maximum (band
+1e-12), Float32 within 3.6e-7 (band 1e-5), axes bit for bit, profile counts equal, snapped bins equal, centroids within 4e-8 px
+(Float32) and 1e-10 px (Float64); 64 threads on one `FFT2D` and one `FFT2DDouble` over every plan, 0 bitwise mismatches; the
+port's Float32 arithmetic identical to macTEM's (and the apps-parity check, section 6, then showed 580,392 of 580,392 values
+identical). Findings and what was done:
+1. and 2. (should-fix) The neighbour flag's true branch and the spot's crop path were not exercised by the committed gate (a
+   mutant of each passed it). Fixed in `f51d1f8`: `neighbour-3bins` and `noisy256-k10-r0` committed (6.06 MB), and
+   `CoverageTests` (the crop path on both precisions, the case counts, `PowerSpectrumError.crop`, `RadialProfile.points`, the
+   spacings, the nm accessors); each new test broken once (5 of 5 mutants caught).
+3. **The Float32 bands of section 3 for the centroid (1e-6 px) and the angle (1e-6°) are claims on the planted cases**, not
+   on every input: a lattice 2000 times stronger than a second one gave a Float32 angle 1.3e-6° from NumPy (centroids 4e-7 to
+   7e-7 px); at 200:1, 1.6e-8°. Use `.float64` where that matters. The truth bands (0.1°, 0.3°) catch gross errors (pixel q on
+   anisotropic data), not a 0.05° bias; the NumPy band guards the estimator.
+4. The "printed, not gated" distribution of bins below 1e-3 of the maximum (section 3) is not implemented; the registered truths
+   "DC bin = DC·w·h" and "A·w·h/2" hold through the NumPy match, and the consumer check asserts both on its own lattice. Open.
+5. The Float32 1e-5-of-maximum band is blind next to a DC of 1e6 (a lattice peak is 4.5e-10 of the maximum); the k ≥ 1 profile
+   error reached 2.3e-5 to 9.9e-4 of the largest non-DC bin there. Section 9's caveat (a ring fainter than about 1e-6 of the DC
+   is not reliable on Float32) covers it; `SpotMeasurement` removes the mean and is not affected.
+6. Behaviour against macTEM, none numeric: `reciprocalUnits` of an axis already in "1/…" is the unit after the "1/" (macTEM
+   wrote "1/1/…"); `RadialProfile.compute` throws where macTEM returned nil; refusal payloads carry the units; a 1 × 1 image's
+   default-width profile is refused (as macTEM's); `mixedUnits` compares the unit strings as written (" nm" and "nm" differ),
+   while `LengthUnit` folds them for conversion. Recorded in `docs/consumers-0.0.1.md`.
+7. Open, for 0.1.0's API pass: `FFT2D.transform` traps on a size mismatch (a `precondition`, now to be documented or made a
+   throw); `angle(qa:qb:)` loses range beyond about 1e±150 components (normalise by the larger component); a subnormal scale
+   counts as calibrated; a spot on non-finite pixels returns NaN instead of throwing; `fftfreq`, `nextPow2`, `frequencies` and
+   `hanning` are public helpers to keep or hide deliberately; a doc line that the angle is unsigned (a spot and its Friedel
+   partner give θ and 180° − θ).
+8. Full-parity reads the manifests' absolute paths into `.build/pins-full` of the generating checkout; the case counts are now
+   asserted.
+9. The apps-parity harness did not exist at `eb042aa`; it landed in `3f744ca` and passed.
