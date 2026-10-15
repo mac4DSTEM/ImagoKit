@@ -401,6 +401,146 @@
    "axis_units": "1/px",
    "peaks": [],
    "crop_of": null
+  },
+  {
+   "name": "ifA-128x96",
+   "kind": "ifft",
+   "input": "ifA-128x96.in.f32",
+   "width": 128,
+   "height": 96,
+   "scale_x": 0.0123,
+   "scale_y": 0.0246,
+   "units": "nm",
+   "crop": null,
+   "out_width": 128,
+   "out_height": 96,
+   "ifft": "ifA-128x96.ifft.f64",
+   "spots": [
+    {
+     "kx": 9.1,
+     "ky": 3.9,
+     "r": 2.5,
+     "e": 2.0
+    },
+    {
+     "kx": -4.1,
+     "ky": 7.9,
+     "r": 2.5,
+     "e": 2.0
+    }
+   ],
+   "mask_lattice": "A",
+   "imag_max": 5.857660905436553e-14,
+   "real_max": 205.0846021106685,
+   "corr_masked": 0.9948395428520684,
+   "corr_other": -0.00011619877105366548,
+   "peaks": [],
+   "crop_of": null
+  },
+  {
+   "name": "ifB-128x96",
+   "kind": "ifft",
+   "input": "ifB-128x96.in.f32",
+   "width": 128,
+   "height": 96,
+   "scale_x": 0.0123,
+   "scale_y": 0.0246,
+   "units": "nm",
+   "crop": null,
+   "out_width": 128,
+   "out_height": 96,
+   "ifft": "ifB-128x96.ifft.f64",
+   "spots": [
+    {
+     "kx": 21.9,
+     "ky": -9.1,
+     "r": 3.0,
+     "e": 0.0
+    },
+    {
+     "kx": -15.1,
+     "ky": 10.9,
+     "r": 3.0,
+     "e": 0.0
+    }
+   ],
+   "mask_lattice": "B",
+   "imag_max": 1.0510111299784814e-14,
+   "real_max": 43.46569644273879,
+   "corr_masked": 0.992757274919252,
+   "corr_other": 0.0004846642694290049,
+   "peaks": [],
+   "crop_of": null
+  },
+  {
+   "name": "ifA-127x50",
+   "kind": "ifft",
+   "input": "ifA-127x50.in.f32",
+   "width": 127,
+   "height": 50,
+   "scale_x": 0.0123,
+   "scale_y": 0.0246,
+   "units": "nm",
+   "crop": null,
+   "out_width": 127,
+   "out_height": 50,
+   "ifft": "ifA-127x50.ifft.f64",
+   "spots": [
+    {
+     "kx": 9.1,
+     "ky": 3.9,
+     "r": 2.5,
+     "e": 2.0
+    },
+    {
+     "kx": -4.1,
+     "ky": 7.9,
+     "r": 2.5,
+     "e": 2.0
+    }
+   ],
+   "mask_lattice": "A",
+   "imag_max": 1.3210704278635136e-13,
+   "real_max": 203.98756839002428,
+   "corr_masked": 0.9948873584852773,
+   "corr_other": -0.0001273305514758728,
+   "peaks": [],
+   "crop_of": null
+  },
+  {
+   "name": "ifB-127x50",
+   "kind": "ifft",
+   "input": "ifB-127x50.in.f32",
+   "width": 127,
+   "height": 50,
+   "scale_x": 0.0123,
+   "scale_y": 0.0246,
+   "units": "nm",
+   "crop": null,
+   "out_width": 127,
+   "out_height": 50,
+   "ifft": "ifB-127x50.ifft.f64",
+   "spots": [
+    {
+     "kx": 21.9,
+     "ky": -9.1,
+     "r": 3.0,
+     "e": 0.0
+    },
+    {
+     "kx": -15.1,
+     "ky": 10.9,
+     "r": 3.0,
+     "e": 0.0
+    }
+   ],
+   "mask_lattice": "B",
+   "imag_max": 6.643866405796785e-14,
+   "real_max": 43.09962577610844,
+   "corr_masked": 0.9927664141091109,
+   "corr_other": 0.0005135116294691294,
+   "peaks": [],
+   "crop_of": null
   }
  ],
  "spot": [
@@ -1249,6 +1389,46 @@
    "file": "fft/c250-crop-odd.pow.f64",
    "sha256": "653cd1caaf789613c96d70f067de458aeb659cea770f26615ceaa79c9f71a472",
    "bytes": 49288
+  },
+  {
+   "file": "fft/ifA-127x50.ifft.f64",
+   "sha256": "2e1e335a540c1cd5690a13bd39a2cb9da4927dd34ca30c2de58eb0282bd53957",
+   "bytes": 50800
+  },
+  {
+   "file": "fft/ifA-127x50.in.f32",
+   "sha256": "3ff60637ebc810117c8d679f3e2a8bdfe6cc90fc9f324ffcd2211503f1d53105",
+   "bytes": 25400
+  },
+  {
+   "file": "fft/ifA-128x96.ifft.f64",
+   "sha256": "9e444166d22789a50ffd901d03ab5f4f95a48aaa6bde64d559dd81971aa7a403",
+   "bytes": 98304
+  },
+  {
+   "file": "fft/ifA-128x96.in.f32",
+   "sha256": "cbbc49bc70a254c8f4084743b3a722fc2fc7ce9d91f771fb497fe1baf312d306",
+   "bytes": 49152
+  },
+  {
+   "file": "fft/ifB-127x50.ifft.f64",
+   "sha256": "d2134fc0ed0bd0170612ab0059812fd5317d2c035c4b73382b88db15dee7ce3f",
+   "bytes": 50800
+  },
+  {
+   "file": "fft/ifB-127x50.in.f32",
+   "sha256": "3ff60637ebc810117c8d679f3e2a8bdfe6cc90fc9f324ffcd2211503f1d53105",
+   "bytes": 25400
+  },
+  {
+   "file": "fft/ifB-128x96.ifft.f64",
+   "sha256": "408c62d63534dced7170cdae1e5f3bf500121957b683002660ecd1ce98783783",
+   "bytes": 98304
+  },
+  {
+   "file": "fft/ifB-128x96.in.f32",
+   "sha256": "cbbc49bc70a254c8f4084743b3a722fc2fc7ce9d91f771fb497fe1baf312d306",
+   "bytes": 49152
   },
   {
    "file": "fft/n128x96-noise.ax.f64",

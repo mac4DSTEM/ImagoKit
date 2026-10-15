@@ -1,0 +1,192 @@
+{
+ "generator": "tools/slice-1/pins.py",
+ "mactem_commit": "3d17311",
+ "versions": {
+  "python": "3.14.7",
+  "numpy": "2.5.4",
+  "scipy": "1.18.1",
+  "scikit-image": "0.26.0"
+ },
+ "hrtem": [
+  {
+   "name": "bin-128",
+   "tier": "bin",
+   "n": 128,
+   "params": {
+    "delta": 5.0,
+    "step": 2.0,
+    "cycles": 99,
+    "smoothing": true,
+    "order": 4,
+    "ro": 0.3,
+    "pct": 0.0
+   },
+   "input": "bin-128.in.f32",
+   "passes": 36,
+   "files": {
+    "absf": "bin-128.absf.f64",
+    "wiener": "bin-128.wiener.f64",
+    "W": "bin-128.spectrum.f64",
+    "M": "bin-128.background.f64",
+    "a": "bin-128.absfmask.f64",
+    "w": "bin-128.wienermask.f64",
+    "c1": "bin-128.c1.f64",
+    "S": "bin-128.S.f64",
+    "firstpass": "bin-128.firstpass.f64",
+    "nearmargins": "bin-128.nearmargins.f64",
+    "p2region": "bin-128.p2region.f64"
+   }
+  },
+  {
+   "name": "pct5-128",
+   "tier": "param",
+   "n": 128,
+   "params": {
+    "delta": 5.0,
+    "step": 2.0,
+    "cycles": 99,
+    "smoothing": true,
+    "order": 4,
+    "ro": 0.3,
+    "pct": 5.0
+   },
+   "input": "pct5-128.in.f32",
+   "passes": 36,
+   "files": {
+    "absf": "pct5-128.absf.f64",
+    "wiener": "pct5-128.wiener.f64",
+    "W": "pct5-128.spectrum.f64",
+    "M": "pct5-128.background.f64",
+    "a": "pct5-128.absfmask.f64",
+    "w": "pct5-128.wienermask.f64",
+    "c1": "pct5-128.c1.f64",
+    "S": "pct5-128.S.f64",
+    "firstpass": "pct5-128.firstpass.f64",
+    "nearmargins": "pct5-128.nearmargins.f64",
+    "p2region": "pct5-128.p2region.f64"
+   }
+  }
+ ],
+ "files": [
+  {
+   "file": "hrtem/bin-128.S.f64",
+   "sha256": "470b8bb5cef97eadb38b9d3d2b48c4478122f4b1ec34c45f14027467721af5cb",
+   "bytes": 131072
+  },
+  {
+   "file": "hrtem/bin-128.absf.f64",
+   "sha256": "a98567785f2d81c1c631d953b41e3a1526d09ae525699c0f0b0d6788ecb87d88",
+   "bytes": 131072
+  },
+  {
+   "file": "hrtem/bin-128.absfmask.f64",
+   "sha256": "227538e5c45c98a4b48746f4fbf7fc95d9876adc7eea67bce0605654d13eb350",
+   "bytes": 131072
+  },
+  {
+   "file": "hrtem/bin-128.background.f64",
+   "sha256": "5a33bf009c2932ea8a02063d22d4bfc610156ccd4a5ecb60c90c2ee50dbc46e0",
+   "bytes": 131072
+  },
+  {
+   "file": "hrtem/bin-128.c1.f64",
+   "sha256": "e520cee2acb8c084707b114c01216decd90c6911f27692322c8fe956bfce41d8",
+   "bytes": 131072
+  },
+  {
+   "file": "hrtem/bin-128.firstpass.f64",
+   "sha256": "3ec2ddafda3f843bec6e3612a67eb1d78ed4de9b09d057a2da4058447d6a3401",
+   "bytes": 131072
+  },
+  {
+   "file": "hrtem/bin-128.in.f32",
+   "sha256": "fe57f05e800ff50448b1d5292c306bf110af02639d0baa777c157af7d4f71063",
+   "bytes": 65536
+  },
+  {
+   "file": "hrtem/bin-128.nearmargins.f64",
+   "sha256": "9b408b3121a28f94db8d781efd1d4ce2876ea9474cf76e5dbc288b595e276a43",
+   "bytes": 101976
+  },
+  {
+   "file": "hrtem/bin-128.p2region.f64",
+   "sha256": "ad2224ae714f21c85fb518ff38d8792a0ed7b74be7842d4b27eb4dcc6499f2c0",
+   "bytes": 131072
+  },
+  {
+   "file": "hrtem/bin-128.spectrum.f64",
+   "sha256": "9cc69cf76aa2681ee7b26f57448d322a58637f29691e8c27493a87493111338f",
+   "bytes": 131072
+  },
+  {
+   "file": "hrtem/bin-128.wiener.f64",
+   "sha256": "00467960fb82c0dae47c0cea80bb7e253f17a69248d62d7260b23b3951d70975",
+   "bytes": 131072
+  },
+  {
+   "file": "hrtem/bin-128.wienermask.f64",
+   "sha256": "d2f7475e265fa26d5414caeeceb77d82aafbd2e237121ca54bee560492df98a8",
+   "bytes": 131072
+  },
+  {
+   "file": "hrtem/pct5-128.S.f64",
+   "sha256": "470b8bb5cef97eadb38b9d3d2b48c4478122f4b1ec34c45f14027467721af5cb",
+   "bytes": 131072
+  },
+  {
+   "file": "hrtem/pct5-128.absf.f64",
+   "sha256": "44c78b0a855d6091954d8c23622ae41ab6dc4442e2dc0a4a7205992aa78ee95e",
+   "bytes": 131072
+  },
+  {
+   "file": "hrtem/pct5-128.absfmask.f64",
+   "sha256": "b7c791156631cfa240e9bb597cecd8237b196e4b1facf70ede02b04d9b6d59d1",
+   "bytes": 131072
+  },
+  {
+   "file": "hrtem/pct5-128.background.f64",
+   "sha256": "5a33bf009c2932ea8a02063d22d4bfc610156ccd4a5ecb60c90c2ee50dbc46e0",
+   "bytes": 131072
+  },
+  {
+   "file": "hrtem/pct5-128.c1.f64",
+   "sha256": "e520cee2acb8c084707b114c01216decd90c6911f27692322c8fe956bfce41d8",
+   "bytes": 131072
+  },
+  {
+   "file": "hrtem/pct5-128.firstpass.f64",
+   "sha256": "3ec2ddafda3f843bec6e3612a67eb1d78ed4de9b09d057a2da4058447d6a3401",
+   "bytes": 131072
+  },
+  {
+   "file": "hrtem/pct5-128.in.f32",
+   "sha256": "fe57f05e800ff50448b1d5292c306bf110af02639d0baa777c157af7d4f71063",
+   "bytes": 65536
+  },
+  {
+   "file": "hrtem/pct5-128.nearmargins.f64",
+   "sha256": "9b408b3121a28f94db8d781efd1d4ce2876ea9474cf76e5dbc288b595e276a43",
+   "bytes": 101976
+  },
+  {
+   "file": "hrtem/pct5-128.p2region.f64",
+   "sha256": "ad2224ae714f21c85fb518ff38d8792a0ed7b74be7842d4b27eb4dcc6499f2c0",
+   "bytes": 131072
+  },
+  {
+   "file": "hrtem/pct5-128.spectrum.f64",
+   "sha256": "9cc69cf76aa2681ee7b26f57448d322a58637f29691e8c27493a87493111338f",
+   "bytes": 131072
+  },
+  {
+   "file": "hrtem/pct5-128.wiener.f64",
+   "sha256": "8dcec0852108df0f298c72ca160fac766c1a18f8ba3eff0c2308a75610e83d1f",
+   "bytes": 131072
+  },
+  {
+   "file": "hrtem/pct5-128.wienermask.f64",
+   "sha256": "106f7ab7a24fb722bcfd284ba17a4fe21e5f95015dea9f049bee619cf6c3b620",
+   "bytes": 131072
+  }
+ ]
+}

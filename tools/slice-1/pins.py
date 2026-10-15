@@ -13,8 +13,9 @@ Run from the repository root, before the Swift code (the registration's rule). S
   3. The committed subset (under 8 MB; the split is printed) is written to Tests/ImagoFFTTests/Fixtures/ with manifests
      whose paths are relative to that folder, every file's sha256, and the versions. .build/pins-full/ keeps every case
      for tools/slice-1/full-parity.sh.
-Slice 1b (masked inverse, HRTEM filters) adds its fixtures in its own step; the fft harness's `ifft` cases are written to
-.build/pins-full/ now and committed then.
+Slice 1b (amendment 7): the fft harness's `ifft` cases are committed with the spectrum and profile cases; macTEM's
+hrtem-filter-parity (plants.py, reference.py, SEED0 20261015) runs too, and two of its 41 cases are committed to
+Tests/ImagoFiltersTests/Fixtures/ (slice-1b-pins.json); the budget is 10 MB over both folders.
 """
 import hashlib
 import importlib.util
@@ -33,11 +34,15 @@ APPS = os.path.join(ROOT, ".build", "apps", "macTEM-" + MACTEM_COMMIT)
 FULL = os.path.join(ROOT, ".build", "pins-full")
 FIX = os.path.join(ROOT, "Tests", "ImagoFFTTests", "Fixtures")
 HARNESS_FILES = ["tools/fft-parity/make_fixture.py", "tools/fft-parity/reference.py",
-                 "tools/spot-parity/make_fixture.py", "tools/spot-parity/reference.py"]
+                 "tools/spot-parity/make_fixture.py", "tools/spot-parity/reference.py",
+                 "tools/hrtem-filter-parity/plants.py", "tools/hrtem-filter-parity/reference.py"]
+FILTER_FIX = os.path.join(ROOT, "Tests", "ImagoFiltersTests", "Fixtures")
+HRTEM_COMMITTED = ["bin-128", "pct5-128"]          # the defaults with the energy region; the low-frequency taper
+HRTEM_KEYS = ["absf", "wiener", "W", "M", "a", "w", "c1", "S", "firstpass", "nearmargins", "p2region"]
 SPOT_COMMIT_MAX_PIXELS = 256 * 128          # spot cases up to 256 x 128 are committed; 256 x 256 and 512 x 512 are full only,
 SPOT_COMMITTED_EXTRA = ["neighbour-3bins", "noisy256-k10-r0"]   # but for the one neighbour case and one noisy case (Gate B)
 ANGLE_COMMITTED = ["a256-iso-t60-clean", "a256-aniso-t109.47-clean", "a256-iso-t145-noisy", "a256-aniso-t30-noisy"]
-BUDGET = 8 * 1024 * 1024
+BUDGET = 10 * 1024 * 1024                         # amendment 7 (was 8 MB before slice 1b)
 ANGLE_SEED = 20261016
 
 
@@ -61,10 +66,10 @@ def extract():
             f.write(src)
 
 
-def run_harness(name):
-    here = os.path.join(APPS, "tools", name + "-parity")
+def run_harness(name, folder=None, maker="make_fixture.py"):
+    here = os.path.join(APPS, "tools", (folder or name) + "-parity")
     planted, ref = os.path.join(FULL, name, "planted"), os.path.join(FULL, name, "ref")
-    for script, args in (("make_fixture.py", [planted]), ("reference.py", [planted, ref])):
+    for script, args in ((maker, [planted]), ("reference.py", [planted, ref])):
         r = subprocess.run([sys.executable, "-I", "-B", os.path.join(here, script)] + args, capture_output=True, text=True)
         log = os.path.join(FULL, name + "-" + script.replace(".py", ".log"))
         with open(log, "w") as f:
@@ -207,6 +212,7 @@ def main():
     extract()
     fft = run_harness("fft")
     spot = run_harness("spot")
+    hrtem = run_harness("hrtem", folder="hrtem-filter", maker="plants.py")
     angle = angle_cases(load_spot_estimator())
 
     if os.path.exists(FIX):
@@ -216,9 +222,9 @@ def main():
     # Spectrum and profile cases (slice 1a); the ifft cases wait for 1b. Magnitude is sqrt(power) and is not committed.
     d = os.path.join(FIX, "fft")
     os.makedirs(d)
-    keep = [c for c in fft["cases"] if c["kind"] in ("spectrum", "profile")]
+    keep = [c for c in fft["cases"] if c["kind"] in ("spectrum", "profile", "ifft")]
     sections["fft"] = [relocate({k: v for k, v in c.items() if k != "magnitude"},
-                                ["input", "power", "axis_x", "axis_y", "pmean", "pcount"], [], d) for c in keep]
+                                ["input", "power", "axis_x", "axis_y", "pmean", "pcount", "ifft"], [], d) for c in keep]
     # Crop cases carry the cropped input too (written by reference.py as <case>.cropped.in.f32).
     for c in sections["fft"]:
         if c.get("crop"):
@@ -237,11 +243,34 @@ def main():
         fail("committed angle cases missing: %s" % sorted(set(ANGLE_COMMITTED) - {c["name"] for c in keep}))
     sections["angle"] = [relocate(c, ["input"], [os.path.join(FULL, "angle")], d) for c in keep]
 
+    if os.path.exists(FILTER_FIX):
+        shutil.rmtree(FILTER_FIX)
+    d = os.path.join(FILTER_FIX, "hrtem")
+    os.makedirs(d)
+    hsection = []
+    for c in hrtem["cases"]:
+        if c["name"] not in HRTEM_COMMITTED:
+            continue
+        out = {k: c[k] for k in ("name", "tier", "n", "params", "input", "passes")}
+        shutil.copyfile(os.path.join(FULL, "hrtem", "ref", c["input"]), os.path.join(d, c["input"]))
+        out["files"] = {}
+        for k in HRTEM_KEYS:
+            if k in c["files"]:
+                shutil.copyfile(os.path.join(FULL, "hrtem", "ref", c["files"][k]), os.path.join(d, c["files"][k]))
+                out["files"][k] = c["files"][k]
+        hsection.append(out)
+    if [c["name"] for c in hsection] != HRTEM_COMMITTED:
+        fail("committed hrtem cases missing")
+    ffiles = []
+    for root, _, names in os.walk(FILTER_FIX):
+        for n in sorted(names):
+            p = os.path.join(root, n)
+            ffiles.append({"file": os.path.relpath(p, FILTER_FIX), "sha256": sha256(p), "bytes": os.path.getsize(p)})
     for root, _, names in os.walk(FIX):
         for n in sorted(names):
             p = os.path.join(root, n)
             files.append({"file": os.path.relpath(p, FIX), "sha256": sha256(p), "bytes": os.path.getsize(p)})
-    total = sum(f["bytes"] for f in files)
+    total = sum(f["bytes"] for f in files) + sum(f["bytes"] for f in ffiles)
     if total > BUDGET:
         fail("committed fixtures %d bytes, over the 8 MB budget" % total)
     import scipy
@@ -252,11 +281,14 @@ def main():
             "fft": sections["fft"], "spot": sections["spot"], "angle": sections["angle"], "files": files}
     with open(os.path.join(FIX, "slice-1a-pins.json"), "w") as f:
         json.dump(pins, f, indent=1)
-    full_counts = {"fft": len(fft["cases"]), "spot": len(spot["cases"]), "angle": len(angle)}
-    print("pins.py: committed %d files, %.2f MB: fft %d of %d cases (spectrum and profile; ifft in 1b), spot %d of %d, "
-          "angle %d of %d; the full set in .build/pins-full/"
-          % (len(files), total / 2**20, len(sections["fft"]), full_counts["fft"], len(sections["spot"]),
-             full_counts["spot"], len(sections["angle"]), full_counts["angle"]))
+    with open(os.path.join(FILTER_FIX, "slice-1b-pins.json"), "w") as f:
+        json.dump({"generator": "tools/slice-1/pins.py", "mactem_commit": MACTEM_COMMIT, "versions": pins["versions"],
+                   "hrtem": hsection, "files": ffiles}, f, indent=1)
+    full_counts = {"fft": len(fft["cases"]), "spot": len(spot["cases"]), "angle": len(angle), "hrtem": len(hrtem["cases"])}
+    print("pins.py: committed %d files, %.2f MB: fft %d of %d cases, spot %d of %d, angle %d of %d, hrtem %d of %d; "
+          "the full set in .build/pins-full/"
+          % (len(files) + len(ffiles), total / 2**20, len(sections["fft"]), full_counts["fft"], len(sections["spot"]),
+             full_counts["spot"], len(sections["angle"]), full_counts["angle"], len(hsection), full_counts["hrtem"]))
 
 
 if __name__ == "__main__":
