@@ -1,0 +1,68 @@
+ImagoKit
+Copyright (c) 2026 Paul Lobpreis
+
+Licensed under the BSD 3-Clause License (LICENSE).
+
+No number computed by this library is validated on a microscope: agreement with
+NumPy and SciPy, recovery of planted lattices and stated closed forms are what is
+claimed (docs/registration-slice-1.md section 9).
+
+
+================================================================================
+Why BSD-3-Clause (decided 2026-10-15, at the repository's creation)
+================================================================================
+
+The references are NumPy, SciPy and scikit-image, all BSD-3-Clause. They are
+oracles: their code is run beside the kit, never copied into it. The Swift seed
+of slice 1 is the copyright holder's own code from the owner's GPL-3.0 applications
+(below), relicensed here; the owner confirms that relicensing before the
+first push (docs/status.md, "Waiting"). Should the owner decline, the package becomes
+GPL-3.0 like the suite's other kits, by replacing LICENSE and this paragraph.
+
+GPL-3.0 sources (Atomap for atom-column finding, HyperSpy, py4DSTEM) are not
+ported into ImagoCore, ImagoFFT, ImagoFilters or ImagoAlignment. A later port of
+one goes into its own module, licensed GPL-3.0 and named as such in
+Package.swift and the README, or into a separate package; one GPL module never
+changes the licence of the others, but an application linking it is bound by it.
+
+
+================================================================================
+The seed of slice 1 (the copyright holder's own code, read-only)
+================================================================================
+
+macTEM (github.com/mac4DSTEM/macTEM) at commit 3d17311:
+  Sources/TEMCore/Compute/PowerSpectrum.swift, RadialProfile.swift,
+  SpotMeasure.swift, MaskedInverseFFT.swift, HRTEMFilter.swift,
+  FFTRoomMath.swift (the unit rules), Data/CalibratedImage.swift (the axis
+  convention), and the parity harnesses tools/fft-parity, tools/spot-parity and
+  tools/hrtem-filter-parity (the planted truth).
+mac4DSTEM (github.com/mac4DSTEM/mac4DSTEM) at commit 7a0f727f:
+  mac4DSTEM/Core/Compute/FFT2D.swift (the exact-length 2D DFT on vDSP: radix-2,
+  exact radix-3 and radix-5 plans, vDSP DFT, Bluestein), of which macTEM's
+  FFT2D.swift is a verbatim copy.
+
+
+================================================================================
+The HRTEM filters' method (no code taken)
+================================================================================
+
+The average background subtraction and Wiener filters follow R. Kilaas,
+"Optimal and near-optimal filters in high-resolution electron microscopy",
+J. Microsc. 190 (1998) 45-51, as D. R. G. Mitchell's DigitalMicrograph script
+HRTEM_Filter.s v4.0 (2019-11-01) describes them. That script states no licence:
+nothing of it is copied. The kit implements the method's steps as the
+registration states them (formulas, constants and parameters are method). Its
+output has never been compared with DigitalMicrograph.
+
+Tao Ma's hrtem_filter (github.com/matao1984/hrtem_filter, MIT) is an
+independent Python implementation, used only as a printed cross-check of the
+mask formulas, never copied.
+
+
+================================================================================
+The oracles (run, not copied)
+================================================================================
+
+NumPy 2.5.4        Copyright (c) 2005-2025, NumPy Developers. BSD-3-Clause.
+SciPy 1.18.1       Copyright (c) 2001-2002 Enthought, Inc. 2003, SciPy Developers. BSD-3-Clause.
+scikit-image 0.26.0 Copyright (c) 2009-2022 the scikit-image team. BSD-3-Clause.

@@ -1,0 +1,7 @@
+# Swift Package Index: which modules get hosted DocC documentation. Listing on the Index is the owner's, once the repository
+# is public. ImagoAlignment is an empty placeholder until slice 2 is registered and is left out.
+version: 1
+builder:
+  configs:
+    - platform: macos-spm
+      documentation_targets: [ImagoCore, ImagoFFT, ImagoFilters]

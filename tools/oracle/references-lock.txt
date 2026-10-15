@@ -1,0 +1,13 @@
+# ImagoKit's oracle stack: exact versions, installed with --no-deps into References/oracle-venv (tools/oracle/provision.sh),
+# so nothing floats. The same NumPy, SciPy and scikit-image releases macTEM's FFT, spot and HRTEM-filter harnesses were
+# measured on (macTEM tools/lib/references-lock.txt, 2026-10-12/13), on CPython 3.14.7 (arm64). scikit-image's closure:
+# lazy-loader, networkx, ImageIO, pillow, packaging, tifffile.
+numpy==2.5.4
+scipy==1.18.1
+scikit-image==0.26.0
+lazy-loader==0.5
+networkx==3.6.1
+ImageIO==2.37.4
+pillow==12.3.0
+packaging==26.3
+tifffile==2026.9.20
