@@ -144,4 +144,74 @@ Slice 2 after slice 1's 0.0.2; slice 2b (order-3 splines) when a consumer needs 
 
 ## 10. Amendments
 
-None yet.
+### 2026-10-15 17:09 CEST (amendment 1), the slice-2 pins land
+
+`tools/slice-2/pins.py` (run under `../tools/memcap.sh`, peak 0.3 GB, 5 s) asserts the three sha256 values of section 2 and the
+pinned versions (NumPy 2.5.4, SciPy 1.18.1, scikit-image 0.26.0, CPython 3.14.7), writes the full set to
+`.build/pins-full/alignment/` (32.1 MB, 330 registration cases) and a committed subset to
+`Tests/ImagoAlignmentTests/Fixtures/` (**3.96 MiB of a separate 4 MiB budget**, 81 files with every file's sha256 in
+`slice-2-pins.json`; slice 1's 9.3 MB of 10 is untouched): 68 registration cases, the shift and Fourier-shift pins, and the
+96 × 96 drift stack. What the pins showed, and what changes in this registration because of it:
+
+1. **The planted image.** Section 4's plant is the lattices (three, amplitude 20 to 80 on DC 1000, integer frequencies up to
+   0.075·min(h, w), each with a second harmonic at half amplitude, seed 20261017) plus an amorphous continuum; the continuum
+   is not the slice-1 generator's. Its power-law spectrum (amplitude k^-1.5, rms 15) holds nearly all its power in the first
+   few frequency bins, and phase correlation, which gives every frequency one weight, then fails at σ = 5 (worst error 1.1 px
+   on the 24 vectors, 19 beyond 0.15 px). The continuum is now random-phase with amplitude (1 + (q/0.10)²)⁻¹, q in cycles per
+   pixel, rms 30, band-limited to |f| ≤ 0.4 on both axes (so no Nyquist content and the Fourier shift is exact), and `plant()`
+   is the one generator for every size. (0.10 and the exponent 2 are the values at which the bilinear mean's correlation of
+   section 4 reaches 0.999 on both stacks; exponent 1 gave 0.9977.) Noise is added independently to the reference and to each
+   moving image; the moving image is `fourier_shift(base, −s)`, so the registered shift is +s.
+2. **Planted truth, measured in NumPy** (24 vectors, 256 × 256; u = 20 unless stated): noise-free worst |ŝ − s| **0.020** px
+   (band 0.035), at u = 100 **0.010** (band 0.015), at u = 1 0.500 (grid); σ = 5: **0.030** (band 0.05); σ = 20: **0.050**
+   (band 0.15); u = 100 at σ > 0 is printed, not gated (0.010 and 0.050). A 128 × 128 noise-free plant was tried for the
+   committed subset and reached 0.020 at u = 100 (the roundoff bins above the band limit weigh twice as much): the committed
+   plant cases are 256 × 256.
+3. **Drift stack** (12 frames, random-walk steps N(0, 0.7²) seed 20261018, σ = 5): committed at 96 × 96, full set also 256 × 256.
+   Worst recovered |error| over the band: `.first` 0.93 / 0.48 (96² / 256²), `.previous` 0.94 / 0.42, and **`.mean` 0.93 of a
+   band that is now 0.20 px, not 0.05**: the mean of a drifting stack is a smeared reference, scikit-image itself returns up
+   to 0.185 px error on frames 6 and 8 (96²; 0.147 at 256²; the same centred on the mean error, 0.13 to 0.175), at every size
+   tried. Section 4's "`.first` and `.mean` within 0.05 px" becomes: `.first` 0.05, `.mean` 0.20, `.previous` 0.05·√k. The
+   sums use the planted drift itself as the shifts: the Fourier aligned mean equals the unshifted image to **6.5e-8** (96²) and
+   6.8e-8 (256²) of its maximum, the bilinear mean correlates **0.99938** (96²) and **0.99917** (256²) with it inside the
+   full-overlap region (8,463 and 63,503 pixels).
+4. **The near-tie rule is measured, not 1e-5.** Section 3.4's premise (the Float32 FFT's error relative to the maximum is
+   1e-5) holds for the correlation of images with real noise (ε32 ≤ 1.5e-6 at σ = 5 and 20) and fails for noise-free ones:
+   phase normalisation gives unit weight to every bin, including those whose content is below the arithmetic noise of the
+   transform, so the float32 correlation of the noise-free plant differs from the float64 one by up to **2.5e-2** of its
+   maximum (4.4e-2 in the full set), and SciPy's own float32 run picks a different integer peak than its float64 run on the
+   half-pixel vector (`plant256-s0-v03-u1`: (0, 0) against (0, 1), the two maxima 0.6 % apart). So each case carries ε32
+   (the float32 pipeline of the oracle's own steps against its float64 pipeline, per stage) and ε64 (the response of the
+   float64 pipeline to a one-ulp perturbation of every input pixel, an implementation's arithmetic noise; at most 9.7e-10), and
+   is flagged a near-tie when the gap between the two largest samples is at most max(1e-5, 4·ε32) (Float32) or max(1e-12,
+   8·ε64) (Float64): 117 and 17 of the 330 cases. A flagged case is held to the **bounding box** of the shifts whose
+   correlation sample lies within that noise of the maximum (the integer peaks within it, each refined), not to 1/u; the
+   box is in the pins, and `pins.py` asserts that the oracle's own shift lies in it. Every unflagged case is held to equality.
+5. **scikit-image on float32 input** returns a float32 shift (5.1 comes back as 5.099999904632568) and a float32 error and
+   phase difference. The pins record both oracle runs (the same pixels, float32 and widened to float64); the Float32 kit is
+   compared with the float32 run, the Float64 kit with the float64 one. The two oracle runs disagree in the shift in 148 of
+   the 330 cases, 117 of them by representation alone, 31 by a grid step or more. The error is `√|1 − x|` with x near 1
+   when the images match: its float64 value of an exact copy is ill-conditioned (error 3e-8 comes back with 1.5e-8 of noise),
+   and the float32 oracle differs from the float64 one by up to 5.5e-4 in error and 2.7e-4 in phase difference on the
+   noise-free plant. Section 3.4's error and phase bands are therefore applied as: the **squared** error within 1e-12 (Float64) /
+   1e-5 (Float32), the error itself within 1e-10 / 1e-5 where the oracle's error is at least 0.1, and the phase difference
+   (compared on the circle: π and −π are one angle) within 1e-10 / 1e-5, each **plus** 8 (error²) or 4 (phase) times the case's
+   measured ε of the last correlation stage; the measured ε is 0 to 1e-6 on every case with real noise.
+6. **Section 3.2's mode table, checked against SciPy.** A Python transliteration of the C `map_coordinate`
+   and of `NI_ZoomShift`'s order-0 and order-1 branches (the coordinate `k − s` mapped per axis; order 0 reads `floor(c + 1/2)`,
+   order 1 `floor(c)` and `floor(c) + 1`; a neighbour beyond the edge is mapped by the mode's integer rule, or is `cval` for
+   "grid-constant") reproduces `ndimage.shift` to 1e-12 on 6 shapes (13 × 10, 5 × 4, 2 × 2, 1 × 6, 7 × 1, 3 × 3) × 7 modes × 2
+   orders × 44 shifts (integer, half-integer, edge-crossing, 100.3, 1e-9 and random): 0 differences. It shows: "wrap" has
+   period n − 1 (n = 5, shift 2: `[30, 40, 10, 20, 30]`); "constant" gives `cval` for every coordinate outside [0, n − 1],
+   also in (−1, 0); order 0 rounds half up after the mapping (shift 0.5 reproduces the image, shift −0.5 reads the next
+   pixel); "grid-constant" interpolates toward `cval` from the edge pixels. The committed pins hold 4 images (10 × 13, 5 × 4,
+   1 × 6, 7 × 1), 30 shifts and cval 7.5 for each of the 14 (mode, order) pairs. `fourier_shift` indexes frequencies as
+   `fftfreq` does (the Nyquist index of an even size is negative); the pins hold 5 images (12 × 10, 11 × 9, 1 × 8, 8 × 1,
+   16 × 16) × 12 shifts and each case's largest imaginary part.
+7. **Not an effect, a correction.** Section 3.1 step 4 calls the amplitudes of the refined branch (`Σ|F|²`, not divided by the
+   pixel count) "scikit-image's quirk": the refined correlation is likewise the unnormalised sum, so the two branches give the
+   same error for the same pair. The code and its type document this as consistent; the mutant "amplitudes divided by the size"
+   stays (it gives √(N² − 1) for an identical pair).
+8. **Round half to even** (step 4, `np.round(shift·u)/u`): the shift there is an integer, so `shift·u` is an integer and the
+   rounding never meets a half; "round half away" is an equivalent mutant (section 5 lists it).
+
