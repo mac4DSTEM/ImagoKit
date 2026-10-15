@@ -22,14 +22,16 @@ registration, no code yet), **absent**.
 |---|---|---|---|
 | `ndimage.median_filter(size=3, mode="nearest")` | partial | `HRTEMFilter` step A1 (slice 1b) | 3 × 3, nearest, inside the filter only |
 | `ndimage.map_coordinates(order=1, mode="nearest")` | partial | `HRTEMFilter.radialProfile` (slice 1b) | order 1, nearest, on circles about the centre |
-| `ndimage.shift`, `ndimage.fourier_shift` | registered | `ImagoAlignment` (slice 2) | orders 0 and 1; order 3 in 2b |
+| `ndimage.shift(order=0 or 1)` | partial | `ImageShift.shift` (slice 2) | all seven modes (`constant`, `nearest`, `wrap`, `reflect`, `mirror`, `grid-constant`, `grid-wrap`) and `cval`, 2D, one real channel; `order` 2 to 5 (the spline prefilter) absent, slice 2b; `output=` and `prefilter=` absent |
+| `ndimage.fourier_shift` | partial | `ImageShift.fourierShift`, `fourierShiftWithResidual` (slice 2) | `real(ifft2(fourier_shift(fft2(x), s)))` of a real 2D image, with the largest imaginary part reported; `n=` and `axis=` (real-FFT input) absent |
 | `ndimage.gaussian_filter`, `uniform_filter`, `zoom`, `rotate` | absent | | |
 
 ## scikit-image 0.26.0
 
 | Function | State | Where | Notes |
 |---|---|---|---|
-| `registration.phase_cross_correlation` (with `upsample_factor`) | registered | `ImagoAlignment` (slice 2) | no masks, no `disambiguate` |
+| `registration.phase_cross_correlation` (with `upsample_factor`) | partial | `PhaseCorrelation.register`, `DriftSeries` (slice 2) | real-space images of one size, integer `upsample_factor` (1 to 1024), `normalization` `"phase"` or `None`; the shift, the error and the phase difference; no masks (`reference_mask`, `moving_mask`, `overlap_ratio`), no `disambiguate`, no `space="fourier"` |
+| a drift series and an aligned sum (not in scikit-image) | done (slice 2) | `DriftSeries`, `AlignedSum` | `.first`, `.mean`, `.previous` references; Fourier or bilinear summing with the overlap count |
 | `filters.butterworth`, `filters.difference_of_gaussians`, `filters.window` | absent | | bandpass, a later slice |
 | `feature.peak_local_max` | absent | | atom columns, a later slice |
 | `restoration.denoise_*` | absent | | denoising, a later slice |

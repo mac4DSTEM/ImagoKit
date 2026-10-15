@@ -1,5 +1,6 @@
 // README.md's program, verbatim (tools/readme-consumer/run.sh checks it line by line), then checks on its numbers.
 import Foundation
+import ImagoAlignment
 import ImagoCore
 import ImagoFFT
 import ImagoFilters
@@ -32,6 +33,23 @@ let bragg = try MaskedInverseFFT.compute(image, spots: [a.maskSpot(radius: 3, ed
 let filtered = try HRTEMFilter.filter(image)
 print("Bragg-filtered image:", bragg.image.count, "pixels; HRTEM filters ran", filtered.passes, "passes")
 
+// Drift: a field of three blobs, displaced by a known sub-pixel amount, is registered back (phase correlation refined to
+// 1/20 pixel) and the pair is summed after alignment.
+var blobs = [Float](repeating: 5, count: n * n)
+for (r0, c0) in [(60.0, 70.0), (120.0, 180.0), (190.0, 90.0)] {
+    for row in 0..<n {
+        for col in 0..<n {
+            let d2 = (Double(row) - r0) * (Double(row) - r0) + (Double(col) - c0) * (Double(col) - c0)
+            blobs[row * n + col] += Float(100 * exp(-d2 / 18))
+        }
+    }
+}
+let field = try Micrograph(width: n, height: n, pixels: blobs)
+let drifted = try ImageShift.fourierShift(field, by: PixelShift(row: -2.5, column: 1.25))
+let drift = try PhaseCorrelation.register(reference: field, moving: drifted, upsampleFactor: 20, normalization: .unnormalized)
+let summed = try AlignedSum.sum([field, drifted], shifts: [.zero, drift.shift])
+print("registered drift:", drift.shift.row, drift.shift.column, "px; aligned sum of", summed.frameCount, "frames")
+
 // The planted truth: d = 1/|q| with q = (40, 12) and (−15, 35) cycles over 5.12 nm; the angle between them.
 let qa = (40.0 / 5.12, 12.0 / 5.12), qb = (-15.0 / 5.12, 35.0 / 5.12)
 let plantedAngle = try SpotMeasurement.angle(qa: qa, qb: qb)
@@ -39,5 +57,6 @@ let ok = abs(a.dNanometres! * (qa.0 * qa.0 + qa.1 * qa.1).squareRoot() - 1) < 2e
     && abs(b.dNanometres! * (qb.0 * qb.0 + qb.1 * qb.1).squareRoot() - 1) < 2e-3
     && abs(pair.angle - plantedAngle) < 0.1
     && bragg.image.count == n * n && filtered.passes >= 1
+    && drift.shift == PixelShift(row: 2.5, column: -1.25) && summed.frameCount == 2 && summed.counts.allSatisfy { $0 == 2 }
 print("readme-consumer summary: \(ok ? "passed" : "FAILED")")
 if !ok { exit(1) }

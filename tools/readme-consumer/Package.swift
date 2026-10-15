@@ -16,6 +16,7 @@ let package = Package(
             .product(name: "ImagoCore", package: kit),
             .product(name: "ImagoFFT", package: kit),
             .product(name: "ImagoFilters", package: kit),
+            .product(name: "ImagoAlignment", package: kit),
         ]),
     ],
     swiftLanguageModes: [.v6]

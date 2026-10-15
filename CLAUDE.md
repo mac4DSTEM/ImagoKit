@@ -2,17 +2,17 @@
 
 ImagoKit: the macEM suite's image-analysis library (the sixth kit, the owner's decision of 2026-10-15 15:25), a Swift port
 of what the apps compute on a micrograph: the exact-length 2D FFT and the centred power spectrum, the radial profile,
-FFT-spot spacings and angles, the masked inverse FFT, the HRTEM filters; later drift and stack alignment, GPA strain and
+FFT-spot spacings and angles, the masked inverse FFT, the HRTEM filters, drift and stack alignment; later GPA strain and
 atom-column finding. NumPy, SciPy and scikit-image are its references. BSD-3-Clause (README "Licence" and `NOTICE` say why
 and what would change it). Modules: `ImagoCore` (image, calibration, the FFT engine), `ImagoFFT` (spectrum, profile, spots,
-masked inverse), `ImagoFilters` (HRTEM filters), `ImagoAlignment` (slice 2, a placeholder with its scope). Rules only here;
+masked inverse), `ImagoFilters` (HRTEM filters), `ImagoAlignment` (slice 2: phase correlation, shifts, drift series, aligned sums). Rules only here;
 state in `docs/status.md`. Tests are Swift Testing (`import Testing`, `@Test`, `#expect`, `#require`).
 
 ## Read first
 
 1. The suite's `../CLAUDE.md` (board, tiers, how we work) and `../ROADMAP.md`, "Kits" (the direction, the oracles, the
    licence rule, the Apple-infrastructure requirements, the 0.1.0 bar, the kit loop).
-2. `docs/registration-slice-1.md`: what slice 1 makes, the definitions, the pins, the planted truth, the gates, slice 2's scope.
+2. `docs/registration-slice-1.md` and `docs/registration-slice-2.md`: what each slice makes, the definitions, the pins, the planted truth, the gates, the amendments.
 3. `docs/status.md`: what is live, the hand-off, what is unverified.
 4. `../CuboKit/CLAUDE.md` and `../DiffractoKit/CLAUDE.md`: the kit repos this one follows.
 

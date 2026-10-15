@@ -115,8 +115,115 @@ for e in [HRTEMFilterError.oddSize(33), .tooSmall(16), .pixelCount(expected: 4, 
     check(e.errorDescription?.isEmpty == false, "HRTEMFilterError text: \(e)")
 }
 
-// ImagoAlignment (slice 2): the first symbol; the rest of its surface is checked below.
-check(PixelShift.zero == PixelShift(row: 0, column: 0), "ImagoAlignment: PixelShift.zero")
+// ImagoAlignment (slice 2): shifts, registrations, drift series and aligned sums, on the lattice above.
+check(PixelShift.zero == PixelShift(row: 0, column: 0) && PixelShift(row: 1, column: 2).column == 2, "PixelShift")
+check(Normalization.allCases.count == 2 && Normalization.phase.rawValue == "phase" && Normalization.unnormalized.rawValue == "unnormalized",
+      "Normalization")
+check(ShiftOrder.nearest.rawValue == 0 && ShiftOrder.linear.rawValue == 1 && ShiftOrder.allCases.count == 2, "ShiftOrder")
+check(ShiftMode.allCases.map(\.rawValue) == ["constant", "nearest", "wrap", "reflect", "mirror", "grid-constant", "grid-wrap"],
+      "ShiftMode names are SciPy's")
+check(AlignmentMethod.allCases.count == 2 && DriftReference.allCases.map(\.rawValue) == ["first", "mean", "previous"],
+      "AlignmentMethod and DriftReference")
+check(PhaseCorrelation.maximumUpsampleFactor == 1024 && ImageShift.maximumShift == 1e9, "the limits")
+
+// ImageShift on a row of five pixels: SciPy's modes, by hand.
+let row = try Micrograph(width: 5, height: 1, pixels: [10, 20, 30, 40, 50])
+func shifted(_ mode: ShiftMode, _ order: ShiftOrder, _ by: Double, cval: Double = -1) throws -> [Float] {
+    try ImageShift.shift(row, by: PixelShift(row: 0, column: by), order: order, mode: mode, cval: cval).pixels
+}
+check(try shifted(.constant, .linear, 2) == [-1, -1, 10, 20, 30], "constant: cval beyond the edge")
+check(try shifted(.nearest, .linear, 2) == [10, 10, 10, 20, 30], "nearest")
+check(try shifted(.wrap, .linear, 2) == [30, 40, 10, 20, 30], "wrap has SciPy's period n − 1")
+check(try shifted(.gridWrap, .linear, 2) == [40, 50, 10, 20, 30], "grid-wrap has period n")
+check(try shifted(.reflect, .linear, 2) == [20, 10, 10, 20, 30] && (try shifted(.mirror, .linear, 2)) == [30, 20, 10, 20, 30],
+      "reflect and mirror")
+check(try shifted(.gridConstant, .linear, 0.5) == [4.5, 15, 25, 35, 45], "grid-constant interpolates toward cval")
+check(try shifted(.nearest, .nearest, -0.5) == [20, 30, 40, 50, 50], "order 0 rounds half up")
+check(try shifted(.nearest, .linear, 0.25) == [10, 17.5, 27.5, 37.5, 47.5], "order 1 interpolates")
+let doubleShift = try ImageShift.shift(row, by: PixelShift(row: 0, column: 0.25), mode: .nearest, precision: .float64)
+check(doubleShift.pixels == [10, 17.5, 27.5, 37.5, 47.5] && doubleShift.width == 5, "shift on the Float64 path")
+
+// The Fourier shift of an integer shift is a roll; a half-pixel shift of an even size leaves a Nyquist residual.
+let rolled = try ImageShift.fourierShift(image, by: PixelShift(row: 2, column: -3), precision: .float64)
+var rollError: Float = 0
+for r in 0..<h { for c in 0..<w {
+    rollError = max(rollError, abs(rolled.pixels[r * w + c] - image.pixels[((r - 2 + h) % h) * w + (c + 3) % w]))
+} }
+check(rollError < 1e-4 && rolled.x == image.x, "an integer Fourier shift is a roll and keeps the calibration")
+let residual = try ImageShift.fourierShiftWithResidual(image, by: PixelShift(row: 0.5, column: 0), precision: .float64)
+check(residual.image.width == w && residual.largestImaginaryPart >= 0 && residual.largestImaginaryPart < 1e-3,
+      "fourierShiftWithResidual (a lattice has no Nyquist content)")
+
+// Registration needs structure that is not periodic (a lattice matches itself at every cell): five Gaussian blobs,
+// displaced by a known quarter-pixel shift and registered back (the blobs are the reference).
+let blobCentres: [(Double, Double, Double)] = [(30, 40, 100), (45, 90, 70), (60, 25, 50), (70, 70, 90), (25, 100, 60)]
+var blobPixels = [Float](repeating: 0, count: w * h)
+for r in 0..<h { for c in 0..<w {
+    var v = 5.0
+    for (br, bc, amplitude) in blobCentres {
+        let d2 = (Double(r) - br) * (Double(r) - br) + (Double(c) - bc) * (Double(c) - bc)
+        v += amplitude * exp(-d2 / 18)
+    }
+    blobPixels[r * w + c] = Float(v)
+} }
+let blobs = try Micrograph(width: w, height: h, pixels: blobPixels)
+let truth = PixelShift(row: 3.5, column: -2.25)
+let moved = try ImageShift.fourierShift(blobs, by: PixelShift(row: -truth.row, column: -truth.column), precision: .float64)
+for precision in Precision.allCases {
+    let r = try PhaseCorrelation.register(reference: blobs, moving: moved, upsampleFactor: 4, normalization: .unnormalized,
+                                          precision: precision)
+    check(r.shift == truth, "\(precision): register recovers (3.5, −2.25) on the 1/4 grid, got \(r.shift)")
+    check(r.upsampleFactor == 4 && r.normalization == .unnormalized && r.precision == precision && r.error < 0.3
+          && abs(r.phaseDifference) < 1e-3, "\(precision): the registration's fields")
+}
+let whole = try PhaseCorrelation.register(reference: blobs, moving: moved, normalization: .unnormalized, precision: .float64)
+check((whole.shift.row == 3 || whole.shift.row == 4) && whole.shift.column == -2,
+      "upsample factor 1 gives whole pixels (3.5 is a tie, −2.25 → −2), got \(whole.shift)")
+check(ImageRegistration(shift: truth, error: 0.5, phaseDifference: 0.25, upsampleFactor: 2, normalization: .phase,
+                        precision: .float32).shift == truth, "ImageRegistration is constructible")
+
+// A drift series and the aligned sum: four frames drifting by known quarter pixels.
+let drift = [PixelShift.zero, PixelShift(row: 1, column: 2), PixelShift(row: 2, column: 3.5), PixelShift(row: 3.5, column: 3.5)]
+let stack = try drift.map { try ImageShift.fourierShift(blobs, by: PixelShift(row: -$0.row, column: -$0.column), precision: .float64) }
+for (reference, name) in [(DriftReference.first, "first"), (.previous, "previous")] {
+    let series = try DriftSeries.estimate(stack, reference: reference, upsampleFactor: 4, normalization: .unnormalized,
+                                          precision: .float64)
+    check(series.map(\.shift) == drift, "DriftSeries .\(name) recovers the drift, got \(series.map(\.shift))")
+}
+let meanSeries = try DriftSeries.estimate(stack, reference: .mean, upsampleFactor: 4, normalization: .unnormalized)
+check(meanSeries.count == 4 && zip(meanSeries, drift).allSatisfy { abs(($0.shift.row - meanSeries[0].shift.row) - $1.row) < 0.5 },
+      "DriftSeries .mean follows the drift")
+let aligned = try AlignedSum.sum(stack, shifts: drift, method: .fourier, precision: .float64)
+var alignedError: Float = 0
+for i in 0..<(w * h) { alignedError = max(alignedError, abs(aligned.mean.pixels[i] - blobs.pixels[i])) }
+check(alignedError < 1e-3 && aligned.counts.allSatisfy { $0 == 4 } && aligned.frameCount == 4 && aligned.method == .fourier
+      && aligned.precision == .float64 && aligned.sum.width == w && aligned.largestImaginaryPart < 1e-3,
+      "the Fourier aligned mean is the image")
+let overlap = try AlignedSum.sum(stack, shifts: drift, method: .bilinear)
+check(overlap.counts[0] == 1 && overlap.counts[(h / 2) * w + w / 2] == 4 && overlap.method == .bilinear
+      && overlap.largestImaginaryPart == 0 && overlap.mean.pixels.count == w * h,
+      "the bilinear overlap count: one frame covers the corner, four the centre")
+
+// Refusals, by name, with texts.
+let tall = try Micrograph(width: 4, height: 5, pixels: [Float](repeating: 1, count: 20))
+do { _ = try PhaseCorrelation.register(reference: image, moving: tall) } catch let e as AlignmentError {
+    check(e == .sizeMismatch(index: 1, width: 4, height: 5, expectedWidth: w, expectedHeight: h), "a size mismatch is refused by name")
+}
+do { _ = try DriftSeries.estimate([]) } catch let e as AlignmentError { check(e == .emptyStack, "an empty stack is refused") }
+do { _ = try PhaseCorrelation.register(reference: image, moving: image, upsampleFactor: 0) } catch let e as AlignmentError {
+    check(e == .upsampleFactor(0), "an upsample factor of 0 is refused")
+}
+do { _ = try ImageShift.shift(image, by: PixelShift(row: .nan, column: 0)) } catch let e as AlignmentError {
+    check(e == .invalidShift(index: 0), "a NaN shift is refused")
+}
+do { _ = try AlignedSum.sum([image], shifts: []) } catch let e as AlignmentError {
+    check(e == .shiftCount(expected: 1, actual: 0), "a missing shift is refused")
+}
+for e in [AlignmentError.emptyStack, .sizeMismatch(index: 1, width: 2, height: 3, expectedWidth: 4, expectedHeight: 5),
+          .nonFinitePixel(index: 0), .upsampleFactor(0), .invalidShift(index: 0), .shiftCount(expected: 2, actual: 1),
+          .fftSetup(width: 1, height: 2)] {
+    check(e.errorDescription?.isEmpty == false, "AlignmentError text: \(e)")
+}
 
 print("consumer-check summary: \(checks) checks, \(failures) failures")
 if failures > 0 { exit(1) }

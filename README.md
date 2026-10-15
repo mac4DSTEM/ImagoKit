@@ -2,13 +2,14 @@
 
 Image analysis for electron micrographs, in Swift, for macOS and iPadOS: the Fourier transform of an image with its
 calibration, lattice spacings and angles measured from FFT spots, Bragg (masked inverse FFT) filtering, the HRTEM
-background-subtraction and Wiener filters, and, next, drift correction and stack alignment. Each number is defined once,
+background-subtraction and Wiener filters, and drift correction and stack alignment. Each number is defined once,
 pinned against the Python packages the field already uses, and checked against planted lattices whose answer is known.
 
 **Status: pre-release.** Slice 1 is in: `ImagoCore`, `ImagoFFT` (spectrum, radial profile, spot spacings and angles, the
 masked inverse FFT) and `ImagoFilters` (the HRTEM filters), each on a Float32 and a Float64 path
-([`docs/registration-slice-1.md`](docs/registration-slice-1.md)). Slice 2 (`ImagoAlignment`: phase correlation, drift and
-stack alignment) is registered ([`docs/registration-slice-2.md`](docs/registration-slice-2.md)) and not yet written.
+([`docs/registration-slice-1.md`](docs/registration-slice-1.md)). Slice 2 is in too ([`docs/registration-slice-2.md`](docs/registration-slice-2.md)):
+`ImagoAlignment` registers an image onto another by phase correlation refined to a fraction of a pixel, shifts images
+(SciPy's orders 0 and 1 and the Fourier shift), estimates the drift of a stack and sums it aligned.
 
 ## What it computes
 
@@ -52,11 +53,12 @@ or with `-O` for the kit: the manifest carries no optimisation flags (a versione
 ## The first ten minutes
 
 A lattice image with two spots: its spectrum, its radial profile, both spacings and the angle between them, a Bragg filter
-on one spot, and the HRTEM filters. This program is compiled and run as it stands by `tools/readme-consumer` (every line
+on one spot, the HRTEM filters, and the registration of a drifted copy. This program is compiled and run as it stands by `tools/readme-consumer` (every line
 below is checked against that consumer's source).
 
 ```swift
 import Foundation
+import ImagoAlignment
 import ImagoCore
 import ImagoFFT
 import ImagoFilters
@@ -88,6 +90,23 @@ print(String(format: "d₁ = %.4f nm, d₂ = %.4f nm, angle = %.2f°", a.dNanome
 let bragg = try MaskedInverseFFT.compute(image, spots: [a.maskSpot(radius: 3, edge: 2)])
 let filtered = try HRTEMFilter.filter(image)
 print("Bragg-filtered image:", bragg.image.count, "pixels; HRTEM filters ran", filtered.passes, "passes")
+
+// Drift: a field of three blobs, displaced by a known sub-pixel amount, is registered back (phase correlation refined to
+// 1/20 pixel) and the pair is summed after alignment.
+var blobs = [Float](repeating: 5, count: n * n)
+for (r0, c0) in [(60.0, 70.0), (120.0, 180.0), (190.0, 90.0)] {
+    for row in 0..<n {
+        for col in 0..<n {
+            let d2 = (Double(row) - r0) * (Double(row) - r0) + (Double(col) - c0) * (Double(col) - c0)
+            blobs[row * n + col] += Float(100 * exp(-d2 / 18))
+        }
+    }
+}
+let field = try Micrograph(width: n, height: n, pixels: blobs)
+let drifted = try ImageShift.fourierShift(field, by: PixelShift(row: -2.5, column: 1.25))
+let drift = try PhaseCorrelation.register(reference: field, moving: drifted, upsampleFactor: 20, normalization: .unnormalized)
+let summed = try AlignedSum.sum([field, drifted], shifts: [.zero, drift.shift])
+print("registered drift:", drift.shift.row, drift.shift.column, "px; aligned sum of", summed.frameCount, "frames")
 ```
 
 ## Checking it yourself
