@@ -147,7 +147,7 @@ states no licence); this is a functional re-implementation of the steps above.
 |---|---|
 | Float32 path against macTEM `3d17311`'s `PowerSpectrum`, `RadialProfile`, `SpotMeasure`, `MaskedInverseFFT`, `HRTEMFilter` on every planted case (the apps-parity check, section 6) | **bit for bit**: the same code in the same order of operations; any reordering is an amendment before it lands |
 | Frequency axes and spacings, both paths, against `fftshift(fftfreq(n, d))` | **bit for bit** |
-| Crop: the spectrum of a crop against the spectrum of the cropped image | **bit for bit** |
+| Crop: the spectrum of a crop against the spectrum of the cropped image | **bit for bit** in steady state; tested within 1e-6 (Float32) and 1e-14 (Float64) of the maximum (amendment 9) |
 | Float32 spectrum (magnitude, power) against NumPy float64 | within **1e-5 of its maximum** (macTEM measured 5e-8 to 1e-7); bins below 1e-3 of the maximum measured and printed, not gated (macTEM: up to 1.9e-2 relative) |
 | Float64 spectrum against NumPy float64 | within **1e-12 of its maximum**; against the kit's direct Double DFT within 1e-12 on sizes ≤ 64 |
 | Radial profile, Float32 | every bin within **1e-5 of the profile's maximum**, and every bin k ≥ 1 within **1e-5 of the largest non-DC bin** (amendment 3); counts **equal** |
@@ -409,3 +409,30 @@ the flag rule's δ is `max(3 × |Δc|, 1e-9)` points and the pass count must equ
   the bit-for-bit claim against macTEM holds in steady state, and the apps-parity harness gates on a warm second pass and
   prints the cold pass as a diagnostic; no claim is made that two runs of a Float32 product are bit-identical. The Float64
   path was not probed for it.
+
+### 2026-10-15 16:32 CEST (amendment 9), after the Gate B refuter on `81ab1b7` (slice 1b)
+
+The refuter (a Sonnet subagent, independent; `scratchpad/refuter-1b/`) **upheld slice 1b with findings, no wrong number, no
+port deviation**: the Float32 code reads as macTEM's (the generic `F.Scalar(Double)` conversion matched `Float(Double)` on 80 M
+values bit for bit); the Float64 filters within 1.2e-14 of a float64 reading on 24 images the pins do not cover (n = 32 … 512,
+pure noise, DC 1e6, pct 20 without smoothing, cycles 1, delta 0 and 50, ro 0.01 and 3 with order 20), flags and passes equal;
+the masked inverse matching NumPy on 64 cases (odd sizes, Nyquist, wrapping, overlapping, r = 0, e = 0, no spots). Done:
+1. The mask does not wrap: a spot reaching the Nyquist row or column of an even size, or crossing the spectrum's edge, leaves a
+   complex result (NumPy's definition too); the type's doc says so and `aSpotAtNyquistLeavesAnImaginaryPart` pins it.
+2. Two committed HRTEM cases share one image: the cycle cap, the taper rounding and the disk edge now have unit tests on it
+   (`120ba8c`); the Float32 per-bin flag rule fires on 15 of the 41 full cases and on none committed — the full set is its
+   catcher. The Float32 window rounding is held by apps parity only (as H15).
+3. The result's fields are asserted (`0b63676`): on the Float64 path pass 1's c (1e-8 points), the median, M0 (full set) and every
+   flag's first pass against the float64 reading; on both, `flagged`, `flagsPerPass` and `finalDelta` against the flags.
+4. `maskSpot` on odd sizes, the mask's union and odd heights (`120ba8c`, `0b63676`); the planted 5.3 correlation is held
+   through the NumPy match (0.993–0.995 and ≤ 5e-4 there), not asserted on its own.
+5. The consumer check names the rest of slice 1's public surface (45 checks).
+6. `HRTEMFilterError.maskCount` for a wrong mask length; `MaskedInverseFFTError` has texts; `radialProfile` and
+   `rotationalAverage` document that they trap on a wrong count or n < 2. Open for 0.1.0's API pass: `Spot` is not validated
+   (NaN centre, negative radius), sizes whose n² overflows trap.
+7. Note: the Float32 stage bands hold on the DC-1000 plants; at DC 1e6 the W-weighted a and w reached 2.9e-4 / 2.5e-4 at
+   n = 128 (band 1e-4) and pass 1's c 1.5 points, with outputs within 4.6e-8: section 9's Float32 caveat covers the masks and
+   flags too, and `.float64` is the path for such images.
+Also, from the bit-equality tests: `cropEqualsTheCroppedImage` and `spotOnACropIsTheSpotOfTheCroppedImage` compared two runs of
+the same computation bit for bit and could fail on a first vDSP call (amendment 8); they now compare within 1e-6 (Float32) and
+1e-14 (Float64) of the maximum, and section 3's crop row says so.

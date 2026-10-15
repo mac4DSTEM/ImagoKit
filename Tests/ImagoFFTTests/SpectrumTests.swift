@@ -55,7 +55,9 @@ func cropEqualsTheCroppedImage(_ c: FFTPin, _ precision: Precision) throws {
     let a = try PowerSpectrum.compute(image, crop: region, precision: precision)
     let cropped = try #require(image.cropped(region))
     let b = try PowerSpectrum.compute(cropped, precision: precision)
-    #expect(a.power == b.power && a.axisX == b.axisX && a.axisY == b.axisY)
+    // The same computation twice; equal to one Float32 ulp, not bit for bit (a first vDSP call can differ, amendment 8).
+    let band = precision == .float32 ? 1e-6 : 1e-14
+    #expect(Pins.relativeToMaximum(a.power.doubles, b.power.doubles) <= band && a.axisX == b.axisX && a.axisY == b.axisY)
     // The crop's pixels are the harness's cropped input, and its origin moved by the offset.
     #expect(cropped.pixels == Pins.floats(c.cropped_input ?? c.name + ".cropped.in.f32", section: "fft"))
     #expect(cropped.x?.origin == -Double(region.col) && cropped.y?.origin == -Double(region.row))

@@ -26,7 +26,11 @@ func spotOnACropIsTheSpotOfTheCroppedImage(_ precision: Precision) throws {
     let onCrop = try SpotMeasurement.measure(image, crop: region, clickRow: row, clickColumn: col, precision: precision)
     let cropped = try #require(image.cropped(region))
     let direct = try SpotMeasurement.measure(cropped, clickRow: row, clickColumn: col, precision: precision)
-    #expect(onCrop == direct)
+    // Not bit equality: a first call of a vDSP size can differ by one Float32 ulp (registration amendment 8), so the two
+    // measurements agree to the registered centroid band.
+    let band = precision == .float32 ? 1e-6 : 1e-10
+    #expect(onCrop.snappedRow == direct.snappedRow && onCrop.snappedCol == direct.snappedCol && onCrop.units == direct.units)
+    #expect(abs(onCrop.centroidRow - direct.centroidRow) <= band && abs(onCrop.centroidCol - direct.centroidCol) <= band)
     #expect(onCrop.width == region.width && onCrop.height == region.height)
     // The crop holds 192 × 224 pixels of the same lattice: the spacing stays the planted one within the noisy band's order.
     #expect(abs(onCrop.d - c.d0) / c.d0 < 0.02, "d \(onCrop.d) vs d₀ \(c.d0)")

@@ -83,6 +83,38 @@ do {
     check(error == .notSquare(width: 128, height: 96), "a non-square image is refused")
 }
 
+// The rest of slice 1's public surface (registration gate 7).
+let spotA = try SpotMeasurement.measure(image, clickRow: h / 2 - 7, clickColumn: w / 2 + 10)
+let maskSpot = spotA.maskSpot(radius: 2, edge: 1)
+check(abs(maskSpot.kx - 10) < 0.01 && abs(maskSpot.ky + 7) < 0.01 && maskSpot.weight(atDistance: 0) == 1
+      && maskSpot.weight(atDistance: 3) == 0, "maskSpot and Spot.weight")
+let oneSided = try MaskedInverseFFT.compute(image, spots: [maskSpot], includeFriedelPartners: false, precision: .float64)
+check(oneSided.imaginaryMax > 0.1 && oneSided.precision == .float64, "without Friedel partners the result is complex")
+check(MaskedInverseFFTError.fftSetup(width: 1, height: 2).errorDescription?.isEmpty == false, "MaskedInverseFFTError text")
+check(HRTEMFilter.edgeWindow(radius: 0, n: 64) == 1 && HRTEMFilter.butterworth(radius: 0, ro: 0.3, order: 4, n: 64) == 1
+      && abs(HRTEMFilter.lowFrequencyTaper(radius: 0, taperRadius: 4) - 0.15) < 1e-16, "the filter's closed forms")
+var cone = [Double](repeating: 0, count: 64 * 64)
+for i in cone.indices {
+    let dr = Double(i / 64 - 32), dc = Double(i % 64 - 32)
+    cone[i] = (dr * dr + dc * dc).squareRoot()
+}
+check(HRTEMFilter.radialProfile(cone, n: 64).count == 32 && HRTEMFilter.rotationalAverage(cone, n: 64).count == 64 * 64,
+      "radialProfile and rotationalAverage")
+let ones = try HRTEMFilter.applyMask([Double](repeating: 1, count: 64 * 64), to: square.pixels, n: 64, precision: .float64)
+check(zip(ones.doubles, square.pixels).map { abs($0 - Double($1)) }.max()! < 1e-9, "applyMask with a mask of ones is the identity")
+let full = try HRTEMFilter.filter(square, parameters: .defaults, precision: .float64)
+let stages: [[Double]] = [full.median, full.initialBackground, full.firstPassC, full.background, full.spectrum,
+                          full.absfMask, full.wienerMask]
+let sized = stages.allSatisfy { $0.count == 64 * 64 } && full.flagged.count == 64 * 64 && full.firstFlaggedPass.count == 64 * 64
+check(sized && full.flagsPerPass.count == full.passes && full.finalDelta >= 0 && full.n == 64 && full.parameters == .defaults,
+      "the filter result's fields")
+var bad = HRTEMFilter.Parameters(); bad.order = 0
+check(bad.outOfRange == "order", "Parameters.outOfRange")
+for e in [HRTEMFilterError.oddSize(33), .tooSmall(16), .pixelCount(expected: 4, actual: 3), .maskCount(expected: 4, actual: 3),
+          .nonFinitePixel, .parameterOutOfRange("order"), .fftSetup(8), .notSquare(width: 1, height: 2)] {
+    check(e.errorDescription?.isEmpty == false, "HRTEMFilterError text: \(e)")
+}
+
 // The module still to come names its registration.
 check(ImagoAlignmentScope.registration.hasPrefix("docs/registration-slice-2.md"), "ImagoAlignment names its registration")
 
