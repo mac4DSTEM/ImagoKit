@@ -146,7 +146,8 @@ public nonisolated enum ImageShift {
                 } else {
                     let s2 = Double(2 * n)
                     if x < -s2 { x = s2 * (-x / s2).rounded(.towardZero) + x }
-                    x = x < Double(-n) ? x + s2 : -x - 1
+                    // A coordinate reduced to exactly 0 (x was a multiple of 2n beyond −2n) is the first pixel, as SciPy reads it.
+                    x = x < Double(-n) ? x + s2 : (x == 0 ? 0 : -x - 1)
                 }
             case .wrap:
                 if n <= 1 {
