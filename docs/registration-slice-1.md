@@ -289,4 +289,18 @@ Metal numerics layer is a suite question, not this kit's.
 
 ## 11. Amendments
 
-None yet.
+### 2026-10-15 15:50 CEST, the slice-1a pins land (before any Swift code)
+
+`tools/slice-1/pins.py` (run under `../tools/memcap.sh`, peak 169 MB) extracted macTEM `3d17311`'s fft-parity and spot-parity
+scripts into `.build/apps/`, ran them with the kit's interpreter (NumPy 2.5.4, SciPy 1.18.1, scikit-image 0.26.0, CPython
+3.14.7): every plant self-check of both harnesses passed (gate 1). The spot harness at `3d17311` has 41 cases (38 spots and 3
+refusals: `nearDC` plus two `nearEdge` cases added by macTEM's slice C′ review), not the 38 its README names; all 41 are
+pinned. The angle plants of 5.4: 30 cases (256 × 256 clean and noisy, 512 × 384 clean, iso and aniso, five angles); NumPy's
+estimator recovers every planted angle within **0.0021°** noise-free (band 0.1°) and **0.024°** noisy (band 0.3°), spacing
+ratios within 0.4 %. The noisy cases use one seed each, cycling over 20261016–20261019 (the registration's "four seeds").
+
+**The committed split** (5.56 MB of the 8 MB budget, `Tests/ImagoFFTTests/Fixtures/slice-1a-pins.json` with every file's
+sha256): fft 15 of 19 cases (all spectrum and profile cases; the 4 `ifft` cases are 1b's), power and axes only (the magnitude
+is √power, recomputed by the test from the committed power, and compared as such); spot 23 of 41 (every case up to 256 × 128
+pixels, the refusals and the DC 1000 cases among them); angle 4 of 30 (`a256-iso-t60-clean`, `a256-aniso-t109.47-clean`,
+`a256-iso-t145-noisy`, `a256-aniso-t30-noisy`). The rest is in `.build/pins-full/` for `tools/slice-1/full-parity.sh`.
