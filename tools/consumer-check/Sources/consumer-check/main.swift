@@ -57,8 +57,8 @@ for precision in Precision.allCases {
 do {
     _ = try SpotMeasurement.measure(image, clickRow: h / 2, clickColumn: w / 2)   // the ±2 snap stays within 2.83 bins
     check(false, "a click at the centre is refused")
-} catch SpotMeasurementError.nearDC {
-    check(true, "a click at the centre is refused")
+} catch let error as SpotMeasurementError {   // bound, then matched: the runner's compiler crashes on `catch E.case`
+    check(error == .nearDC, "a click at the centre is refused")
 }
 
 // ImagoFFT's masked inverse: lattice a alone, rebuilt from its spot.
@@ -79,8 +79,8 @@ for precision in Precision.allCases {
 do {
     _ = try HRTEMFilter.filter(image)
     check(false, "a non-square image is refused")
-} catch HRTEMFilterError.notSquare(128, 96) {
-    check(true, "a non-square image is refused")
+} catch let error as HRTEMFilterError {
+    check(error == .notSquare(width: 128, height: 96), "a non-square image is refused")
 }
 
 // The module still to come names its registration.

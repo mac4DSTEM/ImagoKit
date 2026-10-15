@@ -20,6 +20,18 @@ private func directDFT(_ re: [Double], _ im: [Double], nx: Int, ny: Int) -> ([Do
     return (outRe, outIm)
 }
 
+/// The largest |z − w| over two complex arrays in split form (one helper: the runner's compiler times out type-checking the
+/// inline expression).
+private func largestDistance(_ re: [Double], _ im: [Double], _ wantRe: [Double], _ wantIm: [Double]) -> Double {
+    var worst = 0.0
+    for i in re.indices {
+        let dr: Double = re[i] - wantRe[i]
+        let di: Double = im[i] - wantIm[i]
+        worst = max(worst, (dr * dr + di * di).squareRoot())
+    }
+    return worst
+}
+
 private func signal(_ n: Int, seed: UInt64) -> [Double] {
     var state = seed
     return (0..<n).map { _ in
@@ -42,7 +54,7 @@ func doubleFFTEqualsTheDirectDFT(_ k: Int) throws {
     fft.transform(re: &re, im: &im, forward: true)
     let (wantRe, wantIm) = directDFT(re0, im0, nx: nx, ny: ny)
     let top = zip(wantRe, wantIm).map { ($0 * $0 + $1 * $1).squareRoot() }.max()!
-    let worst = (0..<(nx * ny)).map { ((re[$0] - wantRe[$0]) * (re[$0] - wantRe[$0]) + (im[$0] - wantIm[$0]) * (im[$0] - wantIm[$0])).squareRoot() }.max()!
+    let worst = largestDistance(re, im, wantRe, wantIm)
     #expect(worst <= 1e-12 * top, "\(nx) × \(ny): \(worst / top) of the maximum")
     // The inverse returns the input, scaled by 1/(nx·ny).
     fft.transform(re: &re, im: &im, forward: false, scaleInverse: true)
@@ -116,7 +128,7 @@ func doubleFFTIsAtRoundoffOnOneAxis(_ n: Int, _ band: Double) throws {
     fft.transform(re: &re, im: &im, forward: true)
     let (wantRe, wantIm) = directDFT(re0, im0, nx: n, ny: 1)
     let top = zip(wantRe, wantIm).map { ($0 * $0 + $1 * $1).squareRoot() }.max()!
-    let worst = (0..<n).map { ((re[$0] - wantRe[$0]) * (re[$0] - wantRe[$0]) + (im[$0] - wantIm[$0]) * (im[$0] - wantIm[$0])).squareRoot() }.max()!
+    let worst = largestDistance(re, im, wantRe, wantIm)
     #expect(worst <= band * top, "\(n): \(worst / top) of the maximum, band \(band)")
 }
 
