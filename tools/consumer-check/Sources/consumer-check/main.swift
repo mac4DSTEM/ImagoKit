@@ -204,21 +204,22 @@ check(overlap.counts[0] == 1 && overlap.counts[(h / 2) * w + w / 2] == 4 && over
       && overlap.largestImaginaryPart == 0 && overlap.mean.pixels.count == w * h,
       "the bilinear overlap count: one frame covers the corner, four the centre")
 
-// Refusals, by name, with texts.
+// Refusals, by name, with texts: a call that stops throwing fails its check.
+@MainActor func refusal(_ label: String, _ expected: AlignmentError, _ body: () throws -> Void) {
+    do { try body(); check(false, label + " (no error thrown)") }
+    catch let e as AlignmentError { check(e == expected, label) }
+    catch { check(false, label + " (another error: \(error))") }
+}
 let tall = try Micrograph(width: 4, height: 5, pixels: [Float](repeating: 1, count: 20))
-do { _ = try PhaseCorrelation.register(reference: image, moving: tall) } catch let e as AlignmentError {
-    check(e == .sizeMismatch(index: 1, width: 4, height: 5, expectedWidth: w, expectedHeight: h), "a size mismatch is refused by name")
+refusal("a size mismatch is refused by name", .sizeMismatch(index: 1, width: 4, height: 5, expectedWidth: w, expectedHeight: h)) {
+    _ = try PhaseCorrelation.register(reference: image, moving: tall)
 }
-do { _ = try DriftSeries.estimate([]) } catch let e as AlignmentError { check(e == .emptyStack, "an empty stack is refused") }
-do { _ = try PhaseCorrelation.register(reference: image, moving: image, upsampleFactor: 0) } catch let e as AlignmentError {
-    check(e == .upsampleFactor(0), "an upsample factor of 0 is refused")
+refusal("an empty stack is refused", .emptyStack) { _ = try DriftSeries.estimate([]) }
+refusal("an upsample factor of 0 is refused", .upsampleFactor(0)) {
+    _ = try PhaseCorrelation.register(reference: image, moving: image, upsampleFactor: 0)
 }
-do { _ = try ImageShift.shift(image, by: PixelShift(row: .nan, column: 0)) } catch let e as AlignmentError {
-    check(e == .invalidShift(index: 0), "a NaN shift is refused")
-}
-do { _ = try AlignedSum.sum([image], shifts: []) } catch let e as AlignmentError {
-    check(e == .shiftCount(expected: 1, actual: 0), "a missing shift is refused")
-}
+refusal("a NaN shift is refused", .invalidShift(index: 0)) { _ = try ImageShift.shift(image, by: PixelShift(row: .nan, column: 0)) }
+refusal("a missing shift is refused", .shiftCount(expected: 1, actual: 0)) { _ = try AlignedSum.sum([image], shifts: []) }
 for e in [AlignmentError.emptyStack, .sizeMismatch(index: 1, width: 2, height: 3, expectedWidth: 4, expectedHeight: 5),
           .nonFinitePixel(index: 0), .upsampleFactor(0), .invalidShift(index: 0), .shiftCount(expected: 2, actual: 1),
           .fftSetup(width: 1, height: 2)] {
