@@ -2,8 +2,8 @@
 // ImagoKit — image analysis for electron micrographs on Apple platforms: the calibrated image and the exact-length 2D
 // FFT (ImagoCore); the centred power spectrum, its radial profile, FFT-spot spacings and angles, and the masked inverse
 // FFT (ImagoFFT); the HRTEM background-subtraction and Wiener filters (ImagoFilters); drift and stack alignment
-// (ImagoAlignment, slice 2). NumPy, SciPy and scikit-image are the references. docs/registration-slice-1.md is the first
-// registration; until it lands the modules are placeholders that state their scope.
+// (ImagoAlignment, slice 2). NumPy, SciPy and scikit-image are the references. docs/registration-slice-1.md and
+// docs/registration-slice-2.md define every number.
 //
 // Swift 6 language mode, nonisolated by default (no `.defaultIsolation`), the three upcoming features enabled below, no
 // unsafe flags (a versioned dependency cannot carry them): a consumer builds the kit optimised itself, and tools/test.sh
@@ -36,14 +36,15 @@ let package = Package(
         .target(name: "ImagoFFT", dependencies: ["ImagoCore"], swiftSettings: settings),
         // Slice 1b (1.3): the HRTEM filters (average background subtraction and Wiener). Later: bandpass, denoising.
         .target(name: "ImagoFilters", dependencies: ["ImagoCore", "ImagoFFT"], swiftSettings: settings),
-        // Slice 2 (registered in scope only, docs/registration-slice-1.md section 10): phase cross-correlation, drift
-        // and stack alignment, shifted sums. Empty until registered.
+        // Slice 2 (docs/registration-slice-2.md): phase cross-correlation with sub-pixel refinement, shifts of order 0 and
+        // 1 and the Fourier shift, drift series and aligned stack sums, on both precisions.
         .target(name: "ImagoAlignment", dependencies: ["ImagoCore"], swiftSettings: settings),
-        .testTarget(name: "ImagoCoreTests", dependencies: ["ImagoCore", "ImagoAlignment"],
-                    swiftSettings: settings),
+        .testTarget(name: "ImagoCoreTests", dependencies: ["ImagoCore"], swiftSettings: settings),
         .testTarget(name: "ImagoFFTTests", dependencies: ["ImagoCore", "ImagoFFT"], exclude: ["Fixtures"],
                     swiftSettings: settings),
         .testTarget(name: "ImagoFiltersTests", dependencies: ["ImagoCore", "ImagoFFT", "ImagoFilters"], exclude: ["Fixtures"],
+                    swiftSettings: settings),
+        .testTarget(name: "ImagoAlignmentTests", dependencies: ["ImagoCore", "ImagoAlignment"], exclude: ["Fixtures"],
                     swiftSettings: settings),
     ],
     swiftLanguageModes: [.v6]

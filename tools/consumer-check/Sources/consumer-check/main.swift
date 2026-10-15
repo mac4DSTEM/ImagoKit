@@ -115,8 +115,8 @@ for e in [HRTEMFilterError.oddSize(33), .tooSmall(16), .pixelCount(expected: 4, 
     check(e.errorDescription?.isEmpty == false, "HRTEMFilterError text: \(e)")
 }
 
-// The module still to come names its registration.
-check(ImagoAlignmentScope.registration.hasPrefix("docs/registration-slice-2.md"), "ImagoAlignment names its registration")
+// ImagoAlignment (slice 2): the first symbol; the rest of its surface is checked below.
+check(PixelShift.zero == PixelShift(row: 0, column: 0), "ImagoAlignment: PixelShift.zero")
 
 print("consumer-check summary: \(checks) checks, \(failures) failures")
 if failures > 0 { exit(1) }

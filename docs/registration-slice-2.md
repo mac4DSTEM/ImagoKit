@@ -215,3 +215,50 @@ pinned versions (NumPy 2.5.4, SciPy 1.18.1, scikit-image 0.26.0, CPython 3.14.7)
 8. **Round half to even** (step 4, `np.round(shift·u)/u`): the shift there is an integer, so `shift·u` is an integer and the
    rounding never meets a half; "round half away" is an equivalent mutant (section 5 lists it).
 
+### 2026-10-15 17:12 CEST (amendment 2), the code lands: the API as built, the bands as measured, one honest order of events
+
+**Order of events.** The pins of amendment 1 were committed first (`ba70a20`), but the Swift sources existed, uncommitted, in the
+working tree while `pins.py` was being finalised, and the first run of the Swift tests was made against an intermediate pin
+set whose near-tie flags used the registered 1e-5 / 1e-12 rule and 1/u. That run is where the measured-noise rule of
+amendment 1 point 4 came from: 42 issues in all (the noise-free plants and the unnormalised cases on Float32, `none128` at u = 100,
+the error and phase of near-identical pairs, `.mean` at 0.05 px, a closed form of mine written wrongly, two phase comparisons
+across ±π). **No source file under `Sources/` changed between that run and the commit**; the pins, the bands and the tests did.
+
+**The API** (all `public`, `ImagoAlignment`, Foundation and Accelerate only): `PixelShift` (row, column; `.zero`),
+`Normalization` (`.phase`, `.unnormalized`), `ImageRegistration` (`shift`, `error`, `phaseDifference`, `upsampleFactor`,
+`normalization`, `precision`), `PhaseCorrelation.register(reference:moving:upsampleFactor:normalization:precision:)` and
+`maximumUpsampleFactor` (1024), `ShiftOrder` (`.nearest`, `.linear`), `ShiftMode` (the seven SciPy modes under their names),
+`ImageShift.shift(_:by:order:mode:cval:precision:)`, `.fourierShift(_:by:precision:)`, and **`.fourierShiftWithResidual`**
+(added: the image and the largest |imaginary part|, section 3.3's "reports"), `maximumShift` (1e9), `DriftReference`,
+`DriftSeries.estimate(_:reference:upsampleFactor:normalization:precision:)`, `AlignmentMethod` (`.fourier`, `.bilinear`),
+`AlignedSum.sum(_:shifts:method:precision:)`, `AlignedStack` (`sum`, `mean`, `counts`, `frameCount`, `method`, `precision`,
+`largestImaginaryPart`) and one `AlignmentError` with texts (`emptyStack`, `sizeMismatch`, `nonFinitePixel`, `upsampleFactor`,
+`invalidShift`, `shiftCount`, `fftSetup`). Deviations from section 1: one error enum; `ImagoAlignmentScope` is gone (nothing needs it);
+an upsample factor above 1024 is refused (the region has ceil(1.5·u)² samples); a shift above 1e9 pixels or not finite is refused;
+`.previous` and `.first` give frame 0 the shift (0, 0) with error 0 and phase difference 0, without computing it.
+The results are `Micrograph`s, so Float32 pixels: **the Float64 path's output is its Double result rounded once to Float32**.
+
+**Bands as built** (full set, `tools/slice-2/full-parity.sh`; the committed gate holds the same checks on the committed subset):
+
+| Claim | Registered | Held as | Worst measured |
+|---|---|---|---|
+| Float64 shift against scikit-image | equal, near-ties within 1/u | equal on all 330 cases; the 17 flagged ones inside their box | 0 |
+| Float32 shift against scikit-image (float32 run) | equal, near-ties within 1/u | equal on the 213 unflagged cases; the 117 flagged ones inside their box (amendment 1, point 4) | 1.0 px, a u = 1 half-pixel tie, inside its box |
+| Float64 error / phase difference | 1e-10 | error² 1e-12, error 1e-10 where the oracle's error is at least 0.1, phase 1e-10, each plus 8 / 4 × the case's ε64 | error² 3.2e-14, phase 2.3e-11 |
+| Float32 error / phase difference | 1e-5 | error² 1e-5, error 1e-5 where ≥ 0.1, phase 1e-5, each plus 8 / 4 × the case's ε32 | error² 2.1e-6, phase 1.8e-3 (a noise-free plant, ε32 up to 4.4e-2) |
+| `ndimage.shift`, Float64 / Float32, of the image's maximum | 1e-12 / 1e-6 | the Float64 engine (`package`) 1e-12, the public Float64 call (Float32 pixels) the Float32 rounding of that, 6.5e-8; Float32 1e-6 | 1.6e-16 engine, 3.9e-8 public; Float32 1.1e-7 |
+| Fourier shift, Float64 / Float32 | 1e-12 / 1e-5 | public Float64 (rounded) 6.5e-8, Float32 1e-5 | 4.6e-8; 2.6e-7 |
+| Planted shifts (section 4) | per section 4 | per amendment 1, Float64 always; Float32 except in a flagged case (held to its box) | the kit's Float64 shift is the oracle's in every case, so its truth errors are amendment 1's: 0.050 px (σ = 20, u = 20), 0.020 noise-free u = 20, 0.010 at u = 100 |
+| Drift against the planted drift | 0.05 px | `.first` 0.05, `.mean` 0.20, `.previous` 0.05·√k; both precisions | 0.93, 0.93, 0.94 of the band (96²) |
+| Drift series against scikit-image's | as the parts | every frame's shift equal (a flagged frame would be held to its box) | 0 (2.2e-16 cumulated) |
+| `.previous` against the cumulated pairwise shifts | exactly | exactly (a separate `register` per pair, then the sum), and the `cumulated` function's arithmetic by hand | 0 |
+| Aligned sums | as the parts | Fourier 1e-7 (Float64, rounded) / 1e-5 (Float32); bilinear 1e-7 / 1e-6; counts equal to the pin's and to the test's own re-derivation | 3.3e-8 / 3.3e-7; 3.3e-8 / 2.0e-7 |
+| Fourier mean against the unshifted image (Float64) | 1e-6 | 1e-6 | 9.9e-8 |
+| Bilinear mean's correlation, full overlap | above 0.999 | above 0.999 | 0.99938 (96²), 0.99917 (256²) |
+
+**Equivalent mutant noted:** "round half to even replaced by half away" in section 3.1 step 4 (amendment 1, point 8). The registered
+mutant list otherwise stands.
+
+**Float32 and vDSP.** No test asserts bit equality between two runs of a Float32 (or a Double) transform (slice 1, amendment 8): a
+repeated call is compared to within a Float32 ulp, and the series-against-pairs tests compare shifts on the 1/u grid.
+
