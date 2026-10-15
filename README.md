@@ -5,9 +5,9 @@ calibration, lattice spacings and angles measured from FFT spots, Bragg (masked 
 background-subtraction and Wiener filters, and, next, drift correction and stack alignment. Each number is defined once,
 pinned against the Python packages the field already uses, and checked against planted lattices whose answer is known.
 
-**Status: pre-release.** The package skeleton and the first registration exist; no API is public yet. The first tag
-(0.0.1) comes with slice 1's code. Until then this README describes what slice 1 registers
-([`docs/registration-slice-1.md`](docs/registration-slice-1.md)).
+**Status: pre-release, 0.0.1 candidate.** Slice 1a is in: `ImagoCore` and `ImagoFFT`'s spectrum, radial profile, spot
+spacings and angles ([`docs/registration-slice-1.md`](docs/registration-slice-1.md)). Slice 1b (the masked inverse FFT and
+`ImagoFilters`) and slice 2 (`ImagoAlignment`) are registered and not yet written.
 
 ## What it computes
 
@@ -50,7 +50,7 @@ or with `-O` for the kit: the manifest carries no optimisation flags (a versione
 
 ## The first ten minutes
 
-Slice 1 will make this work (the registration fixes the names; the code is not written yet):
+Slice 1a's API (the consumer check compiles the same calls):
 
 ```swift
 import ImagoCore

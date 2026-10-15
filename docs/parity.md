@@ -9,12 +9,12 @@ registration, no code yet), **absent**.
 
 | Function | State | Where | Notes |
 |---|---|---|---|
-| `fft2(x)` on a real 2D array, any shape | registered | `ImagoCore` `FFT2D` (slice 1) | exact N-point DFT for every length (no padding); Float32 and Float64 paths; `s=`, `axes=` and `norm=` other than `"backward"` absent |
-| `ifft2(X)` | registered | `FFT2D` (slice 1) | `norm="backward"` (1/(nx·ny)) only |
-| `fftshift`, `ifftshift` (2D) | registered | `PowerSpectrum`, `MaskedInverseFFT` (slice 1) | inside the products, not as a public function yet |
-| `fftfreq(n, d)` | registered | `PowerSpectrum.frequencies` (slice 1) | |
+| `fft2(x)` on a real 2D array, any shape | done | `ImagoCore` `FFT2D`, `FFT2DDouble` (slice 1a) | exact N-point DFT for every length (no padding); Float32 and Float64 paths; `s=`, `axes=` and `norm=` other than `"backward"` absent |
+| `ifft2(X)` | done | `FFT2D`, `FFT2DDouble` (slice 1a) | `norm="backward"` (1/(nx·ny)) only |
+| `fftshift`, `ifftshift` (2D) | partial | `PowerSpectrum` (1a); `MaskedInverseFFT` (1b) | inside the products, not as a public function yet |
+| `fftfreq(n, d)` | done | `PowerSpectrum.frequencies`, `FFT2D.fftfreq` (slice 1a) | `fftshift(fftfreq)` order, bit for bit |
 | `rfft2`, `irfft2`, `fftn`, `hfft` | absent | | |
-| `numpy.hanning(n)` | registered | `SpotMeasurement` (slice 1) | the window of the spot estimator |
+| `numpy.hanning(n)` | done | `SpotMeasurement.hanning` (slice 1a) | the window of the spot estimator |
 
 ## SciPy 1.18.1, `scipy.ndimage` and `scipy.fft`
 
@@ -38,8 +38,8 @@ registration, no code yet), **absent**.
 
 | Quantity | State | Truth |
 |---|---|---|
-| radial profile against physical \|q\| | registered (slice 1) | a planted ring at known \|q\| |
-| spot spacing d = 1/\|q\| and the angle between two spots | registered (slice 1) | planted lattices, closed forms |
+| radial profile against physical \|q\| | done (slice 1a) | a planted ring at known \|q\| |
+| spot spacing d = 1/\|q\| and the angle between two spots | done (slice 1a) | planted lattices, closed forms |
 | masked inverse FFT (Bragg filter) | registered (slice 1) | NumPy's `ifft2(ifftshift(fftshift(fft2(x)) · M))` and a planted two-lattice image |
 | HRTEM ABSF and Wiener filters (Kilaas 1998, Mitchell's script) | registered (slice 1) | a float64 NumPy/SciPy reading of the same steps; never compared with DigitalMicrograph |
 | GPA strain (Hÿtch, Snoeck and Kilaas 1998) | absent | a later slice; planted strain fields |

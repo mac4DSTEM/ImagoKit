@@ -324,3 +324,11 @@ Section 3's "within 1e-5 of the largest non-DC bin" is macTEM's `profile-away` c
 ring and is held by the first band (1e-5 of the maximum). The first test run compared bin 0 too and failed on all five
 profile cases on the Float32 path (1.9e-3); the test now reads as the source check does. A clarification of what was
 registered, not a band change; the Float64 row says k ≥ 1 likewise.
+
+### 2026-10-15 15:50 CEST: the real-data check waits for a raw HRTEM image
+
+Section 2 named `$MACEM_DATA/tem/Camera Ceta 1623 1.05 Mx 20260605 Ceta.tif`. Read with tifffile 2026.9.20: one page, 2048 ×
+2048 × 3 `uint8`, values 0–255: an 8-bit RGB render, not detector counts (the three 630 kx and 1.05 Mx HRTEM images in `tem/`
+exist only as such TIFFs). A spectrum of a render is not a check of anything a user measures, so the real-data check is not
+run on it. It runs when the owner adds a raw HRTEM image (Velox `.emd` or DM4, counts) to `data/tem/`; it stays agreement only,
+outside the repository, skipped by name when absent. Nothing else in slice 1 depends on it.
