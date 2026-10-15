@@ -1,4 +1,4 @@
-# ImagoKit CI: the hook proof, the gate (tools/test.sh = `swift test -c release`) and the consumer check.
+# ImagoKit CI: the hook proof, the gate (tools/test.sh = `swift test -c release`), the consumer check and the README consumer.
 #
 # Enabling it (Actions on the repository) is the owner's. Package.swift declares macOS 15 and iOS 18 with tools 6.2, so the
 # runner needs a Swift 6.2 or newer toolchain. Pinned as SpectroKit 0.5.0 pins it: the `macos-26` image with the newest Xcode
@@ -40,3 +40,5 @@ jobs:
         run: tools/test.sh
       - name: Consumer check (a separate package, the public API only)
         run: tools/consumer-check/run.sh
+      - name: README consumer (the README's program compiled and run, drift-checked line by line)
+        run: tools/readme-consumer/run.sh
