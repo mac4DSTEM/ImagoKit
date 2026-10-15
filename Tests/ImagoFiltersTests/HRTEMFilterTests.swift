@@ -181,3 +181,35 @@ func filtersMatchTheFloat64Reading(_ c: HRTEMPin, _ precision: Precision) throws
         #expect(a.x == image.x && w.y == image.y && a.width == n && r.precision == precision && r.parameters == .defaults)
     }
 }
+
+// Added after the slice-1b mutants: the cycle cap, the taper radius's rounding and the flag disk's edge, which the two
+// committed cases cannot reach (they stop by delta at 36 passes, R = 3.2, and no flag reaches r = n/2).
+private func committedBin128() throws -> (pixels: [Float], n: Int) {
+    let c = try #require(HRTEMPins.cases.first { $0.name == "bin-128" })
+    return (HRTEMPins.floats(c.input), c.n)
+}
+
+@Test func theCycleCapStopsTheLoop() throws {
+    let (pixels, n) = try committedBin128()
+    var p = HRTEMFilter.Parameters(); p.cycles = 3; p.delta = 50
+    let r = try HRTEMFilter.filter(pixels: pixels, width: n, height: n, parameters: p)
+    #expect(r.passes == 3 && r.flagsPerPass.count == 3)
+}
+
+@Test func theTaperRadiusRoundsHalfAwayFromZero() throws {
+    let (pixels, n) = try committedBin128()
+    var p = HRTEMFilter.Parameters(); p.lowFrequencyPercent = 20; p.smoothing = false   // R = round(64 · 0.2) = round(12.8) = 13
+    let r = try HRTEMFilter.filter(pixels: pixels, width: n, height: n, parameters: p)
+    let at12 = (n / 2) * n + n / 2 + 12                                                   // r = 12 < 13: tapered
+    #expect(abs(r.absfMask[at12] - HRTEMFilter.lowFrequencyTaper(radius: 12, taperRadius: 13)) < 1e-15)
+}
+
+@Test func nothingIsFlaggedOnTheDiskEdge() throws {
+    let (pixels, n) = try committedBin128()
+    var p = HRTEMFilter.Parameters(); p.delta = 50; p.step = 10                             // flag far out, fast
+    let r = try HRTEMFilter.filter(pixels: pixels, width: n, height: n, parameters: p)
+    let half = n / 2
+    let onEdge = [half, half * n]                                                         // (0, n/2) and (n/2, 0): r = n/2
+    for i in onEdge { #expect(r.firstPassC[i] == 0 && !r.flagged[i], "pixel \(i) on r = n/2") }
+    #expect(r.flagged.contains(true))
+}

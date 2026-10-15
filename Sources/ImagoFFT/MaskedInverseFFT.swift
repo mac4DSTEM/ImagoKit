@@ -101,11 +101,7 @@ public nonisolated struct MaskedInverseFFT: Sendable {
         var m = 0.0
         for s in spots {
             let d = ((i - s.kx) * (i - s.kx) + (j - s.ky) * (j - s.ky)).squareRoot()
-            let value: Double
-            if d <= s.radius { value = 1 }
-            else if s.edge > 0, d < s.radius + s.edge { value = 0.5 * (1 + cos(.pi * (d - s.radius) / s.edge)) }
-            else { value = 0 }
-            m = max(m, value)
+            m = max(m, s.weight(atDistance: d))
         }
         return m
     }
