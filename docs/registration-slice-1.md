@@ -376,7 +376,7 @@ guard) caught by no test, M1f and M4d equivalent (argued there). Added: `doubleF
 5 × 1 and 125 × 1 at 2e-15 of the maximum: **test bands at roundoff, tighter than section 3's registered 1e-12**, measured
 unmutated at 1.9e-15, 2.5e-16, 6.2e-16) and `micrographRefusesASizeThatWrapsToItsPixelCount`; M1, M5, M32 and M24 are now caught.
 
-### 2026-10-15 16:14 CEST, the slice-1b pins land (before any 1b code)
+### 2026-10-15 16:09 CEST, the slice-1b pins land (before any 1b code)
 
 `tools/slice-1/pins.py` now also runs macTEM `3d17311`'s hrtem-filter-parity (`plants.py`, `reference.py`, SEED0 20261015;
 41 cases, every self-check passed, 31 s, peak 534 MB under memcap) and commits the fft harness's four `ifft` cases

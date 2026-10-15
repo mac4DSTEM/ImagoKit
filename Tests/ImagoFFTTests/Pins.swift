@@ -6,6 +6,8 @@ import ImagoCore
 
 struct CropPin: Decodable, Sendable { let row, col, height, width: Int }
 
+struct SpotPinMask: Decodable, Sendable { let kx, ky, r, e: Double }
+
 struct FFTPin: Decodable, Sendable, CustomStringConvertible {
     let name, kind, input, units: String
     let width, height: Int
@@ -16,6 +18,9 @@ struct FFTPin: Decodable, Sendable, CustomStringConvertible {
     let bin_width_given: Double?
     let ring_bin: Int?
     let peaks: [[Int]]?
+    let ifft: String?
+    let spots: [SpotPinMask]?
+    let imag_max, real_max: Double?
     var description: String { name }
 }
 
@@ -63,7 +68,7 @@ enum Pins {
     }
 
     static let fft: [FFTPin] = full == nil ? committed.fft
-        : (harness("fft/ref/manifest.json") as [FFTPin]).filter { $0.kind == "spectrum" || $0.kind == "profile" }
+        : (harness("fft/ref/manifest.json") as [FFTPin]).filter { ["spectrum", "profile", "ifft"].contains($0.kind) }
     static let spot: [SpotPin] = full == nil ? committed.spot : harness("spot/ref/manifest.json")
     static let angle: [AnglePin] = full == nil ? committed.angle : harness("angle/manifest.json")
 

@@ -1,9 +1,7 @@
-// The placeholders' test (tier 3): the modules without code yet name their registration.
+// The placeholder's test (tier 3): the module without code yet names its registration.
 import ImagoAlignment
-import ImagoFilters
 import Testing
 
-@Test func placeholdersNameTheirRegistration() {
-    #expect(ImagoFiltersScope.registration == "docs/registration-slice-1.md")
+@Test func placeholderNamesItsRegistration() {
     #expect(ImagoAlignmentScope.registration.hasPrefix("docs/registration-slice-2.md"))
 }

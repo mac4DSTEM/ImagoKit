@@ -34,14 +34,16 @@ let package = Package(
         // Slice 1 (1.2): the centred spectrum and its axes, the radial profile, spot measurement, lattice spacings and
         // the angle between spots, the masked inverse FFT.
         .target(name: "ImagoFFT", dependencies: ["ImagoCore"], swiftSettings: settings),
-        // Slice 1 (1.3): the HRTEM filters (average background subtraction and Wiener). Later: bandpass, denoising.
+        // Slice 1b (1.3): the HRTEM filters (average background subtraction and Wiener). Later: bandpass, denoising.
         .target(name: "ImagoFilters", dependencies: ["ImagoCore", "ImagoFFT"], swiftSettings: settings),
         // Slice 2 (registered in scope only, docs/registration-slice-1.md section 10): phase cross-correlation, drift
         // and stack alignment, shifted sums. Empty until registered.
         .target(name: "ImagoAlignment", dependencies: ["ImagoCore"], swiftSettings: settings),
-        .testTarget(name: "ImagoCoreTests", dependencies: ["ImagoCore", "ImagoFilters", "ImagoAlignment"],
+        .testTarget(name: "ImagoCoreTests", dependencies: ["ImagoCore", "ImagoAlignment"],
                     swiftSettings: settings),
         .testTarget(name: "ImagoFFTTests", dependencies: ["ImagoCore", "ImagoFFT"], exclude: ["Fixtures"],
+                    swiftSettings: settings),
+        .testTarget(name: "ImagoFiltersTests", dependencies: ["ImagoCore", "ImagoFFT", "ImagoFilters"], exclude: ["Fixtures"],
                     swiftSettings: settings),
     ],
     swiftLanguageModes: [.v6]

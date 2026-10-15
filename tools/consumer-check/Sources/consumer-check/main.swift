@@ -61,8 +61,29 @@ do {
     check(true, "a click at the centre is refused")
 }
 
-// The modules still to come name their registration.
-check(ImagoFiltersScope.registration == "docs/registration-slice-1.md", "ImagoFilters names its registration")
+// ImagoFFT's masked inverse: lattice a alone, rebuilt from its spot.
+let masked = try MaskedInverseFFT.compute(image, spots: [MaskedInverseFFT.Spot(kx: 10, ky: -7, radius: 2, edge: 1)])
+let one = (0..<(w * h)).map { i -> Double in
+    cos(2 * Double.pi * (10 * Double(i % w) / Double(w) - 7 * Double(i / w) / Double(h)))
+}
+check(zip(masked.image.doubles, one).map { abs($0 - $1) }.max()! < 1e-4, "the masked inverse keeps lattice a only")
+check(masked.imaginaryMax < 1e-3, "the masked inverse is real")
+
+// ImagoFilters: the HRTEM filters on a 64 × 64 crop, both precisions.
+let square = image.cropped(PixelCrop(row: 0, col: 0, height: 64, width: 64))!
+for precision in Precision.allCases {
+    let r = try HRTEMFilter.filter(square, parameters: .defaults, precision: precision)
+    let (absf, wiener) = try HRTEMFilter.outputs(r, like: square)
+    check(absf.width == 64 && wiener.x == square.x && r.passes >= 1, "\(precision): the HRTEM filters run")
+}
+do {
+    _ = try HRTEMFilter.filter(image)
+    check(false, "a non-square image is refused")
+} catch HRTEMFilterError.notSquare(128, 96) {
+    check(true, "a non-square image is refused")
+}
+
+// The module still to come names its registration.
 check(ImagoAlignmentScope.registration.hasPrefix("docs/registration-slice-2.md"), "ImagoAlignment names its registration")
 
 print("consumer-check summary: \(checks) checks, \(failures) failures")

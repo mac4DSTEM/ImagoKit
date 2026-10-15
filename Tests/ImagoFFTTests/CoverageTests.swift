@@ -7,7 +7,7 @@ import Testing
 
 @Test func everyPinnedCaseIsLoaded() {
     // A truncated manifest must not pass with fewer cases.
-    let expected = Pins.full == nil ? (fft: 15, spot: 25, angle: 4) : (fft: 15, spot: 41, angle: 30)
+    let expected = Pins.full == nil ? (fft: 19, spot: 25, angle: 4) : (fft: 19, spot: 41, angle: 30)
     #expect(Pins.fft.count == expected.fft && Pins.spot.count == expected.spot && Pins.angle.count == expected.angle,
             "fft \(Pins.fft.count), spot \(Pins.spot.count), angle \(Pins.angle.count)")
     #expect(Pins.spot.contains { $0.neighbour } && Pins.spot.contains { $0.tier == "noisy" })
