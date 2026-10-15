@@ -1,52 +1,62 @@
 # ImagoKit status
 
-## Now (2026-10-15 16:05 CEST, `5a40748`): slice 1a done, the 0.0.1 candidate
+## Now (2026-10-15 16:31 CEST): slice 1 done, 0.0.2 candidate; slice 2 registered
 
-- **Slice 1a** (tier 1, `docs/registration-slice-1.md` with amendments 1–6): `ImagoCore` (`Micrograph`, `AxisCalibration`,
-  `PixelCrop`, `LengthUnit`, `Precision`, `FFT2D` on vDSP Float32, `FFT2DDouble` the reference path) and `ImagoFFT`
-  (`PowerSpectrum`, `SpectrumValues`, `RadialProfile`, `SpotMeasurement` with the angle between spots, `LatticePair`).
-- **Gate** `tools/test.sh`: green and stamped at `5a40748`; 24 test functions (135 parameterised cases), 0 warnings, both
-  precisions on every pinned case. **Full set** `tools/slice-1/full-parity.sh`: green (15 spectrum and profile, 41 spot, 30
-  angle cases). **Apps parity** `tools/slice-1/apps-parity/run.sh`: the Float32 path equals macTEM `3d17311`'s TEMCore bit
-  for bit, 580,392 of 580,392 values, no string differs. **Consumer check**: 25 checks, Debug, no warnings. **Hook proof**:
-  passes.
-- **Pins** `tools/slice-1/pins.py` (under memcap, peak 169 MB): macTEM's fft- and spot-parity harnesses at `3d17311` plus 30
-  angle plants; committed 88 files, 6.06 MB; the rest in `.build/pins-full`.
-- **Mutants**: 35 on the frozen commit, 33 caught by the committed gate (after the follow-up tests), 2 argued equivalent;
-  5 of 5 Gate B follow-ups caught (`docs/slice-1-mutants-2026-10-15.md`).
-- **Gate B** (Sonnet refuter on `eb042aa`): upheld with findings, no wrong number; findings 1, 2, 4 (part), 8 fixed in
-  `f51d1f8`; the rest recorded in amendment 5.
-- **Oracle**: `References/oracle-venv` (a link to the org folder's `References/ImagoKit/`), CPython 3.14.7, NumPy 2.5.4,
-  SciPy 1.18.1, scikit-image 0.26.0, wheels `--no-deps` from `tools/oracle/references-lock.txt`, `pip check` clean.
-- **Consumers**: `docs/consumers-0.0.1.md` (what macTEM deletes at its switch: the FFT2D copy, PowerSpectrum, RadialProfile,
-  SpotMeasure; mac4DSTEM needs no change). The suite rule: apps re-pin at 0.1.0.
+- **Public** at github.com/mac4DSTEM/ImagoKit (the owner, 16:10); BSD-3-Clause accepted (coordinator, 16:10). The owner's
+  push stopped at `465c473`; the commits after it are local until the owner pushes.
+- **Slice 1** (tier 1, `docs/registration-slice-1.md`, amendments 1–9):
+  - `ImagoCore`: `Micrograph`, `AxisCalibration`, `PixelCrop`, `LengthUnit`, `Precision`, `FFT2D` (vDSP Float32),
+    `FFT2DDouble` (the reference path).
+  - `ImagoFFT`: `PowerSpectrum`, `SpectrumValues`, `RadialProfile`, `SpotMeasurement` (with the angle between spots and
+    `maskSpot`), `LatticePair`, `MaskedInverseFFT`.
+  - `ImagoFilters`: `HRTEMFilter` (ABSF and Wiener, Kilaas 1998 as Mitchell's script describes; never compared with
+    DigitalMicrograph).
+- **Checks at `4ba1a74`** (the gate's stamp):
+  - Gate `tools/test.sh`: 39 test functions, 0 warnings, both precisions on every committed case.
+  - Full set `tools/slice-1/full-parity.sh`: green (fft 19, spot 41, angle 30, hrtem 41 cases).
+  - Apps parity `tools/slice-1/apps-parity/run.sh`: the Float32 path equals macTEM `3d17311` bit for bit, 19,773,475 of
+    19,773,475 values (warm pass).
+  - Consumer check: 45 checks. README consumer: the README's program compiled and run. iOS: `xcodebuild` for generic iOS
+    succeeds with no warnings (not run on a device or simulator).
+- **Gate B**: 1a upheld with findings (amendment 5), 1b upheld with findings (amendment 9); the should-fix items are fixed.
+  **Mutants**: 1a 35 (33 caught, 2 equivalent) + 5 follow-ups; 1b 27 (26 caught after the follow-ups, 1 equivalent, 1 held by
+  apps parity) + 8 follow-ups (`docs/slice-1-mutants-2026-10-15.md`).
+- **Pins** `tools/slice-1/pins.py` (memcap, peak 534 MB): macTEM's fft-, spot- and hrtem-filter-parity harnesses at
+  `3d17311` plus 30 angle plants; committed 9.30 MB of a 10 MB budget; the rest in `.build/pins-full`.
+- **Slice 2** registered (`docs/registration-slice-2.md`): phase correlation (scikit-image 0.26.0), shifts (SciPy 1.18.1),
+  drift series and aligned sums. No code yet.
+- **0.1.0 bar**: slices 1 (done); `docs/parity.md` filled for slice 1; the consumer check (separate package); CI and `.spi.yml`;
+  DocC per module; a stand-alone README with its consumer; the platform floor macOS 15 / iOS 18. Missing: CI green on the
+  runner (the fix is in `35e0dcf`, not yet pushed), the app importing it (macTEM's switch, `docs/consumers-0.0.1.md` and
+  `-0.0.2.md`), the API items of amendments 5 and 9.
+- **Consumers**: `docs/consumers-0.0.1.md`, `docs/consumers-0.0.2.md`: at its switch macTEM deletes `FFT2D.swift` (its one
+  `copies.manifest` line), `PowerSpectrum`, `RadialProfile`, `SpotMeasure`, `MaskedInverseFFT`, `HRTEMFilter` and
+  `FFTMask.spot`, their tests and harnesses. mac4DSTEM: no change.
 
 ## Next
 
-1. Slice 1b (registered): the masked inverse FFT (`ImagoFFT`) and the HRTEM filters (`ImagoFilters`), pins from macTEM's
-   fft-parity `ifft` cases and hrtem-filter-parity (41 plants), apps parity extended, mutants, one refuter.
-2. The real-data check, when a raw HRTEM image exists (amendment 4).
-3. Slice 2's registration (`ImagoAlignment`, scope in registration section 10).
-4. 0.1.0: the API pass of amendment 5 item 7, DocC, an example executable, the README consumer, the 0.1.0 bar.
+1. The owner pushes; CI on the runner (Xcode 26.6) must go green — `35e0dcf` fixed the first run's type-check timeout; any
+   further runner-only failure is tier 3.
+2. Slice 2's pins (`tools/slice-2/pins.py`) and code, then 0.1.0 with the API pass (amendments 5 item 7 and 9 item 6) and
+   macTEM's switch in macTEM's session.
+3. Gate D on the vDSP first-call finding (amendment 8).
+4. The real-data check when a raw HRTEM image exists (amendment 4).
 
 ## Waiting on the owner
 
-- Confirm or change the name (ImagoKit; runner-up MicrografoKit; `docs/naming.md`).
-- Confirm the BSD-3-Clause licence: the slice-1 seed is the owner's own code from GPL-3.0 macTEM and mac4DSTEM, relicensed
-  here (`NOTICE`). Otherwise GPL-3.0 like the other kits (replace `LICENSE` and the `NOTICE` paragraph).
-- Create the remote and push: `gh repo create mac4DSTEM/ImagoKit --public --source . --remote origin --push` (or `--private`).
-- Tag 0.0.1 at `5a40748` when the name and licence stand: `git tag -a 0.0.1 5a40748 -m "ImagoKit 0.0.1: slice 1a" && git push origin 0.0.1`.
-- Enable Actions; submit the URL to the Swift Package Index once public.
-- A raw HRTEM image (Velox `.emd` or DM4, counts) in `data/tem/` for the real-data check: the 630 kx and 1.05 Mx images there
-  are 8-bit RGB TIFF renders.
+- Push `main` (8 commits after `465c473` at closeout).
+- Tag **0.0.2 at the closeout head** once its CI run is green, and skip 0.0.1: `5a40748` fails on the runner's Xcode 26.6
+  (the type-check timeout fixed in `35e0dcf`). `git tag -a 0.0.2 <head> -m "ImagoKit 0.0.2: slice 1" && git push origin 0.0.2`.
+- Submit the URL to the Swift Package Index.
+- A raw HRTEM image (Velox `.emd` or DM4, counts) in `data/tem/` for the real-data check (the HRTEM TIFFs are 8-bit renders).
 
-## Open (amendment 5)
+## Open
 
-- Float32 centroid and angle bands (1e-6 px, 1e-6°) are claims on the planted cases; a 2000:1 lattice pair gave 1.3e-6°.
-- The "printed, not gated" weak-bin distribution is not implemented.
-- API pass for 0.1.0: `FFT2D.transform` traps on a size mismatch; `angle(qa:qb:)` range beyond about 1e±150; a subnormal
-  scale counts as calibrated; a spot on non-finite pixels returns NaN; which helpers stay public; the unsigned angle documented.
+- Gate D: a first call of a vDSP 1D FFT or DFT size can differ by one Float32 ulp (amendment 8).
+- Float32 bands are claims on the planted cases (amendment 5 item 3, amendment 9 item 7).
+- API pass for 0.1.0: `FFT2D.transform` traps on a size mismatch; `angle(qa:qb:)` range; subnormal scales; non-finite pixels in
+  spots; `Spot` not validated; n² overflow traps in the filters; which helpers stay public.
 
 ## Unverified
 
-- CI has never run (no remote). macOS 15 and iOS 18 are declared; built and tested on macOS 27 only.
+- CI has not passed yet. iOS 18 built, never run. macOS 15 declared, built and tested on macOS 27 only.
