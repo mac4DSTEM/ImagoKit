@@ -34,7 +34,8 @@ FULL = os.path.join(ROOT, ".build", "pins-full")
 FIX = os.path.join(ROOT, "Tests", "ImagoFFTTests", "Fixtures")
 HARNESS_FILES = ["tools/fft-parity/make_fixture.py", "tools/fft-parity/reference.py",
                  "tools/spot-parity/make_fixture.py", "tools/spot-parity/reference.py"]
-SPOT_COMMIT_MAX_PIXELS = 256 * 128          # spot cases up to 256 x 128 are committed; 256 x 256 and 512 x 512 are full only
+SPOT_COMMIT_MAX_PIXELS = 256 * 128          # spot cases up to 256 x 128 are committed; 256 x 256 and 512 x 512 are full only,
+SPOT_COMMITTED_EXTRA = ["neighbour-3bins", "noisy256-k10-r0"]   # but for the one neighbour case and one noisy case (Gate B)
 ANGLE_COMMITTED = ["a256-iso-t60-clean", "a256-aniso-t109.47-clean", "a256-iso-t145-noisy", "a256-aniso-t30-noisy"]
 BUDGET = 8 * 1024 * 1024
 ANGLE_SEED = 20261016
@@ -226,7 +227,8 @@ def main():
             c["cropped_input"] = os.path.basename(src)
     d = os.path.join(FIX, "spot")
     os.makedirs(d)
-    keep = [c for c in spot["cases"] if c["width"] * c["height"] <= SPOT_COMMIT_MAX_PIXELS]
+    keep = [c for c in spot["cases"]
+            if c["width"] * c["height"] <= SPOT_COMMIT_MAX_PIXELS or c["name"] in SPOT_COMMITTED_EXTRA]
     sections["spot"] = [relocate(c, ["input"], [], d) for c in keep]
     d = os.path.join(FIX, "angle")
     os.makedirs(d)

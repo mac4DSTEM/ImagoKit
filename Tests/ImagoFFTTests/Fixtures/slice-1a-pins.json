@@ -845,6 +845,28 @@
    "error": null
   },
   {
+   "name": "noisy256-k10-r0",
+   "input": "noisy256-k10-r0.in.f32",
+   "width": 256,
+   "height": 256,
+   "scale_x": 0.0123,
+   "scale_y": 0.0246,
+   "units": "nm",
+   "click_row": 134,
+   "click_col": 140,
+   "kind": "spot",
+   "snapped_row": 132,
+   "snapped_col": 140,
+   "d0": 0.25790566185156605,
+   "tier": "noisy",
+   "neighbour": false,
+   "click_offset": 2,
+   "centroid_row": 132.48955456612111,
+   "centroid_col": 139.98588976778535,
+   "d": 0.258219328612018,
+   "error": null
+  },
+  {
    "name": "refuse-nearDC",
    "input": "refuse-nearDC.in.f32",
    "width": 128,
@@ -909,6 +931,28 @@
    "centroid_col": null,
    "d": null,
    "error": "nearDC"
+  },
+  {
+   "name": "neighbour-3bins",
+   "input": "neighbour-3bins.in.f32",
+   "width": 256,
+   "height": 256,
+   "scale_x": 0.0123,
+   "scale_y": 0.0246,
+   "units": "nm",
+   "click_row": 137,
+   "click_col": 148,
+   "kind": "spot",
+   "snapped_row": 136,
+   "snapped_col": 148,
+   "d0": 0.15438262158077848,
+   "tier": "noisy",
+   "neighbour": true,
+   "click_offset": 1,
+   "centroid_row": 136.00000000000026,
+   "centroid_col": 148.0523359023682,
+   "d": 0.1539951274215125,
+   "error": null
   }
  ],
  "angle": [
@@ -1410,6 +1454,16 @@
    "file": "spot/dc1000-256x128-k5.in.f32",
    "sha256": "0bfc7b266ea67118dad2569604c642f9017dc69c0a5da981c8501ed3352d2a38",
    "bytes": 131072
+  },
+  {
+   "file": "spot/neighbour-3bins.in.f32",
+   "sha256": "c3942ac274840e8c34dbc565f596f501f04651682f5d4b77d3e811c95b22fb2a",
+   "bytes": 262144
+  },
+  {
+   "file": "spot/noisy256-k10-r0.in.f32",
+   "sha256": "56b0f274fcbcaae6579f5c057ac834867254507d380eb119e9f8fa0fbe4895ce",
+   "bytes": 262144
   },
   {
    "file": "spot/refuse-dc-radius3.in.f32",
