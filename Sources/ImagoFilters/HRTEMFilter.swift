@@ -37,6 +37,8 @@ public nonisolated enum HRTEMFilterError: Error, Equatable, Sendable, LocalizedE
     case oddSize(Int)
     case tooSmall(Int)
     case pixelCount(expected: Int, actual: Int)
+    /// A mask given to `applyMask` whose length is not n².
+    case maskCount(expected: Int, actual: Int)
     case nonFinitePixel
     case parameterOutOfRange(String)
     case fftSetup(Int)
@@ -48,6 +50,7 @@ public nonisolated enum HRTEMFilterError: Error, Equatable, Sendable, LocalizedE
         case .oddSize(let n): return "The HRTEM filters need an even size; this image is \(n) × \(n)."
         case .tooSmall(let n): return "The HRTEM filters need at least 32 × 32 pixels; this image is \(n) × \(n)."
         case .pixelCount(let expected, let actual): return "Cannot filter: \(actual) pixels for an image of \(expected)."
+        case .maskCount(let expected, let actual): return "Cannot apply a mask of \(actual) values to an image of \(expected) pixels."
         case .nonFinitePixel: return "The image holds a pixel that is not a finite number, so it cannot be filtered."
         case .parameterOutOfRange(let name): return "The filter's \(name) is outside the range the filter allows."
         case .fftSetup(let n): return "The Fourier transform of a \(n) × \(n) image could not be set up."
@@ -252,7 +255,8 @@ public nonisolated enum HRTEMFilter {
     /// real(IFFT(FFT(pixels) · mask)), the mask in the centred frame (DC at (n/2, n/2)).
     public static func applyMask(_ mask: [Double], to pixels: [Float], n: Int,
                                  precision: Precision = .float32) throws -> SpectrumValues {
-        guard mask.count == n * n, pixels.count == n * n else { throw HRTEMFilterError.pixelCount(expected: n * n, actual: pixels.count) }
+        guard pixels.count == n * n else { throw HRTEMFilterError.pixelCount(expected: n * n, actual: pixels.count) }
+        guard mask.count == n * n else { throw HRTEMFilterError.maskCount(expected: n * n, actual: mask.count) }
         switch precision {
         case .float32:
             guard let fft = FFT2D(nx: n, ny: n) else { throw HRTEMFilterError.fftSetup(n) }
@@ -264,7 +268,8 @@ public nonisolated enum HRTEMFilter {
     }
 
     /// The profile P(ρ), ρ = 0 … n/2 − 1: X sampled bilinearly at (n/2 + ρ cos θ, n/2 + ρ sin θ) (row, column) for 512
-    /// angles θ = 2πk/512 and averaged over them.
+    /// angles θ = 2πk/512 and averaged over them. Requires `x.count == n · n` and n ≥ 2 (it traps otherwise; `filter`
+    /// checks its input before calling it).
     public static func radialProfile(_ x: [Double], n: Int) -> [Double] {
         let half = n / 2
         let angles = 512

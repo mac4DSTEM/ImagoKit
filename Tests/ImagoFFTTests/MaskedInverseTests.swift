@@ -77,3 +77,26 @@ func maskedInverseMatchesNumPy(_ c: FFTPin, _ precision: Precision) throws {
     }
     #expect(worst < 1e-12, "the mask differs from the union by \(worst)")
 }
+
+/// Added after the slice-1b refuter: the mask does not wrap, so a spot reaching the Nyquist column of an even width leaves a
+/// complex result, reported by `imaginaryMax`; the same spot away from it leaves rounding only. And `maskSpot` on odd sizes.
+@Test func aSpotAtNyquistLeavesAnImaginaryPart() throws {
+    let w = 64, h = 48
+    let pixels = (0..<(w * h)).map { Float(1 + cos(2 * Double.pi * (Double($0 % w) / 2 + 6 * Double($0 / w) / Double(h)))) }
+    let image = try Micrograph(width: w, height: h, pixels: pixels)
+    let atNyquist = try MaskedInverseFFT.compute(image, spots: [.init(kx: -32, ky: 6, radius: 2, edge: 1)], precision: .float64)
+    let inside = try MaskedInverseFFT.compute(image, spots: [.init(kx: 20, ky: 6, radius: 2, edge: 1)], precision: .float64)
+    #expect(atNyquist.imaginaryMax > 0.1)
+    #expect(inside.imaginaryMax < 1e-12)
+}
+
+@Test(arguments: [(63, 45), (64, 47), (33, 33)])
+func maskSpotOnOddSizes(_ w: Int, _ h: Int) throws {
+    let pixels = (0..<(w * h)).map { Float(cos(2 * Double.pi * (7 * Double($0 % w) / Double(w) + 5 * Double($0 / w) / Double(h)))) }
+    let image = try Micrograph(width: w, height: h, pixels: pixels)
+    let m = try SpotMeasurement.measure(image, clickRow: h / 2 + 5, clickColumn: w / 2 + 7)
+    let spot = m.maskSpot(radius: 3, edge: 2)
+    #expect(abs(spot.kx - 7) < 1e-6 && abs(spot.ky - 5) < 1e-6, "(\(spot.kx), \(spot.ky))")
+    let back = try MaskedInverseFFT.compute(image, spots: [spot], precision: .float64)
+    #expect(zip(back.image.doubles, pixels).map { abs($0 - Double($1)) }.max()! < 1e-6)
+}

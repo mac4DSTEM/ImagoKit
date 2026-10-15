@@ -392,7 +392,7 @@ The HRTEM tests apply macTEM's harness checks as section 3 states them (outputs,
 the disk at the first pass where any bin differs, the energy check for the noisy tiers at the defaults). On the Float64 path
 the flag rule's δ is `max(3 × |Δc|, 1e-9)` points and the pass count must equal the reference's when no bin differs.
 
-### 2026-10-15 16:47 CEST, slice 1b checked: apps parity, mutants, and a vDSP first-call finding
+### 2026-10-15 16:24 CEST (amendment 8), slice 1b checked: apps parity, mutants, and a vDSP first-call finding
 
 - **Apps parity** (`tools/slice-1/apps-parity`, extended by a Sonnet lane): the Float32 `MaskedInverseFFT` (Friedel partners on
   and off) and `HRTEMFilter` (both outputs and every stage, the flags, passes and flags per pass) equal macTEM `3d17311`'s

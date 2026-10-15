@@ -272,7 +272,7 @@ def main():
             files.append({"file": os.path.relpath(p, FIX), "sha256": sha256(p), "bytes": os.path.getsize(p)})
     total = sum(f["bytes"] for f in files) + sum(f["bytes"] for f in ffiles)
     if total > BUDGET:
-        fail("committed fixtures %d bytes, over the 8 MB budget" % total)
+        fail("committed fixtures %d bytes, over the %d MB budget" % (total, BUDGET // 2**20))
     import scipy
     import skimage
     pins = {"generator": "tools/slice-1/pins.py", "mactem_commit": MACTEM_COMMIT,

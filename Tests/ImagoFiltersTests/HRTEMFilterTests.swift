@@ -113,6 +113,19 @@ func filtersMatchTheFloat64Reading(_ c: HRTEMPin, _ precision: Precision) throws
         break
     }
     if precision == .float64 && !anyDiffer { #expect(result.passes == c.passes, "passes \(result.passes) vs \(c.passes)") }
+    // The result's other fields (added after the slice-1b refuter): pass 1's c, the median and, where present, M0 against
+    // the float64 reading; the flags against their own first pass; the counts and the final d against the flags.
+    let disk = (0..<count).filter { radius($0) < Double(half) && refS[$0] > 0 }
+    if precision == .float64 {
+        #expect(disk.allSatisfy { abs(result.firstPassC[$0] - refC1[$0]) <= 1e-8 }, "pass 1's c beyond 1e-8 points")
+        #expect(HRTEMPins.relativeToMaximum(result.median, refS) <= 1e-10)
+        if let m0 = c.files["M0"] { #expect(HRTEMPins.relativeToMaximum(result.initialBackground, HRTEMPins.doubles(m0)) <= 1e-10) }
+        #expect(result.firstFlaggedPass == refFirst, "flags differ from the float64 reading")
+    }
+    #expect((0..<count).allSatisfy { result.flagged[$0] == (result.firstFlaggedPass[$0] > 0) })
+    let flaggedCount = result.flagged.filter { $0 }.count
+    #expect(result.flagsPerPass.count == result.passes && result.flagsPerPass.last == flaggedCount)
+    #expect(result.finalDelta == 100 * Double(flaggedCount) / Double(count))
     // Truth (P2): at the defaults on the noisy tiers, each output's energy outside the lattice bins is below the input's.
     if noisyTiers.contains(c.tier), c.params == defaults, let regionFile = c.files["p2region"] {
         let region = HRTEMPins.doubles(regionFile)
@@ -159,6 +172,9 @@ func filtersMatchTheFloat64Reading(_ c: HRTEMPin, _ precision: Precision) throws
     #expect(throws: HRTEMFilterError.oddSize(33)) { try HRTEMFilter.filter(pixels: [Float](repeating: 0, count: 33 * 33), width: 33, height: 33) }
     #expect(throws: HRTEMFilterError.tooSmall(30)) { try HRTEMFilter.filter(pixels: [Float](repeating: 0, count: 900), width: 30, height: 30) }
     #expect(throws: HRTEMFilterError.pixelCount(expected: 1024, actual: 3)) { try HRTEMFilter.filter(pixels: [0, 0, 0], width: 32, height: 32) }
+    #expect(throws: HRTEMFilterError.maskCount(expected: 1024, actual: 5)) {
+        try HRTEMFilter.applyMask([Double](repeating: 1, count: 5), to: [Float](repeating: 1, count: 1024), n: 32)
+    }
     var nan = [Float](repeating: 1, count: 1024); nan[5] = .nan
     #expect(throws: HRTEMFilterError.nonFinitePixel) { try HRTEMFilter.filter(pixels: nan, width: 32, height: 32) }
     for (name, edit) in [("delta", { (p: inout HRTEMFilter.Parameters) in p.delta = 51 }),

@@ -4,17 +4,25 @@
 //
 //  THE MASK: each spot is a centre (kx, ky) in frequency-index units from the spectrum's centre, a radius r and a
 //  raised-cosine edge e, both in index units: m = 1 for d ≤ r, ½(1 + cos(π(d − r)/e)) for r < d < r + e, else 0, d the index
-//  distance to the centre. Each spot's Friedel partner (−kx, −ky) is added, so the result is real for a real image; the
-//  union of spots is their maximum. The image is the real part of `ifft2(ifftshift(fftshift(fft2(x)) · M))`; the largest
-//  |imaginary part| is reported, not hidden. Index units, not physical: r and e are stated on the product.
+//  distance to the centre. Each spot's Friedel partner (−kx, −ky) is added; the union of spots is their maximum. The image
+//  is the real part of `ifft2(ifftshift(fftshift(fft2(x)) · M))`, and the largest |imaginary part| is reported, not hidden.
+//  The mask does not wrap: on an even size the Nyquist row and column have no partner inside the centred frame, so a spot
+//  whose disc reaches them (or crosses the spectrum's edge) leaves a mask that is not symmetric, and the result is not real
+//  (`imaginaryMax` says how far). Index units, not physical: r and e are stated on the product.
 //
 
 import Foundation
 import ImagoCore
 
 /// Why a masked inverse cannot be computed.
-public nonisolated enum MaskedInverseFFTError: Error, Equatable, Sendable {
+public nonisolated enum MaskedInverseFFTError: Error, Equatable, Sendable, LocalizedError {
     case fftSetup(width: Int, height: Int)
+
+    public var errorDescription: String? {
+        switch self {
+        case .fftSetup(let w, let h): "The Fourier transform of a \(w) × \(h) image could not be set up."
+        }
+    }
 }
 
 public nonisolated struct MaskedInverseFFT: Sendable {
@@ -45,7 +53,8 @@ public nonisolated struct MaskedInverseFFT: Sendable {
     public let height: Int
     /// The rebuilt image, row-major, x fastest, row 0 first, in the precision it was computed in.
     public let image: SpectrumValues
-    /// The largest |imaginary part| left by the inverse transform (0 for an exactly symmetric mask on a real image).
+    /// The largest |imaginary part| left by the inverse transform: rounding for a mask symmetric under (k → −k); large when a
+    /// spot reaches the Nyquist row or column of an even size or crosses the spectrum's edge (the mask does not wrap).
     public let imaginaryMax: Double
     public let spots: [Spot]
     public let precision: Precision
