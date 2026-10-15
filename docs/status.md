@@ -1,6 +1,16 @@
 # ImagoKit status
 
-## Now (2026-10-15 17:16 CEST): slice 2 at its green checkpoint, paused (owner: the apps' move first)
+## Now (2026-10-15 17:36 CEST): 0.1.0 candidate at `a4f488b`
+
+- The suite's process changed (owner, 2026-10-15 evening): focused commits with tests that fail before and pass after, one
+  review lane, `CHANGELOG.md` with a Migration paragraph per release, CI the gate. Slice 2 had its one review (approve with
+  changes): the `reflect`-mode defect it found is fixed test-first (`a44e674`); its other notes are in the CHANGELOG's known
+  limits. Gate, both full parities, consumer check (84) and README consumer green at `a4f488b`. **0.1.0 candidate =
+  `a4f488b`** once the owner's push has a green CI run.
+- App switch patches (in the coordinator's notes folder): mac4DSTEM (`imagokit-mac4dstem-switch.patch`, reviewed: approve with
+  changes, folded into its note); macTEM (`imagokit-mactem-switch.patch`, reviewed: changes requested, being revised).
+
+## Earlier (2026-10-15 17:16 CEST): slice 2 at its green checkpoint
 
 - **Released:** 0.0.2 tagged at `2cc5f07` (slice 1), public; CI green on the runner (run 38753074813: Xcode 26.6, Swift 6.3.3,
   39 tests, consumer check 45, README consumer).
