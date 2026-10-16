@@ -24,6 +24,15 @@ public nonisolated struct AxisCalibration: Sendable, Equatable, Hashable {
     /// The physical value at pixel index `i`.
     public func value(at i: Double) -> Double { (i - origin) * scale }
 
+    /// The axis written as an offset: the physical value at pixel index 0, `-origin · scale` (RosettaSciIO's `offset`).
+    public var offset: Double { -origin * scale }
+
+    /// An axis from an offset (the physical value at pixel index 0), a scale and a unit: `origin = -offset / scale`.
+    /// A zero or non-finite scale has no origin; the origin is then 0 and `isCalibrated` is false.
+    public init(offset: Double, scale: Double, unit: String) {
+        self.init(scale: scale, unit: unit, origin: scale != 0 && scale.isFinite ? -offset / scale : 0)
+    }
+
     /// A physical sampling: a unit, and a finite, positive scale. An axis that is not calibrated computes in pixels.
     public var isCalibrated: Bool { !unit.isEmpty && scale.isFinite && scale > 0 }
 }

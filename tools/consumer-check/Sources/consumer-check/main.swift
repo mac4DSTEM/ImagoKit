@@ -31,6 +31,8 @@ let fftD: FFT2DDouble? = FFT2DDouble(nx: w, ny: h)
 check(fft.nx == w && fftD?.ny == h, "FFT2D and FFT2DDouble are made for any size")
 check(FFT2D.fftfreq(3, 4) == -0.25, "fftfreq is NumPy's")
 check(LengthUnit.nanometres(per: "Å") == 0.1, "Å is 0.1 nm")
+check(LengthUnit.angstromsPerPixel(scale: 0.25, unit: "nm") == 2.5, "nm to Å per pixel")
+check(AxisCalibration(offset: -2, scale: 0.2, unit: "nm").origin == 10, "an axis from an offset")
 check(image.cropped(PixelCrop(row: 0, col: 0, height: 32, width: 32))?.width == 32, "a crop")
 
 // ImagoFFT: the spectrum, its axes, the profile, two spots, their spacings and angle.

@@ -41,6 +41,8 @@ registration, no code yet), **absent**.
 
 | Quantity | State | Truth |
 |---|---|---|
+| axis as offset, scale, unit (RosettaSciIO convention) | done (0.1.1) | `value(at: 0) == offset`; round trip with `origin` |
+| Å per pixel, Å⁻¹ per pixel (Å⁻¹, nm⁻¹, mrad), canonical unit spellings | done (0.1.1) | closed forms (1 nm = 10 Å, mrad = 1/(1000 λ) Å⁻¹); every spelling pinned to the transcribed consumer table |
 | radial profile against physical \|q\| | done (slice 1a) | a planted ring at known \|q\| |
 | spot spacing d = 1/\|q\| and the angle between two spots | done (slice 1a) | planted lattices, closed forms |
 | masked inverse FFT (Bragg filter) | done (slice 1b) | NumPy's `ifft2(ifftshift(fftshift(fft2(x)) · M))` and a planted two-lattice image |

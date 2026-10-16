@@ -15,6 +15,14 @@ Every number is held by regression tests against NumPy 2.5.4, SciPy 1.18.1 and s
   `tools/fft1d/pins.py`. Tests use complex-bin error ≤ tolerance × max(1, |oracle|):
   1e-5 for Float and 1e-12 for Double, plus round-trip scaling and shared-plan concurrency checks.
 
+- `AxisCalibration.offset` and `AxisCalibration(offset:scale:unit:)`: the axis written as the physical value at pixel 0
+  (`origin = -offset / scale`), as image formats and RosettaSciIO write it.
+- `LengthUnit` conversions: `angstromsPerPixel(scale:unit:)`, `reciprocalAngstromsPerPixel(scale:unit:wavelengthAngstrom:)`
+  (Å⁻¹, nm⁻¹, mrad), `canonicalRealUnit`, `canonicalReciprocalUnit`, `isPhysicalReciprocal`, `isPixel`,
+  `editableRealUnits`, `editableReciprocalUnits`, and `normalized(_: String?)`. Tests pin every spelling and scale
+  against a transcription of the consumer's table and check the closed forms. `LengthUnit.nanometres(per:)` is the one
+  nanometre table (a consumer's duplicate is deleted at the switch); the Å conversion deliberately reads only Å, nm, pm.
+
 ### Changed
 - Relicensed the entire package to GPL-3.0 by the copyright holder, Paul Lobpreis (2026).
 
