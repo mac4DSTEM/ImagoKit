@@ -36,3 +36,12 @@ Both directions are unnormalised; divide inverse output by the length for NumPy'
 
 - ``MaskedInverseFFT``
 - ``MaskedInverseFFTError``
+
+### Drawing a spectrum
+
+- ``SpectrumDisplay``
+- ``FFTRegion``
+- ``SpectrumBin``
+- ``RadialChartScale``
+- ``SpectrumShape``
+- ``FFTUnits``

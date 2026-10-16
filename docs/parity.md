@@ -49,6 +49,10 @@ registration, no code yet), **absent**.
 | Quantity | State | Truth |
 |---|---|---|
 | distance and angle between marks (anisotropic scales, Kahan cross product) | done (0.1.1) | `ImageMeasurement`: planted angles, closed forms and 100 NumPy float64 triples |
+| display normalisation, log contrast, thumbnails, colour mapping | done (0.1.1) | `DisplayNormalization`, `Thumbnail`, `DisplayMapping`: Float32 bit for bit with a NumPy reading of the definition; the log to the last Float32 bit |
+| scale-bar numbers (1-2-5 length, unit ladder, text, drawn length) | done (0.1.1) | `ScaleBarMath`: exact on 250 random and 108 usual calibrations, plus the ladder grid across mantissa boundaries |
+| square-region, bin and decade geometry, shown units and aspect | done (0.1.1) | `FFTRegion`, `SpectrumBin`, `RadialChartScale`, `FFTUnits`, `SpectrumShape`: exact against a transcribed definition on random cases |
+| log-power spectrum display and its default window | done (0.1.1) | `SpectrumDisplay`: values to the last Float32 bit, window within a 2048th of the range of the (⌈n/2⌉)-th smallest value |
 | axis as offset, scale, unit (RosettaSciIO convention) | done (0.1.1) | `value(at: 0) == offset`; round trip with `origin` |
 | Å per pixel, Å⁻¹ per pixel (Å⁻¹, nm⁻¹, mrad), canonical unit spellings | done (0.1.1) | closed forms (1 nm = 10 Å, mrad = 1/(1000 λ) Å⁻¹); every spelling pinned to the transcribed consumer table |
 | radial profile against physical \|q\| | done (slice 1a) | a planted ring at known \|q\| |

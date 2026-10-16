@@ -37,6 +37,24 @@ Every number is held by regression tests against NumPy 2.5.4, SciPy 1.18.1 and s
   (9244 samples, including NumPy's pairwise float32 sum); `.float64` matches scikit-image on the widened image to 8.9e-16 of
   the image maximum. Orders 2 to 5 and multichannel images are absent.
 
+- Display numerics (Float32 or Double, no UI, no colormap, no text metrics), pinned by `tools/display/pins.py`, an independent
+  NumPy / Python reading of each definition (no package implements these; bit for bit unless stated):
+  - `ImagoCore.DisplayNormalization`: `finiteMinMax`, linear and zero-centred `normalized` with non-finite pixels at
+    `invalidValue` (-1), `logContrast` (log₁₀(1 + max(p, 0))), `normalizedLog`.
+  - `ImagoCore.Thumbnail.make`: the box-average downsample (floor boxes by integer division, invalid pixels left out,
+    never upscaled).
+  - `ImagoCore.ScaleBarMath`: `overlayScale`, `sampling` (a metre axis shown in nm, µm or mm), `nice125`, `ladder`, `format`
+    and `plan` (the label, the unrounded and drawn length). The plate's fit stays with the caller, as does the spelling
+    of a unit (`unitLabel`).
+  - `ImagoCore.DisplayMapping`: window, gamma and a 256-entry colour table to 8-bit RGB in Double (the exact reference for a
+    shader's Float32 arithmetic), masked grey for negative values.
+  - `ImagoFFT.FFTRegion` (the square even region: drawn, moved, resized, typed, centred, valid), `SpectrumBin`,
+    `RadialChartScale.decadeMarks`, `SpectrumShape.aspect` and `FFTUnits` (length, reciprocal and spectrum units shown in nm
+    and nm⁻¹), on `LengthUnit.nanometres(per:)`.
+  - `ImagoFFT.SpectrumDisplay`: v = log₁₀(|F|² / (W·H)²) per bin (NaN for the DC and for zero or non-finite power) and the
+    default window (median by a 2048-bin histogram, white beyond 3 bins of the centre); the log matches NumPy's to the last
+    bit of Float32 on the pinned cases.
+
 ### Changed
 - Relicensed the entire package to GPL-3.0 by the copyright holder, Paul Lobpreis (2026).
 

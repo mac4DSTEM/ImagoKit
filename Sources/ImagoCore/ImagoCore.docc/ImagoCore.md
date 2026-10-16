@@ -33,6 +33,14 @@ reference path. Every product in the kit takes a ``Precision`` and records it: s
 - ``ProfileArithmetic``
 - ``LineProfileError``
 
+### Display
+
+- ``DisplayNormalization``
+- ``Thumbnail``
+- ``ScaleBarMath``
+- ``ScaleBarPlan``
+- ``DisplayMapping``
+
 ### The Fourier transform
 
 - ``FFT2D``
