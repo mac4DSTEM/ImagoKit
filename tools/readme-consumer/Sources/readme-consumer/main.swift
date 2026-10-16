@@ -5,6 +5,16 @@ import ImagoCore
 import ImagoFFT
 import ImagoFilters
 
+import ImagoFFT
+
+var real = [Float](repeating: 0, count: 64)
+var imaginary = real
+real[0] = 1
+let fft = FFT1D(n: real.count)!
+fft.transform(re: &real, im: &imaginary, forward: true)
+fft.transform(re: &real, im: &imaginary, forward: false)
+// Both directions are unnormalised: divide these inverse results by Float(fft.n).
+
 // A 256 × 256 image, 0.02 nm pixels: two lattice fringes on a constant background.
 let n = 256
 var pixels = [Float](repeating: 0, count: n * n)
@@ -53,7 +63,9 @@ print("registered drift:", drift.shift.row, drift.shift.column, "px; aligned sum
 // The planted truth: d = 1/|q| with q = (40, 12) and (−15, 35) cycles over 5.12 nm; the angle between them.
 let qa = (40.0 / 5.12, 12.0 / 5.12), qb = (-15.0 / 5.12, 35.0 / 5.12)
 let plantedAngle = try SpotMeasurement.angle(qa: qa, qb: qb)
-let ok = abs(a.dNanometres! * (qa.0 * qa.0 + qa.1 * qa.1).squareRoot() - 1) < 2e-3
+let ok = real[0] == 64 && real.dropFirst().allSatisfy { $0 == 0 }
+    && imaginary.allSatisfy { $0 == 0 }
+    && abs(a.dNanometres! * (qa.0 * qa.0 + qa.1 * qa.1).squareRoot() - 1) < 2e-3
     && abs(b.dNanometres! * (qb.0 * qb.0 + qb.1 * qb.1).squareRoot() - 1) < 2e-3
     && abs(pair.angle - plantedAngle) < 0.1
     && bragg.image.count == n * n && filtered.passes >= 1

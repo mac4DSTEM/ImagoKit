@@ -226,5 +226,25 @@ for e in [AlignmentError.emptyStack, .sizeMismatch(index: 1, width: 2, height: 3
     check(e.errorDescription?.isEmpty == false, "AlignmentError text: \(e)")
 }
 
+// Public radix-2 plans and their split-complex entry points, in both precisions.
+let lineFFT = FFT1D(n: 64)!
+let lineDouble = FFT1DDouble(n: 64)!
+check(lineFFT.n == 64 && lineDouble.n == 64, "public 1D plan lengths")
+check(FFT1D.nextPow2(65) == 128 && FFT1DDouble.nextPow2(65) == 128, "public radix-2 padding helpers")
+var lineRe = [Float](repeating: 0, count: lineFFT.n)
+var lineIm = lineRe
+lineRe[0] = 1
+lineFFT.transform(re: &lineRe, im: &lineIm, forward: true)
+check(lineRe.allSatisfy { $0 == 1 } && lineIm.allSatisfy { $0 == 0 }, "Float impulse FFT")
+lineFFT.transform(re: &lineRe, im: &lineIm, forward: false)
+check(lineRe[0] == 64 && lineRe.dropFirst().allSatisfy { $0 == 0 }, "Float inverse is unnormalised")
+var lineDR = [Double](repeating: 0, count: lineDouble.n)
+var lineDI = lineDR
+lineDR[0] = 1
+lineDouble.transform(re: &lineDR, im: &lineDI, forward: true)
+check(lineDR.allSatisfy { $0 == 1 } && lineDI.allSatisfy { $0 == 0 }, "Double impulse FFT")
+lineDouble.transform(re: &lineDR, im: &lineDI, forward: false)
+check(lineDR[0] == 64 && lineDR.dropFirst().allSatisfy { $0 == 0 }, "Double inverse is unnormalised")
+
 print("consumer-check summary: \(checks) checks, \(failures) failures")
 if failures > 0 { exit(1) }

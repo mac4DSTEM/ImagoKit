@@ -1,10 +1,19 @@
 # ImagoKit status
 
-## 0.1.1 preparation (2026-10-16)
+## 0.1.1 local candidate (2026-10-16)
 
 - Entire package relicensed to GPL-3.0 by the owner, copyright Paul Lobpreis, 2026; the earlier BSD decision below is historical.
 
-## Now (2026-10-15 17:36 CEST): 0.1.0 candidate at `a4f488b`
+- Added public `ImagoFFT.FFT1D` and `FFT1DDouble`, preserving the radix-2 split-complex API and unnormalised inverse.
+  NumPy 2.5.4 / CPython 3.14.7 fixtures cover 1, 2, 4, 8, 64, 256, 1024; generator:
+  `../tools/memcap.sh -- ../References/ImagoKit/oracle-venv/bin/python -I -B tools/fft1d/pins.py`
+  (8 GB cap, measured peak 8 MB). Complex-bin tolerance: 1e-5 Float, 1e-12 Double, relative to max(1, |oracle|).
+- Gate `tools/test.sh`: 87 test functions green, including four new FFT tests; licence regression proven red against
+  the original BSD file, FFT tests proven red before the API existed. Public consumer: 90 checks green.
+  README consumer: both Swift blocks compiled warning-free and ran successfully. Independent review found no blockers.
+- Branch `codex/imago-0.1.1`; two focused local commits. No push or tag. The earlier handoff below is historical.
+
+## Earlier (2026-10-15 17:36 CEST): 0.1.0 candidate at `a4f488b`
 
 - The suite's process changed (owner, 2026-10-15 evening): focused commits with tests that fail before and pass after, one
   review lane, `CHANGELOG.md` with a Migration paragraph per release, CI the gate. Slice 2 had its one review (approve with

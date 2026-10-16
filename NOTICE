@@ -34,6 +34,18 @@ mac4DSTEM (github.com/mac4DSTEM/mac4DSTEM) at commit 7a0f727f:
 
 
 ================================================================================
+The 1D FFT seed
+================================================================================
+
+mac4DSTEM (github.com/mac4DSTEM/mac4DSTEM) at commit
+c809679c8ee23a355da6af4f63665aaf64f90d0d:
+  mac4DSTEM/Core/Compute/FFT1D.swift (Float radix-2 vDSP FFT).
+The public Float API preserves the unnormalised inverse. Length one is handled
+explicitly, log2 is computed with integer arithmetic, and nextPow2 rejects
+overflow. FFT1DDouble uses the corresponding Double vDSP calls.
+
+
+================================================================================
 The HRTEM filters' method (no code taken)
 ================================================================================
 

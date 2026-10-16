@@ -23,13 +23,38 @@ masked inverse FFT) and `ImagoFilters` (the HRTEM filters), each on a Float32 an
 Later slices, registered when they start: GPA strain (Hÿtch, Snoeck and Kilaas 1998), atom-column finding (Atomap, GPL-3.0,
 in a module of its own), bandpass and denoising filters (scikit-image, SciPy).
 
+## Complex 1D FFT
+
+`ImagoFFT` also provides `FFT1D` (Float) and `FFT1DDouble` (Double). Both accept a positive power-of-two
+length, transform caller-owned split-complex arrays in place, and are Sendable. A plan may be shared across
+concurrent calls with separate buffers.
+
+```swift
+import ImagoFFT
+
+var real = [Float](repeating: 0, count: 64)
+var imaginary = real
+real[0] = 1
+let fft = FFT1D(n: real.count)!
+fft.transform(re: &real, im: &imaginary, forward: true)
+fft.transform(re: &real, im: &imaginary, forward: false)
+// Both directions are unnormalised: divide these inverse results by Float(fft.n).
+```
+
+`FFT1D.nextPow2(_:)` returns the smallest power of two at least its argument (one for arguments ≤ 1);
+values above the largest positive power of two representable by `Int` violate its precondition.
+Length one is the identity. Initialisation returns `nil` for unsupported lengths or allocation failure;
+transform buffers must each have exactly `n` elements. No windowing, padding or centring is implicit.
+NumPy 2.5.4 pins cover lengths 1, 2, 4, 8, 64, 256 and 1024. The tests state the complex-bin tolerances:
+1e-5 for Float and 1e-12 for Double, with an absolute floor for near-zero bins.
+
 ## Conventions (the short version)
 
 - Pixels are row-major, x (column) fastest, row 0 first. A pixel's physical position is `(index − origin) · scale`.
 - The zero frequency of a centred spectrum sits at index `n/2` (integer division) on each axis, odd and even `n` alike, as
   `numpy.fft.fftshift` puts it. The axis value at index `i` is `(i − n/2) / (n · d)`, `d` that axis's own scale, so a
   non-square or anisotropic image has different spacings along x and y.
-- The forward transform is unnormalised and the inverse divides by `nx · ny`, as NumPy's. Nothing is windowed, padded or
+- The 2D forward transform is unnormalised and its inverse divides by `nx · ny`, as NumPy's. Nothing is windowed, padded or
   mean-removed unless a function says so on its signature.
 - Every Float32 result states its registered distance from NumPy's float64 result; speed never changes a number silently.
 

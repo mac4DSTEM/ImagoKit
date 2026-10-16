@@ -11,6 +11,13 @@ accounted for.
 
 ## Topics
 
+### Complex 1D transforms
+
+Both directions are unnormalised; divide inverse output by the length for NumPy's default inverse convention.
+
+- ``FFT1D``
+- ``FFT1DDouble``
+
 ### The spectrum
 
 - ``PowerSpectrum``
