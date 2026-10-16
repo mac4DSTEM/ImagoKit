@@ -33,6 +33,10 @@ check(FFT2D.fftfreq(3, 4) == -0.25, "fftfreq is NumPy's")
 check(LengthUnit.nanometres(per: "Å") == 0.1, "Å is 0.1 nm")
 check(LengthUnit.angstromsPerPixel(scale: 0.25, unit: "nm") == 2.5, "nm to Å per pixel")
 check(AxisCalibration(offset: -2, scale: 0.2, unit: "nm").origin == 10, "an axis from an offset")
+check(ImageMeasurement.distance(PixelPoint(x: 0, y: 0), PixelPoint(x: 3, y: 4), x: nil, y: nil).pixels == 5, "a distance")
+check((try? IntensityHistogram.histogram([0, 1, 2, 3], bins: 3))?.counts == [1, 1, 2], "a histogram")
+check((try? LineProfile.sample(image, from: PixelPoint(x: 0, y: 0), to: PixelPoint(x: 5, y: 0), reduce: .max))?.samples.count == 6,
+      "a line profile")
 check(image.cropped(PixelCrop(row: 0, col: 0, height: 32, width: 32))?.width == 32, "a crop")
 
 // ImagoFFT: the spectrum, its axes, the profile, two spots, their spacings and angle.

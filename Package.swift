@@ -41,7 +41,7 @@ let package = Package(
         // Slice 2 (docs/registration-slice-2.md): phase cross-correlation with sub-pixel refinement, shifts of order 0 and
         // 1 and the Fourier shift, drift series and aligned stack sums, on both precisions.
         .target(name: "ImagoAlignment", dependencies: ["ImagoCore"], swiftSettings: settings),
-        .testTarget(name: "ImagoCoreTests", dependencies: ["ImagoCore"], swiftSettings: settings),
+        .testTarget(name: "ImagoCoreTests", dependencies: ["ImagoCore"], exclude: ["Fixtures"], swiftSettings: settings),
         .testTarget(name: "ImagoFFTTests", dependencies: ["ImagoCore", "ImagoFFT"], exclude: ["Fixtures"],
                     swiftSettings: settings),
         .testTarget(name: "ImagoFiltersTests", dependencies: ["ImagoCore", "ImagoFFT", "ImagoFilters"], exclude: ["Fixtures"],

@@ -17,6 +17,12 @@ registration, no code yet), **absent**.
 | `rfft2`, `irfft2`, `fftn`, `hfft` | absent | | |
 | `numpy.hanning(n)` | done | `SpotMeasurement.hanning` (slice 1a) | the window of the spot estimator |
 
+## NumPy 2.5.4, `numpy.histogram`
+
+| Function | State | Where | Notes |
+|---|---|---|---|
+| `histogram(a, bins=int, range=None or (lo, hi))` on a float32 array | done | `IntensityHistogram.histogram` (0.1.1) | non-finite pixels dropped first (`a[np.isfinite(a)]`); counts and float32 edges bit for bit on 40 pinned cases, NumPy's `ValueError`s as `HistogramError`; an overflowing `last - first` is refused (NumPy continues with non-finite edges); the `mean` field is not NumPy's. float64 input, array or string `bins`, `weights`, `density` absent. `compute` is the variant that keeps the statistics where NumPy raises |
+
 ## SciPy 1.18.1, `scipy.ndimage` and `scipy.fft`
 
 | Function | State | Where | Notes |
@@ -31,6 +37,7 @@ registration, no code yet), **absent**.
 
 | Function | State | Where | Notes |
 |---|---|---|---|
+| `measure.profile_line` | partial | `LineProfile` (0.1.1) | orders 0 and 1, modes `constant` `nearest` `reflect` `mirror` `wrap`, `linewidth`, `cval`, `reduce_func` (mean, sum, min, max, median, closure) and `reduce_func=None`; `.float32` bit for bit with scikit-image on a float32 image (368 pinned profiles), `.float64` within 8.9e-16 of the image maximum; orders 2 to 5, multichannel absent; width below 1 and a degenerate segment throw |
 | `registration.phase_cross_correlation` (with `upsample_factor`) | partial | `PhaseCorrelation.register`, `DriftSeries` (slice 2) | real-space images of one size, integer `upsample_factor` (1 to 1024), `normalization` `"phase"` or `None`; the shift, the error and the phase difference; no masks (`reference_mask`, `moving_mask`, `overlap_ratio`), no `disambiguate`, no `space="fourier"` |
 | a drift series and an aligned sum (not in scikit-image) | done (slice 2) | `DriftSeries`, `AlignedSum` | `.first`, `.mean`, `.previous` references; Fourier or bilinear summing with the overlap count |
 | `filters.butterworth`, `filters.difference_of_gaussians`, `filters.window` | absent | | bandpass, a later slice |
@@ -41,6 +48,7 @@ registration, no code yet), **absent**.
 
 | Quantity | State | Truth |
 |---|---|---|
+| distance and angle between marks (anisotropic scales, Kahan cross product) | done (0.1.1) | `ImageMeasurement`: planted angles, closed forms and 100 NumPy float64 triples |
 | axis as offset, scale, unit (RosettaSciIO convention) | done (0.1.1) | `value(at: 0) == offset`; round trip with `origin` |
 | Å per pixel, Å⁻¹ per pixel (Å⁻¹, nm⁻¹, mrad), canonical unit spellings | done (0.1.1) | closed forms (1 nm = 10 Å, mrad = 1/(1000 λ) Å⁻¹); every spelling pinned to the transcribed consumer table |
 | radial profile against physical \|q\| | done (slice 1a) | a planted ring at known \|q\| |

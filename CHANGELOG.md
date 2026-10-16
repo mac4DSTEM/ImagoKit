@@ -23,6 +23,20 @@ Every number is held by regression tests against NumPy 2.5.4, SciPy 1.18.1 and s
   against a transcription of the consumer's table and check the closed forms. `LengthUnit.nanometres(per:)` is the one
   nanometre table (a consumer's duplicate is deleted at the switch); the Å conversion deliberately reads only Å, nm, pm.
 
+- `ImageMeasurement` (`PixelPoint`, `distance`, `angle`): distance in pixels and, with both axes calibrated in one unit,
+  in that unit using each axis's own scale; the angle at a vertex by `atan2(|cross|, dot)` with Kahan's cross product, in
+  the physical plane when it is defined. Pinned to random triples from NumPy float64 (4e-16 and 1e-13 relative) and to
+  planted angles.
+- `IntensityHistogram.histogram(_:bins:range:)`: `numpy.histogram` of the finite pixels of a Float32 array with NumPy's
+  float32 edge and index arithmetic, bit for bit (40 pinned cases: constants, signed zeros, planted edge values, a denormal
+  range, explicit ranges) and NumPy's errors as `HistogramError`. `compute(_:bins:range:)` is the variant that keeps the
+  statistics when NumPy raises "Too many bins for data range" (empty counts and edges).
+- `LineProfile.sample(...)` and `unreduced(...)`: `skimage.measure.profile_line` for orders 0 and 1, the five modes
+  (`constant`, `nearest`, `reflect`, `mirror`, `wrap`), `linewidth`, `cval` and `reduce_func` (mean, sum, min, max, median or
+  a closure). `.float32` arithmetic is scikit-image on a float32 image and matches it bit for bit on 368 pinned profiles
+  (9244 samples, including NumPy's pairwise float32 sum); `.float64` matches scikit-image on the widened image to 8.9e-16 of
+  the image maximum. Orders 2 to 5 and multichannel images are absent.
+
 ### Changed
 - Relicensed the entire package to GPL-3.0 by the copyright holder, Paul Lobpreis (2026).
 

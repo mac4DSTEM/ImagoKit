@@ -20,6 +20,19 @@ reference path. Every product in the kit takes a ``Precision`` and records it: s
 
 - ``LengthUnit``
 
+### Measurement
+
+- ``ImageMeasurement``
+- ``PixelPoint``
+- ``IntensityHistogram``
+- ``HistogramError``
+- ``LineProfile``
+- ``ProfileMode``
+- ``ProfileOrder``
+- ``ProfileReduction``
+- ``ProfileArithmetic``
+- ``LineProfileError``
+
 ### The Fourier transform
 
 - ``FFT2D``
