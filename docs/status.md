@@ -2,10 +2,10 @@
 
 ## 0.2.0 release commit (2026-10-16)
 
-Version 0.2.0 (the 0.1.1 candidate below, renamed: the additions are a minor). Ready for the owner's push and tag; CI on push is the gate.
-Parity totals: 17 done, 8 partial, 7 absent of 32 rows.
+Version 0.2.0: the calibration units, measurement, histogram, line profile and display numerics for macTEM, on top of the
+tagged 0.1.1. Ready for the owner's push and tag; CI on push is the gate. Parity totals: 17 done, 8 partial, 7 absent of 32 rows.
 
-### The 0.1.1 candidate (now 0.2.0)
+## 0.1.1 (tagged 2026-10-16, 44a9375)
 
 - Entire package relicensed to GPL-3.0 by the owner, copyright Paul Lobpreis, 2026; the earlier BSD decision below is historical.
 
@@ -16,7 +16,7 @@ Parity totals: 17 done, 8 partial, 7 absent of 32 rows.
 - Gate `tools/test.sh`: 87 test functions green, including four new FFT tests; licence regression proven red against
   the original BSD file, FFT tests proven red before the API existed. Public consumer: 90 checks green.
   README consumer: both Swift blocks compiled warning-free and ran successfully. Independent review found no blockers.
-- Branch `codex/imago-0.1.1`; two focused local commits. No push or tag. The earlier handoff below is historical.
+- Released as tag 0.1.1. The earlier handoff below is historical.
 
 ## Earlier (2026-10-15 17:36 CEST): 0.1.0 candidate at `a4f488b`
 

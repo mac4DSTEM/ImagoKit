@@ -11,7 +11,7 @@ Totals at 0.2.0 (32 rows): 17 done, 8 partial, 7 absent, 0 registered.
 
 | Function | State | Where | Notes |
 |---|---|---|---|
-| `fft(x)`, `ifft(x)` on complex 1D input | partial | `ImagoFFT.FFT1D`, `FFT1DDouble` (0.2.0) | radix-2 positive lengths only; split-complex in-place arrays; both directions unnormalised (`ifft(norm="forward")`); divide inverse output by n for default NumPy scaling. Pins at 1, 2, 4, 8, 64, 256, 1024; complex-bin error ≤ 1e-5 (Float) / 1e-12 (Double) × max(1, magnitude of oracle). No `axis=`, `n=` resizing, or padding |
+| `fft(x)`, `ifft(x)` on complex 1D input | partial | `ImagoFFT.FFT1D`, `FFT1DDouble` (0.1.1) | radix-2 positive lengths only; split-complex in-place arrays; both directions unnormalised (`ifft(norm="forward")`); divide inverse output by n for default NumPy scaling. Pins at 1, 2, 4, 8, 64, 256, 1024; complex-bin error ≤ 1e-5 (Float) / 1e-12 (Double) × max(1, magnitude of oracle). No `axis=`, `n=` resizing, or padding |
 | `fft2(x)` on a real 2D array, any shape | done | `ImagoCore` `FFT2D`, `FFT2DDouble` (slice 1a) | exact N-point DFT for every length (no padding); Float32 and Float64 paths; `s=`, `axes=` and `norm=` other than `"backward"` absent |
 | `ifft2(X)` | done | `FFT2D`, `FFT2DDouble` (slice 1a) | `norm="backward"` (1/(nx·ny)) only |
 | `fftshift`, `ifftshift` (2D) | partial | `PowerSpectrum`, `MaskedInverseFFT` (slice 1) | inside the products, not as a public function yet |
