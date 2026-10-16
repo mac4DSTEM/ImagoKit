@@ -1,4 +1,6 @@
 // swift-tools-version: 6.2
+// SPDX-License-Identifier: GPL-3.0-only
+// Copyright (c) 2026 Paul Lobpreis
 // ImagoKit — image analysis for electron micrographs on Apple platforms: the calibrated image and the exact-length 2D
 // FFT (ImagoCore); the centred power spectrum, its radial profile, FFT-spot spacings and angles, and the masked inverse
 // FFT (ImagoFFT); the HRTEM background-subtraction and Wiener filters (ImagoFilters); drift and stack alignment

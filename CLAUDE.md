@@ -3,8 +3,7 @@
 ImagoKit: the macEM suite's image-analysis library (the sixth kit, the owner's decision of 2026-10-15 15:25), a Swift port
 of what the apps compute on a micrograph: the exact-length 2D FFT and the centred power spectrum, the radial profile,
 FFT-spot spacings and angles, the masked inverse FFT, the HRTEM filters, drift and stack alignment; later GPA strain and
-atom-column finding. NumPy, SciPy and scikit-image are its references. BSD-3-Clause (README "Licence" and `NOTICE` say why
-and what would change it). Modules: `ImagoCore` (image, calibration, the FFT engine), `ImagoFFT` (spectrum, profile, spots,
+atom-column finding. NumPy, SciPy and scikit-image are its references. GPL-3.0 (owner decision, 2026-10-16; README "Licence" and `NOTICE`). Modules: `ImagoCore` (image, calibration, the FFT engine), `ImagoFFT` (spectrum, profile, spots,
 masked inverse), `ImagoFilters` (HRTEM filters), `ImagoAlignment` (slice 2: phase correlation, shifts, drift series, aligned sums). Rules only here;
 state in `docs/status.md`. Tests are Swift Testing (`import Testing`, `@Test`, `#expect`, `#require`).
 
@@ -50,11 +49,8 @@ state in `docs/status.md`. Tests are Swift Testing (`import Testing`, `@Test`, `
   `CalibratedImage` and `ImageAxis`). No message, comment or doc names an app or the suite (provenance lives in `NOTICE`).
   `tools/consumer-check` is a separate package that depends on this one by path and compiles only while every symbol it names
   is `public`.
-- **Licence boundary.** The package is BSD-3-Clause. Code ported from a GPL source (Atomap, HyperSpy, py4DSTEM) never enters
-  `ImagoCore`, `ImagoFFT`, `ImagoFilters` or `ImagoAlignment`; it goes into its own GPL-3.0 module (planned: `ImagoAtoms`) with
-  its licence named in `Package.swift`, `NOTICE` and the README, or into a separate package, decided at that slice's
-  registration. Nothing of D. R. G. Mitchell's `HRTEM_Filter.s` (no licence stated) is copied: the filters are a functional
-  re-implementation of the registered steps.
+- **Licence boundary.** The entire package is GPL-3.0 (owner decision, 2026-10-16). Nothing of
+  D. R. G. Mitchell's `HRTEM_Filter.s` (no licence stated) is copied: the filters are a functional re-implementation.
 - **Rigour follows risk** (`../CLAUDE.md`): tier named in every commit; tier 1 is registration, every new test broken once,
   one Gate B refuter on the frozen commit, Gate D when a cause is unproven, a fixture.
 - **Names** (the suite's standard): the library is domain + `Kit`, modules carry its prefix: `ImagoCore`, `ImagoFFT`,

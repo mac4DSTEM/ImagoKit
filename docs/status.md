@@ -1,5 +1,9 @@
 # ImagoKit status
 
+## 0.1.1 preparation (2026-10-16)
+
+- Entire package relicensed to GPL-3.0 by the owner, copyright Paul Lobpreis, 2026; the earlier BSD decision below is historical.
+
 ## Now (2026-10-15 17:36 CEST): 0.1.0 candidate at `a4f488b`
 
 - The suite's process changed (owner, 2026-10-15 evening): focused commits with tests that fail before and pass after, one
