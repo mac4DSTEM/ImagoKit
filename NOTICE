@@ -63,6 +63,17 @@ mask formulas, never copied.
 
 
 ================================================================================
+The line profile (a port of scikit-image)
+================================================================================
+
+ImagoCore/LineProfile.swift ports the algorithm of skimage/measure/profile.py
+(scikit-image 0.26.0, Copyright (c) 2009-2022 the scikit-image team, BSD-3-Clause)
+and follows SciPy's ndimage.map_coordinates. The BSD-3-Clause notice is kept
+here; the BSD licence is compatible with this package's GPL-3.0. numpy.histogram
+(NumPy, BSD-3-Clause) is reproduced as a definition in IntensityHistogram.swift.
+
+
+================================================================================
 The oracles (run, not copied)
 ================================================================================
 

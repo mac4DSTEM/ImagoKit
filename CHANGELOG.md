@@ -55,6 +55,9 @@ Every number is held by regression tests against NumPy 2.5.4, SciPy 1.18.1 and s
     default window (median by a 2048-bin histogram, white beyond 3 bins of the centre); the log matches NumPy's to the last
     bit of Float32 on the pinned cases.
 
+### Migration
+None: every addition is new API. `AxisCalibration.init(scale:unit:origin:)` is unchanged; `offset` and `init(offset:scale:unit:)` are added beside it.
+
 ### Changed
 - Relicensed the entire package to GPL-3.0 by the copyright holder, Paul Lobpreis (2026).
 
