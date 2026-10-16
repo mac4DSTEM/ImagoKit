@@ -63,7 +63,7 @@ NumPy 2.5.4 pins cover lengths 1, 2, 4, 8, 64, 256 and 1024. The tests state the
 ```text
 // Package.swift
 dependencies: [
-    .package(url: "https://github.com/mac4DSTEM/ImagoKit.git", exact: "0.0.1"),
+    .package(url: "https://github.com/mac4DSTEM/ImagoKit.git", exact: "0.2.0"),
 ],
 targets: [
     .target(name: "MyApp", dependencies: [

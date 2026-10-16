@@ -1,6 +1,11 @@
 # ImagoKit status
 
-## 0.1.1 local candidate (2026-10-16)
+## 0.2.0 release commit (2026-10-16)
+
+Version 0.2.0 (the 0.1.1 candidate below, renamed: the additions are a minor). Ready for the owner's push and tag; CI on push is the gate.
+Parity totals: 17 done, 8 partial, 7 absent of 32 rows.
+
+### The 0.1.1 candidate (now 0.2.0)
 
 - Entire package relicensed to GPL-3.0 by the owner, copyright Paul Lobpreis, 2026; the earlier BSD decision below is historical.
 
