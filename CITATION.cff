@@ -7,7 +7,7 @@ abstract: >-
   FFT spots, Bragg filtering, HRTEM filters, and drift and stack alignment, checked against NumPy, SciPy and scikit-image.
 authors:
   - name: "mac4DSTEM contributors"
-license: GPL-3.0-or-later
+license: GPL-3.0
 repository-code: "https://github.com/mac4DSTEM/ImagoKit"
 keywords:
   - electron microscopy
