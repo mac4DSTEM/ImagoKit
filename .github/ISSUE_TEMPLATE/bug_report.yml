@@ -1,0 +1,29 @@
+name: Bug report
+description: Something does not work, or a number differs from the reference package.
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you got, and what you expected. For a wrong number, name the reference function (NumPy, SciPy or scikit-image) and its result.
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Minimal example
+      description: A small Swift snippet or input that reproduces the problem.
+      render: swift
+  - type: input
+    id: version
+    attributes:
+      label: ImagoKit version
+      placeholder: "0.2.0"
+    validations:
+      required: true
+  - type: input
+    id: platform
+    attributes:
+      label: Platform and Xcode / Swift version
+      placeholder: "macOS 15.x, Xcode 26, Apple silicon"

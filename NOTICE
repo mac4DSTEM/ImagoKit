@@ -5,11 +5,11 @@ Licensed under the GNU General Public License v3.0 (LICENSE).
 
 No number computed by this library is validated on a microscope: agreement with
 NumPy and SciPy, recovery of planted lattices and stated closed forms are what is
-claimed (docs/registration-slice-1.md section 9).
+claimed (see docs/registration-slice-1.md, section 9, for the design and validation notes).
 
 
 ================================================================================
-GPL-3.0 (owner decision, 2026-10-16)
+GPL-3.0 (licence chosen by the maintainers, 2026-10-16)
 ================================================================================
 
 The entire package is licensed GPL-3.0, including all four modules. The Python
@@ -18,7 +18,7 @@ not copied into this package.
 
 
 ================================================================================
-The seed of slice 1 (the copyright holder's own code, read-only)
+Origin of the first modules (the copyright holder's own code)
 ================================================================================
 
 macTEM (github.com/mac4DSTEM/macTEM) at commit 3d17311:
@@ -53,8 +53,8 @@ The average background subtraction and Wiener filters follow R. Kilaas,
 "Optimal and near-optimal filters in high-resolution electron microscopy",
 J. Microsc. 190 (1998) 45-51, as D. R. G. Mitchell's DigitalMicrograph script
 HRTEM_Filter.s v4.0 (2019-11-01) describes them. That script states no licence:
-nothing of it is copied. The kit implements the method's steps as the
-registration states them (formulas, constants and parameters are method). Its
+nothing of it is copied. The kit implements the method's steps as
+docs/registration-slice-1.md states them (formulas, constants and parameters are method). Its
 output has never been compared with DigitalMicrograph.
 
 Tao Ma's hrtem_filter (github.com/matao1984/hrtem_filter, MIT) is an

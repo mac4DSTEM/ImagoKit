@@ -5,22 +5,26 @@ calibration, lattice spacings and angles measured from FFT spots, Bragg (masked 
 background-subtraction and Wiener filters, and drift correction and stack alignment. Each number is defined once,
 pinned against the Python packages the field already uses, and checked against planted lattices whose answer is known.
 
-**Status: pre-release.** Slice 1 is in: `ImagoCore`, `ImagoFFT` (spectrum, radial profile, spot spacings and angles, the
-masked inverse FFT) and `ImagoFilters` (the HRTEM filters), each on a Float32 and a Float64 path
-([`docs/registration-slice-1.md`](docs/registration-slice-1.md)). Slice 2 is in too ([`docs/registration-slice-2.md`](docs/registration-slice-2.md)):
-`ImagoAlignment` registers an image onto another by phase correlation refined to a fraction of a pixel, shifts images
-(SciPy's orders 0 and 1 and the Fourier shift), estimates the drift of a stack and sums it aligned.
+**Status: pre-release (0.x).** Four modules are available: `ImagoCore`, `ImagoFFT` (spectrum, radial profile, spot
+spacings and angles, the masked inverse FFT) and `ImagoFilters` (the HRTEM filters), each on a Float32 and a Float64 path,
+and `ImagoAlignment`, which registers an image onto another by phase correlation refined to a fraction of a pixel, shifts
+images (SciPy's orders 0 and 1 and the Fourier shift), estimates the drift of a stack and sums it aligned. The supported
+functions, set against the reference packages' documented API, are listed in [`docs/parity.md`](docs/parity.md). The
+definitions and validation notes behind each number are in [`docs/`](docs/).
+
+**Platform.** Apple platforms only today (macOS 15 and iOS 18 or newer): the FFT engine uses Accelerate's vDSP, and the
+package is built and tested on macOS only. Linux is not supported yet.
 
 ## What it computes
 
-| Module | Scope | Reference | Slice |
+| Module | Scope | Reference | Since |
 |---|---|---|---|
-| `ImagoCore` | the calibrated image (pixels, per-axis scale, unit and origin, crops); length units; the exact N-point 2D DFT for every image size, Float32 on Accelerate's vDSP and a Float64 reference path | `numpy.fft.fft2` / `ifft2` | 1 |
-| `ImagoFFT` | the centred magnitude and power spectrum with `fftshift(fftfreq(n, d))` axes per axis; the radial profile against physical \|q\|; a spot's position (snap, sub-pixel centroid of a Hann-windowed spectrum), its spacing d = 1/\|q\| and the angle between two spots; the masked inverse FFT with raised-cosine spots and Friedel partners | NumPy, and planted lattices | 1 |
-| `ImagoFilters` | the HRTEM average background subtraction filter (ABSF) and Wiener filter (Kilaas 1998, as D. R. G. Mitchell's DigitalMicrograph script describes them) | a float64 NumPy/SciPy reading of the same steps (`scipy.ndimage.median_filter`, `map_coordinates`) | 1 |
-| `ImagoAlignment` | phase cross-correlation with sub-pixel refinement, sub-pixel shifts, drift series and aligned stack sums | `skimage.registration.phase_cross_correlation`, `scipy.ndimage.shift`, `fourier_shift` | 2 |
+| `ImagoCore` | the calibrated image (pixels, per-axis scale, unit and origin, crops); length units; the exact N-point 2D DFT for every image size, Float32 on Accelerate's vDSP and a Float64 reference path | `numpy.fft.fft2` / `ifft2` | 0.0.1 |
+| `ImagoFFT` | the centred magnitude and power spectrum with `fftshift(fftfreq(n, d))` axes per axis; the radial profile against physical \|q\|; a spot's position (snap, sub-pixel centroid of a Hann-windowed spectrum), its spacing d = 1/\|q\| and the angle between two spots; the masked inverse FFT with raised-cosine spots and Friedel partners | NumPy, and planted lattices | 0.0.1 |
+| `ImagoFilters` | the HRTEM average background subtraction filter (ABSF) and Wiener filter (Kilaas 1998, as D. R. G. Mitchell's DigitalMicrograph script describes them) | a float64 NumPy/SciPy reading of the same steps (`scipy.ndimage.median_filter`, `map_coordinates`) | 0.0.2 |
+| `ImagoAlignment` | phase cross-correlation with sub-pixel refinement, sub-pixel shifts, drift series and aligned stack sums | `skimage.registration.phase_cross_correlation`, `scipy.ndimage.shift`, `fourier_shift` | 0.1.0 |
 
-Later slices, registered when they start: GPA strain (Hÿtch, Snoeck and Kilaas 1998), atom-column finding (Atomap, GPL-3.0,
+Planned, not yet available: GPA strain (Hÿtch, Snoeck and Kilaas 1998), atom-column finding (Atomap, GPL-3.0,
 in a module of its own), bandpass and denoising filters (scikit-image, SciPy).
 
 ## Complex 1D FFT
@@ -79,7 +83,7 @@ or with `-O` for the kit: the manifest carries no optimisation flags (a versione
 
 A lattice image with two spots: its spectrum, its radial profile, both spacings and the angle between them, a Bragg filter
 on one spot, the HRTEM filters, and the registration of a drifted copy. This program is compiled and run as it stands by `tools/readme-consumer` (every line
-below is checked against that consumer's source).
+below is checked against that consumer's source in CI).
 
 ```swift
 import Foundation
@@ -137,14 +141,20 @@ print("registered drift:", drift.shift.row, drift.shift.column, "px; aligned sum
 ## Checking it yourself
 
 ```bash
-tools/test.sh                      # the gate: swift test -c release
+swift test -c release              # the test suite (tools/test.sh wraps it)
 tools/consumer-check/run.sh        # a separate package that uses only the public API
 tools/readme-consumer/run.sh       # this README's program, compiled and run
-tools/hooks/test-no-sleep-poll.sh  # the maintainers' shell guard
 ```
 
 The fixtures the tests read are generated by `tools/slice-*/pins.py` against the pinned NumPy, SciPy and scikit-image
-(`tools/oracle/references-lock.txt`; `tools/oracle/provision.sh` builds the environment).
+(`tools/oracle/references-lock.txt`; `tools/oracle/provision.sh` builds the environment). See
+[`CONTRIBUTING.md`](CONTRIBUTING.md) before changing a number.
+
+## Please cite
+
+If ImagoKit contributes to published work, please cite it using [`CITATION.cff`](CITATION.cff) (GitHub's "Cite this
+repository" button reads it), and cite the reference packages whose definitions it follows: NumPy, SciPy and
+scikit-image.
 
 ## Licence
 
