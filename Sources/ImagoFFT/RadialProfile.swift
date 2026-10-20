@@ -38,6 +38,17 @@ public nonisolated struct RadialProfile: Sendable, Equatable {
         public let count: Int
     }
 
+    /// A profile from its bins (a stored or computed one); nil unless `mean` and `count` have the same length and the width is a
+    /// positive finite number.
+    public init?(width: Double, units: String, mean: [Double], count: [Int]) {
+        guard mean.count == count.count, width.isFinite, width > 0 else { return nil }
+        self.init(unchecked: width, units: units, mean: mean, count: count)
+    }
+
+    private init(unchecked width: Double, units: String, mean: [Double], count: [Int]) {
+        self.width = width; self.units = units; self.mean = mean; self.count = count
+    }
+
     public static func compute(_ spectrum: PowerSpectrum, width: Double? = nil) throws -> RadialProfile {
         guard spectrum.unitsX == spectrum.unitsY else { throw RadialProfileError.mixedUnits(spectrum.unitsX, spectrum.unitsY) }
         let dqx = spectrum.spacingX, dqy = spectrum.spacingY
@@ -64,7 +75,7 @@ public nonisolated struct RadialProfile: Sendable, Equatable {
             }
         }
         let mean = zip(sums, counts).map { $1 > 0 ? $0 / Double($1) : 0 }
-        return RadialProfile(width: wb, units: spectrum.unitsX, mean: mean, count: counts)
+        return RadialProfile(unchecked: wb, units: spectrum.unitsX, mean: mean, count: counts)
     }
 
     /// The bins drawn: k ≥ 1 (bin 0 holds the DC) with at least one pixel, each at its centre.
