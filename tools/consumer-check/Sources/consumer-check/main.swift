@@ -285,7 +285,7 @@ let csvHeader = FFTExportHeader(software: "s", fileName: "f", object: "o", image
                                 crop: nil, spectrumWidth: 8, spectrumHeight: 8, spacingX: 0.5, spacingY: 0.5,
                                 unitsX: "1/nm", unitsY: "1/nm")
 let radialText = RadialProfileCSV.text(chartProfile, header: csvHeader, title: "radial", validation: "v", lineage: "l")
-check(radialText?.hasPrefix("# radial\n# software: s\n") == true && radialText?.hasSuffix("\n1,0.75,0.75,4,3\n") == true,
+check(radialText?.hasPrefix("# radial\n# software: s\n") == true && radialText?.hasSuffix("\n1,0.75,0.75,4,3\n2,1.25,1.25,0,5\n") == true,
       "public radial CSV")
 let csvSpot = SpotMeasurement(clickedRow: 1, clickedCol: 2, snappedRow: 1, snappedCol: 2, centroidRow: 1, centroidCol: 2,
                               width: 8, height: 8, qx: 1, qy: 0, q: 1, d: 1, units: "nm", reciprocalUnits: "1/nm",
