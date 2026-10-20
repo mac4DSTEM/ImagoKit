@@ -14,7 +14,7 @@ until then.
 The Float32 path (`precision: .float32`, the default) is macTEM `3d17311`'s arithmetic: `tools/slice-1/apps-parity` compares
 `MaskedInverseFFT` and `HRTEMFilter` (both outputs and every stage: the initial background, the median, pass 1's c, the
 background, the spectrum, both masks, the flags with their first pass, the passes, the flags per pass, the final d) with
-macTEM's on every planted case of `.build/pins-full`, bit for bit (results in `docs/status.md`). The Float64 path is new: the
+macTEM's on every planted case of `.build/pins-full`, bit for bit as the quick check of D12 (results in `docs/status.md`). The Float64 path is new: the
 same steps in Double, within 1e-10 of a float64 NumPy/SciPy reading of the filter (measured about 1e-15).
 
 ## macTEM (at 3d17311)

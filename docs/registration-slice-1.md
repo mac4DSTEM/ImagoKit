@@ -141,13 +141,16 @@ states no licence); this is a functional re-implementation of the steps above.
   filters; the Swift test is skipped by name when the export is absent. A manifest line in `../data/README.md` (for the
   coordinator to commit).
 
-## 3. What is bit-identical and what has a tolerance
+## 3. What is exact and what has a tolerance
+
+D12 (CLAUDE.md): numerics are compared within a tolerance written per function; bit for bit is the quick check at an
+app-to-kit switch, and a failure there is verified against the Python reference within tolerance, not a block.
 
 | Comparison | Claim |
 |---|---|
-| Float32 path against macTEM `3d17311`'s `PowerSpectrum`, `RadialProfile`, `SpotMeasure`, `MaskedInverseFFT`, `HRTEMFilter` on every planted case (the apps-parity check, section 6) | **bit for bit**: the same code in the same order of operations; any reordering is an amendment before it lands |
-| Frequency axes and spacings, both paths, against `fftshift(fftfreq(n, d))` | **bit for bit** |
-| Crop: the spectrum of a crop against the spectrum of the cropped image | **bit for bit** in steady state; tested within 1e-6 (Float32) and 1e-14 (Float64) of the maximum (amendment 9) |
+| Float32 path against macTEM `3d17311`'s `PowerSpectrum`, `RadialProfile`, `SpotMeasure`, `MaskedInverseFFT`, `HRTEMFilter` on every planted case (the apps-parity check, section 6) | quick check, bit for bit (D12): the same code in the same order of operations; any reordering is an amendment before it lands |
+| Frequency axes and spacings, both paths, against `fftshift(fftfreq(n, d))` | asserted exact today; D12 allows a written tolerance |
+| Crop: the spectrum of a crop against the spectrum of the cropped image | exact in steady state; tested within 1e-6 (Float32) and 1e-14 (Float64) of the maximum (amendment 9) |
 | Float32 spectrum (magnitude, power) against NumPy float64 | within **1e-5 of its maximum** (macTEM measured 5e-8 to 1e-7); bins below 1e-3 of the maximum measured and printed, not gated (macTEM: up to 1.9e-2 relative) |
 | Float64 spectrum against NumPy float64 | within **1e-12 of its maximum**; against the kit's direct Double DFT within 1e-12 on sizes ≤ 64 |
 | Radial profile, Float32 | every bin within **1e-5 of the profile's maximum**, and every bin k ≥ 1 within **1e-5 of the largest non-DC bin** (amendment 3); counts **equal** |
@@ -218,8 +221,8 @@ filters to its mean times the DC mask; the closed forms of 4.
 `tools/slice-1/apps-parity/`: a harness compiled from macTEM `3d17311`'s TEMCore sources (`PowerSpectrum.swift`,
 `RadialProfile.swift`, `SpotMeasure.swift`, `MaskedInverseFFT.swift`, `HRTEMFilter.swift`, `FFT2D.swift`,
 `CalibratedImage.swift`, `FFTRoomMath.swift` for `CalibrationUnitConversion` if it is needed, by `git show` into `.build/`) and
-from this kit, run on every planted case, comparing the Float32 path's outputs **bit for bit** (`bitPattern` equality of every
-Float and Double). This is what lets macTEM delete its originals at its switch with its own pinned tests as the second proof.
+from this kit, run on every planted case, comparing the Float32 path's outputs bit for bit as the quick check of D12 (`bitPattern` equality of every
+Float and Double; on a failure, verify within tolerance against the Python reference). This is what lets macTEM delete its originals at its switch with its own pinned tests as the second proof.
 It runs at every frozen commit of slice 1 and is logged in `docs/status.md`; it needs macTEM checked out beside the kit and is
 not part of CI.
 
@@ -310,7 +313,7 @@ pixels, the refusals and the DC 1000 cases among them); angle 4 of 30 (`a256-iso
 - `FFT2D<Float>` / `FFT2D<Double>` (1.1) become two classes, **`FFT2D`** (Float32: mac4DSTEM's code at `7a0f727f` with only
   its access modifiers changed) and **`FFT2DDouble`** (the same code translated line by line to Double: `vDSP_*D` calls,
   `DSPDoubleSplitComplex`, Double twiddles). Reason: vDSP's API is not generic, and a generic wrapper would put a layer of
-  protocol dispatch into the path that must stay bit-identical to the apps'. Both conform to a public protocol `FFT2DTransform`
+  protocol dispatch into the path that must stay in the apps' order of operations (D12: bit for bit is the quick check). Both conform to a public protocol `FFT2DTransform`
   (`nx`, `ny`, the scalar type) for callers that want one name. The numbers and bands of section 3 do not change.
 - The products store their arrays in a `SpectrumValues`-style enum (`.float32([Float])` / `.float64([Double])`) with a
   `Double` accessor, not two optional properties (same content, one source of truth).

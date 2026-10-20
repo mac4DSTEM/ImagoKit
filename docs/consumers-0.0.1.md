@@ -14,8 +14,9 @@ pinned tests as the second proof.
 ## The guarantee
 
 The Float32 path (`precision: .float32`, the default) is the apps' code in the same order of operations: the apps-parity
-check (`tools/slice-1/apps-parity`, registration section 6) compares it with macTEM `3d17311`'s TEMCore bit for bit on every
-planted case. A consumer that switches gets the same bits.
+check (`tools/slice-1/apps-parity`, registration section 6) compares it with macTEM `3d17311`'s TEMCore on every planted
+case; bit for bit is the quick check (D12: if it fails, verify within the written tolerance against the Python reference).
+A consumer that switches gets the same bits.
 
 ## macTEM (at 3d17311)
 

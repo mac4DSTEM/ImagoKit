@@ -40,7 +40,13 @@ state in `docs/status.md`. Tests are Swift Testing (`import Testing`, `@Test`, `
   copy is never a reference. Agreement with NumPy is agreement, not truth: truth is a planted lattice, a closed form or a
   stated invariant.
 - **Pins are generated before the Swift code** (`tools/slice-<n>/pins.py` writes `Tests/<Module>Tests/Fixtures/`); the Swift
-  tests read the pins and the planted truth; a difference is a failure of the port, never a tolerance to widen.
+  tests read the pins and the planted truth.
+- **Numerical testing policy (D12, Paul 2026-10-19).** Readers, I/O, indices and metadata are tested exact. Numerics are
+  compared against the pinned Python reference within a tolerance written per function (`assert_allclose` style: about 1e-7
+  relative for float64, 1e-5 for float32), never widened to hide a bug. During an app-to-kit switch, bit for bit is only a
+  quick check that nothing moved by accident; if it fails, verify against the Python reference within tolerance and do not
+  block. A moved pinned number gets its own commit with the reason. Some tests still assert numerics exactly (`==`);
+  converting them to a written tolerance is a later code change.
 - **Speed never moves a number silently.** The Float32 vDSP path and the Float64 reference path are both public; the
   registration states the tolerance between them and against the oracle. No path is chosen by the hardware.
 - **Public API only, no app types.** Nothing an app needs is `package`. A kit type that replaces an app original keeps its

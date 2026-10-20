@@ -27,7 +27,7 @@ func spectrumMatchesNumPy(_ c: FFTPin, _ precision: Precision) throws {
     let magnitude = Pins.relativeToMaximum(s.magnitude.doubles, wantPower.map { $0.squareRoot() })
     #expect(magnitude <= band, "magnitude: \(magnitude) of the maximum, band \(band)")
     #expect(s.power.precision == precision)
-    // The axes are bit for bit NumPy's fftshift(fftfreq(n, d)).
+    // The axes are NumPy's fftshift(fftfreq(n, d)); asserted exact today (D12 allows a written tolerance).
     #expect(s.axisX == Pins.doubles(c.axis_x!, section: "fft"))
     #expect(s.axisY == Pins.doubles(c.axis_y!, section: "fft"))
     #expect(s.unitsX == c.axis_units && s.unitsY == c.axis_units)
