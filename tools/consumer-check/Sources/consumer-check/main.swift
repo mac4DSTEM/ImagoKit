@@ -259,5 +259,40 @@ check(lineDR.allSatisfy { $0 == 1 } && lineDI.allSatisfy { $0 == 0 }, "Double im
 lineDouble.transform(re: &lineDR, im: &lineDI, forward: false)
 check(lineDR[0] == 64 && lineDR.dropFirst().allSatisfy { $0 == 0 }, "Double inverse is unnormalised")
 
+// Colour tables, segmentation, chart samples and CSV text (0.3.0).
+let inferno = Colormap.inferno.lutRGBA()
+check(inferno.count == 1024 && Array(Colormap.gray.lutRGBA()[0..<4]) == [0, 0, 0, 255], "public colour tables")
+check(DisplayMapping(low: 0, high: 1, gamma: 1, colormap: .gray).rgb(1) == (255, 255, 255), "mapping through a colormap")
+check(DisplayMapping.sampleRGB(inferno, 0) != nil && DisplayMapping.sampleRGB([], 0) == nil, "public table sampler")
+var blobMask = [Bool](repeating: false, count: 36)
+for r in 1...2 { for c in 1...4 { blobMask[r * 6 + c] = true } }
+let blobLabels = try! Segmentation.label(blobMask, width: 6, height: 6)
+let blob = try! Segmentation.objectMoments(blobLabels)
+check(blobLabels.count == 1 && blob[0].area == 8 && blob[0].lengthPx == 4 && blob[0].widthPx == 2 && !blob[0].touchesEdge,
+      "public segmentation")
+let chartProfile = RadialProfile(width: 0.5, units: "1/nm", mean: [9, 4, 0], count: [1, 3, 5])!
+let chartSamples = RadialChartScale.samples(chartProfile, factor: 2)
+check(chartSamples.count == 1 && chartSamples[0].q == 1.5 && RadialChartScale.nearest(chartSamples, toX: 9)?.bin == 1,
+      "public chart samples")
+check(FFTMask.defaultRadius == 3 && FFTMask.radiusRange == 1...32, "public mask defaults")
+check(CSVText.number(0.1) == "0.10000000000000001" && CSVText.quoted("a,b") == "\"a,b\"", "public CSV text")
+let tidySource = TidyResultsCSV.Source(software: "s", fileName: "f", object: "o", width: 2, height: 2, x: nil, y: nil, notes: [])
+let tidyRow = TidyResultsCSV.Row(group: "g", id: "i", label: "l", product: "p", entries: [.init("v", 1.5, unit: "nm")])
+let tidyText = try! TidyResultsCSV.text([tidyRow], source: tidySource, title: "t", session: "s", descriptionLines: [],
+                                        validations: [(product: "p", sentence: "closed form")], lineageLine: "# lineage: none")
+check(tidyText?.hasSuffix("g,i,l,v,1.5,nm,,closed form,\n") == true, "public tidy CSV")
+let csvHeader = FFTExportHeader(software: "s", fileName: "f", object: "o", imageWidth: 8, imageHeight: 8, x: nil, y: nil, notes: [],
+                                crop: nil, spectrumWidth: 8, spectrumHeight: 8, spacingX: 0.5, spacingY: 0.5,
+                                unitsX: "1/nm", unitsY: "1/nm")
+let radialText = RadialProfileCSV.text(chartProfile, header: csvHeader, title: "radial", validation: "v", lineage: "l")
+check(radialText?.hasPrefix("# radial\n# software: s\n") == true && radialText?.hasSuffix("\n1,0.75,0.75,4,3\n") == true,
+      "public radial CSV")
+let csvSpot = SpotMeasurement(clickedRow: 1, clickedCol: 2, snappedRow: 1, snappedCol: 2, centroidRow: 1, centroidCol: 2,
+                              width: 8, height: 8, qx: 1, qy: 0, q: 1, d: 1, units: "nm", reciprocalUnits: "1/nm",
+                              neighbour: false, precision: .float32)
+let spotsText = SpotsCSV.text(rows: [SpotsCSV.Row(number: 1, measured: csvSpot, inMask: true)], omitted: 0, maskRadius: 3,
+                              maskEdge: 2, notes: [], header: csvHeader, title: "spots", validation: "v", lineage: "l")
+check(spotsText?.hasSuffix("\n1,1,1,1,0,1,1,1,0,2,1,2,1\n") == true, "public spots CSV")
+
 print("consumer-check summary: \(checks) checks, \(failures) failures")
 if failures > 0 { exit(1) }
