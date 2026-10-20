@@ -54,6 +54,16 @@ public nonisolated struct SpotMeasurement: Sendable, Equatable {
     public let neighbour: Bool
     public let precision: Precision
 
+    /// A measurement from its values (a stored one, or a planted one in a test); `measure` is the estimator.
+    public init(clickedRow: Int, clickedCol: Int, snappedRow: Int, snappedCol: Int, centroidRow: Double, centroidCol: Double,
+                width: Int, height: Int, qx: Double, qy: Double, q: Double, d: Double, units: String, reciprocalUnits: String,
+                neighbour: Bool, precision: Precision) {
+        self.clickedRow = clickedRow; self.clickedCol = clickedCol; self.snappedRow = snappedRow; self.snappedCol = snappedCol
+        self.centroidRow = centroidRow; self.centroidCol = centroidCol; self.width = width; self.height = height
+        self.qx = qx; self.qy = qy; self.q = q; self.d = d; self.units = units; self.reciprocalUnits = reciprocalUnits
+        self.neighbour = neighbour; self.precision = precision
+    }
+
     /// d in nanometres when `units` is a length unit; nil otherwise.
     public var dNanometres: Double? { LengthUnit.nanometres(per: units).map { d * $0 } }
     /// |q| in reciprocal nanometres when `units` is a length unit; nil otherwise.
