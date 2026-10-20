@@ -1,0 +1,19 @@
+name: Feature request
+description: Suggest a function or an improvement.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: need
+    attributes:
+      label: What do you want to do
+      description: The analysis task, and the function in NumPy, SciPy, scikit-image or another package that does it today, if any.
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: Suggested API or behaviour
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives you considered

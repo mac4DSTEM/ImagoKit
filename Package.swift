@@ -4,8 +4,8 @@
 // ImagoKit — image analysis for electron micrographs on Apple platforms: the calibrated image and the exact-length 2D
 // FFT (ImagoCore); the centred power spectrum, its radial profile, FFT-spot spacings and angles, and the masked inverse
 // FFT (ImagoFFT); the HRTEM background-subtraction and Wiener filters (ImagoFilters); drift and stack alignment
-// (ImagoAlignment, slice 2). NumPy, SciPy and scikit-image are the references. docs/registration-slice-1.md and
-// docs/registration-slice-2.md define every number.
+// (ImagoAlignment). NumPy, SciPy and scikit-image are the references; docs/registration-slice-1.md and
+// docs/registration-slice-2.md hold the definitions and validation notes.
 //
 // Swift 6 language mode, nonisolated by default (no `.defaultIsolation`), the three upcoming features enabled below, no
 // unsafe flags (a versioned dependency cannot carry them): a consumer builds the kit optimised itself, and tools/test.sh
@@ -30,15 +30,15 @@ let package = Package(
         .library(name: "ImagoAlignment", targets: ["ImagoAlignment"]),
     ],
     targets: [
-        // Slice 1 (docs/registration-slice-1.md 1.1): the calibrated image, its axes and crops, length units, and the
+        // The calibrated image, its axes and crops, length units, and the
         // exact N-point 2D DFT for every size (Float32 on vDSP, the Float64 reference path).
         .target(name: "ImagoCore", swiftSettings: settings),
-        // Slice 1 (1.2): the centred spectrum and its axes, the radial profile, spot measurement, lattice spacings and
+        // The centred spectrum and its axes, the radial profile, spot measurement, lattice spacings and
         // the angle between spots, the masked inverse FFT.
         .target(name: "ImagoFFT", dependencies: ["ImagoCore"], swiftSettings: settings),
-        // Slice 1b (1.3): the HRTEM filters (average background subtraction and Wiener). Later: bandpass, denoising.
+        // The HRTEM filters (average background subtraction and Wiener). Later: bandpass, denoising.
         .target(name: "ImagoFilters", dependencies: ["ImagoCore", "ImagoFFT"], swiftSettings: settings),
-        // Slice 2 (docs/registration-slice-2.md): phase cross-correlation with sub-pixel refinement, shifts of order 0 and
+        // Phase cross-correlation with sub-pixel refinement, shifts of order 0 and
         // 1 and the Fourier shift, drift series and aligned stack sums, on both precisions.
         .target(name: "ImagoAlignment", dependencies: ["ImagoCore"], swiftSettings: settings),
         .testTarget(name: "ImagoCoreTests", dependencies: ["ImagoCore"], exclude: ["Fixtures"], swiftSettings: settings),

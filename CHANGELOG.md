@@ -6,7 +6,7 @@ Every number is held by regression tests against NumPy 2.5.4, SciPy 1.18.1 and s
 
 ## 0.2.0 (2026-10-16)
 
-The calibration units, measurement, histogram, line profile and display numerics for macTEM.
+The calibration units, measurement, histogram, line profile and display numerics.
 
 ### Added
 - `AxisCalibration.offset` and `AxisCalibration(offset:scale:unit:)`: the axis written as the physical value at pixel 0
@@ -14,8 +14,8 @@ The calibration units, measurement, histogram, line profile and display numerics
 - `LengthUnit` conversions: `angstromsPerPixel(scale:unit:)`, `reciprocalAngstromsPerPixel(scale:unit:wavelengthAngstrom:)`
   (Å⁻¹, nm⁻¹, mrad), `canonicalRealUnit`, `canonicalReciprocalUnit`, `isPhysicalReciprocal`, `isPixel`,
   `editableRealUnits`, `editableReciprocalUnits`, and `normalized(_: String?)`. Tests pin every spelling and scale
-  against a transcription of the consumer's table and check the closed forms. `LengthUnit.nanometres(per:)` is the one
-  nanometre table (a consumer's duplicate is deleted at the switch); the Å conversion deliberately reads only Å, nm, pm.
+  against a transcription of an application's unit table and check the closed forms. `LengthUnit.nanometres(per:)` is the one
+  nanometre table (an application's own duplicate can be deleted); the Å conversion deliberately reads only Å, nm, pm.
 
 - `ImageMeasurement` (`PixelPoint`, `distance`, `angle`): distance in pixels and, with both axes calibrated in one unit,
   in that unit using each axis's own scale; the angle at a vertex by `atan2(|cross|, dot)` with Kahan's cross product, in
@@ -64,7 +64,7 @@ None: every addition is new API; existing 0.1.0 call sites compile unchanged. `A
   1e-5 for Float and 1e-12 for Double, plus round-trip scaling and shared-plan concurrency checks.
 
 ### Changed
-- Relicensed the entire package to GPL-3.0 by the copyright holder, Paul Lobpreis (2026).
+- Relicensed the entire package to GPL-3.0 by the copyright holder (2026).
 
 ### Migration
 The FFT APIs are additive. Existing APIs are unchanged. Distribution must comply with GPL-3.0; see `LICENSE`.
@@ -90,7 +90,7 @@ The FFT APIs are additive. Existing APIs are unchanged. Distribution must comply
 ### Changed
 - Nothing in 0.0.2's API.
 
-### Fixed (before release, from the 0.1.0 review)
+### Fixed (before release)
 - `ImageShift.shift` in `reflect` mode returned `cval` for a whole-number shift of 4n, 6n, … pixels on an axis of n pixels
   (a coordinate reduced to exactly 0 by the period was mapped outside); now the reflected pixel, as SciPy. Tested by the
   periodic-mode identity (a shift by whole periods returns the image) for `reflect`, `mirror` and `grid-wrap`.
@@ -123,7 +123,7 @@ Additive: no 0.0.2 code changes. Depend on the product `ImagoAlignment` to use t
   DigitalMicrograph script describes them), every stage in the result; never compared with DigitalMicrograph.
 
 ### Migration
-Additive. `ImagoFiltersScope` (0.0.1's placeholder) is gone. For an app that carried the originals of these types, the
+Additive. `ImagoFiltersScope` (0.0.1's placeholder) is gone. For an application that carried the originals of these types, the
 switch deletes them and converts its image type to `Micrograph`: `MaskedInverseFFT.compute` takes a `Micrograph` and
 returns `SpectrumValues`; `HRTEMFilter.filter` returns a `Result` and `HRTEMFilter.outputs(_:like:)` gives the two images;
 `FFTMask.spot`-style helpers become `SpotMeasurement.maskSpot`; error enums are `MaskedInverseFFTError` and
@@ -140,6 +140,6 @@ bits in steady state.
   angle between two spots and `LatticePair`.
 
 ### Migration
-First release. For an app with its own copies of these computations: the image becomes a `Micrograph`
+First release. For an application with its own copies of these computations: the image becomes a `Micrograph`
 (`AxisCalibration(scale:unit:origin:)` per axis); arrays come as `SpectrumValues`; `RadialProfile.compute` throws instead of
 returning nil; a spot is measured with `clickColumn:`; the reciprocal unit of an axis already in "1/nm" is "nm".
