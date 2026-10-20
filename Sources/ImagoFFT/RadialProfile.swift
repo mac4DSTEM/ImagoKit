@@ -38,10 +38,10 @@ public nonisolated struct RadialProfile: Sendable, Equatable {
         public let count: Int
     }
 
-    /// A profile from its bins (a stored or computed one); nil unless `mean` and `count` have the same length and the width is a
+    /// A profile from its bins (a stored or computed one); nil unless `mean` and `count` have the same length, no count is negative, and the width is a
     /// positive finite number.
     public init?(width: Double, units: String, mean: [Double], count: [Int]) {
-        guard mean.count == count.count, width.isFinite, width > 0 else { return nil }
+        guard mean.count == count.count, !count.contains(where: { $0 < 0 }), width.isFinite, width > 0 else { return nil }
         self.init(unchecked: width, units: units, mean: mean, count: count)
     }
 

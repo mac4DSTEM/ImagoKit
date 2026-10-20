@@ -79,6 +79,7 @@ public nonisolated enum TidyResultsCSV {
     ///
     /// - `title`: the first header line's words, written `# <title>`.
     /// - `session`: the sentence that says where the file's marks are kept.
+    /// - `descriptionLines` and `lineageLine` must each be one line (they are written as given).
     /// - `descriptionLines`: complete header lines (each starting `# `) that say what the points and units of this table mean,
     ///   written after `# notes:` in the order given.
     /// - `validations`: (product, sentence) in header order; every row's product must appear.
@@ -91,7 +92,7 @@ public nonisolated enum TidyResultsCSV {
         for row in rows where sentences[row.product] == nil { throw TidyResultsError.noValidation(product: row.product) }
         let notes = source.notes.isEmpty ? "none" : source.notes.map(CSVText.headerValue).joined(separator: "; ")
         var lines: [String] = []
-        lines.append("# \(title)")
+        lines.append("# \(CSVText.headerValue(title))")
         lines.append("# software: \(CSVText.headerValue(source.software))")
         lines.append("# file: \(CSVText.headerValue(source.fileName))")
         lines.append("# object: \(CSVText.headerValue(source.object))")

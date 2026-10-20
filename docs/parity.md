@@ -5,7 +5,7 @@ documented API that a micrograph user reaches for, with its state here. Updated 
 States: **done** (ported, pinned, tested), **partial** (a subset of the parameters, named), **registered** (in a
 registration, no code yet), **absent**.
 
-Totals at 0.2.0 (32 rows): 17 done, 8 partial, 7 absent, 0 registered.
+Totals at 0.2.0 (32 rows): 17 done, 8 partial, 7 absent, 0 registered. Unreleased (0.3.0) adds the rows marked below.
 
 ## NumPy 2.5.4, `numpy.fft`
 
@@ -42,6 +42,8 @@ Totals at 0.2.0 (32 rows): 17 done, 8 partial, 7 absent, 0 registered.
 | `measure.profile_line` | partial | `LineProfile` (0.2.0) | orders 0 and 1, modes `constant` `nearest` `reflect` `mirror` `wrap`, `linewidth`, `cval`, `reduce_func` (mean, sum, min, max, median, closure) and `reduce_func=None`; `.float32` asserted exact today against scikit-image on a float32 image (368 pinned profiles; D12: within the written tolerance), `.float64` within 8.9e-16 of the image maximum; orders 2 to 5, multichannel absent; width below 1 and a degenerate segment throw |
 | `registration.phase_cross_correlation` (with `upsample_factor`) | partial | `PhaseCorrelation.register`, `DriftSeries` | real-space images of one size, integer `upsample_factor` (1 to 1024), `normalization` `"phase"` or `None`; the shift, the error and the phase difference; no masks (`reference_mask`, `moving_mask`, `overlap_ratio`), no `disambiguate`, no `space="fourier"` |
 | a drift series and an aligned sum (not in scikit-image) | done | `DriftSeries`, `AlignedSum` | `.first`, `.mean`, `.previous` references; Fourier or bilinear summing with the overlap count |
+| `measure.label` (`connectivity` 1 and 2, `background`) | done (unreleased) | `Segmentation.label`, `label(values:background:)` | masks and integer maps; labels asserted exact on 29 masks and 3 value maps; `return_num` is `count`; n-dimensional input absent |
+| `measure.regionprops`: `area`, `bbox`, `centroid`, `inertia_tensor`, `inertia_tensor_eigvals`, `axis_major_length`, `axis_minor_length`, `orientation` | partial (unreleased) | `Segmentation.objectMoments` | 888 objects; area and bbox exact, moments to 1e-12 (relative above 1, absolute below); no intensity image, perimeter, Euler number, solidity, `coords` or other properties |
 | `filters.butterworth`, `filters.difference_of_gaussians`, `filters.window` | absent | | bandpass, planned |
 | `feature.peak_local_max` | absent | | atom columns, planned |
 | `restoration.denoise_*` | absent | | denoising, planned |
@@ -55,6 +57,9 @@ Totals at 0.2.0 (32 rows): 17 done, 8 partial, 7 absent, 0 registered.
 | scale-bar numbers (1-2-5 length, unit ladder, text, drawn length) | done (0.2.0) | `ScaleBarMath`: exact on 250 random and 108 usual calibrations, plus the ladder grid across mantissa boundaries |
 | square-region, bin and decade geometry, shown units and aspect | done (0.2.0) | `FFTRegion`, `SpectrumBin`, `RadialChartScale`, `FFTUnits`, `SpectrumShape`: exact against a transcribed definition on random cases |
 | log-power spectrum display and its default window | done (0.2.0) | `SpectrumDisplay`: values to the last Float32 bit, window within a 2048th of the range of the (⌈n/2⌉)-th smallest value |
+| the four display colour tables (viridis, inferno, gray, rdbu) | done (unreleased) | `Colormap`, `DisplayMapping.sampleRGB`: anchor tables, not matplotlib's maps (matplotlib is not in the pinned environment); bytes exact against a NumPy reading and an application's table bytes |
+| radial-chart samples (drawable bins, nearest bin, decade marks) and the spot-mask defaults | done (unreleased) | `RadialChartScale.samples`, `nearest`, `powerAxisMarks`, `FFTMask`: bit for bit against a NumPy reading |
+| CSV text: `%.17g` numbers, header values, cells, the radial-profile, spots and tidy results files | done (unreleased) | `CSVText`, `RadialProfileCSV`, `SpotsCSV`, `TidyResultsCSV`: byte for byte against an application's own writers on 46 seeded cases |
 | axis as offset, scale, unit (RosettaSciIO convention) | done (0.2.0) | `value(at: 0) == offset`; round trip with `origin` |
 | Å per pixel, Å⁻¹ per pixel (Å⁻¹, nm⁻¹, mrad), canonical unit spellings | done (0.2.0) | closed forms (1 nm = 10 Å, mrad = 1/(1000 λ) Å⁻¹); every spelling pinned to the transcribed consumer table |
 | radial profile against physical \|q\| | done | a planted ring at known \|q\| |

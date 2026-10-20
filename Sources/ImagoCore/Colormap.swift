@@ -40,6 +40,7 @@ public nonisolated enum Colormap: String, Sendable, CaseIterable, Equatable, Has
 
     /// The colour at position `t` (0...1) in Double: the anchors joined by straight lines, held beyond the ends.
     public func color(at t: Double) -> (r: Double, g: Double, b: Double) {
+        guard !t.isNaN else { let f = anchors[0]; return (f.r, f.g, f.b) }      // a NaN reads the first colour
         let stops = anchors
         let first = stops[0], last = stops[stops.count - 1]
         if t <= first.t { return (first.r, first.g, first.b) }

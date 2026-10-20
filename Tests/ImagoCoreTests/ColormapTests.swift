@@ -35,6 +35,7 @@ private struct ColormapPins: Decodable, Sendable {
         #expect(Array(gray[512..<516]) == [128, 128, 128, 255])           // t = 128/255 = 0.50196 -> 127.99... rounds to 128
         #expect(Colormap.rdbu.isDiverging && !Colormap.viridis.isDiverging)
         #expect(Colormap.viridis.lutRGBA(count: 1).isEmpty)
+        #expect(Colormap.viridis.color(at: .nan) == Colormap.viridis.color(at: 0))
         #expect(Colormap.allCases.count == 4)
     }
 

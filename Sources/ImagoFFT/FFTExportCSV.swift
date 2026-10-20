@@ -94,15 +94,15 @@ public nonisolated enum RadialProfileCSV {
         guard !points.isEmpty else { return nil }
         let shown = FFTUnits.spectrumUnit(profile.units)
         let unit = CSVText.headerValue(profile.units)
-        var lines = ["# \(title)"]
+        var lines = ["# \(CSVText.headerValue(title))"]
         lines += FFTExportText.commonLines(h)
         lines.append("# transform: \(FFTExportText.transformNote)")
         lines.append("# mean |F|^2: the mean over the pixels of each bin of |F|^2 of that transform (not log, not divided by anything)")
         lines.append("# bin width: \(CSVText.number(profile.width)) \(unit) (\(CSVText.number(profile.width * shown.factor)) \(shown.label))")
         lines.append("# bins: bin k spans [k*width, (k+1)*width) in |q|; the centre is (k + 1/2)*width; bin 0 (the DC bin) is not written")
         lines.append("# omitted: bin 0, the DC bin (the region's sum, which the room's chart does not draw), and bins with no pixel (the profile holds mean 0 there)")
-        lines.append("# validation: \(validation)")
-        lines.append("# lineage: \(lineage)")
+        lines.append("# validation: \(CSVText.headerValue(validation))")
+        lines.append("# lineage: \(CSVText.headerValue(lineage))")
         lines.append("# numbers: %.17g (exact round trip); the shown column is the unit column times \(CSVText.number(shown.factor))")
         lines.append(CSVText.quoted("bin") + "," + CSVText.quoted("|q| centre (\(shown.label))") + ","
                      + CSVText.quoted("|q| centre (\(unit))") + "," + CSVText.quoted("mean |F|^2") + ",count")
@@ -130,8 +130,8 @@ public nonisolated enum SpotsCSV {
     }
 
     /// The whole file, or nil without a row. `omitted`: spots in the list that have no numbers (measuring, refused, no peak,
-    /// or of another region). `notes`: further sentences written verbatim as `# note:` lines. Units and header come from the
-    /// first row and `header`. `title` is the first line's words.
+    /// or of another region). `notes`: further sentences written verbatim as `# note:` lines. The units of every column come from the
+    /// first row (rows are expected to share them) and `header`. `title` is the first line's words.
     public static func text(rows: [Row], omitted: Int, maskRadius: Double, maskEdge: Double, notes: [String],
                             header h: FFTExportHeader, title: String, validation: String, lineage: String) -> String? {
         guard let first = rows.first else { return nil }
@@ -139,7 +139,7 @@ public nonisolated enum SpotsCSV {
         let reciprocalUnit = CSVText.headerValue(first.measured.reciprocalUnits)
         let shownLength = FFTUnits.length(first.measured.d, unit: first.measured.units).label
         let shownQ = FFTUnits.reciprocal(first.measured.q, realUnit: first.measured.units).label
-        var lines = ["# \(title)"]
+        var lines = ["# \(CSVText.headerValue(title))"]
         lines += FFTExportText.commonLines(h)
         lines.append("# \(FFTExportText.spotNote)")
         lines.append("# transform: \(FFTExportText.transformNote)")
@@ -148,8 +148,8 @@ public nonisolated enum SpotsCSV {
         lines.append("# qx, qy: from the centre of the spectrum, signed, in \(reciprocalUnit); Friedel partners are not listed")
         lines.append("# centroid, click: bins of the centred spectrum, column and row, the zero frequency at (width/2, height/2)")
         for note in notes { lines.append("# note: \(CSVText.headerValue(note))") }
-        lines.append("# validation: \(validation)")
-        lines.append("# lineage: \(lineage)")
+        lines.append("# validation: \(CSVText.headerValue(validation))")
+        lines.append("# lineage: \(CSVText.headerValue(lineage))")
         lines.append("# numbers: %.17g (exact round trip); the shown columns are the app's conversion (FFTUnits) of the unit columns")
         let columns = ["spot", "d (\(shownLength))", "|q| (\(shownQ))", "in mask", "neighbour",
                        "d (\(realUnit))", "|q| (\(reciprocalUnit))", "qx (\(reciprocalUnit))", "qy (\(reciprocalUnit))",

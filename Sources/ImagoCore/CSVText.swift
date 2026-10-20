@@ -12,6 +12,8 @@
 //
 //  CELLS are RFC 4180: a cell holding a comma, a quote, CR or LF is wrapped in quotes with its quotes doubled.
 //
+//  Cells are not guarded against spreadsheet formulas (a leading =, +, - or @); the files are data for scripts.
+//
 //  Pure text: exact, tested byte for byte.
 //
 

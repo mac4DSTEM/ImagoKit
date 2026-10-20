@@ -1,5 +1,7 @@
 # ImagoKit status
 
+**Hand-off 2026-10-20 (later):** unreleased on main, not pushed: Colormap tables, Segmentation (skimage label/regionprops), chart samples, CSV writers (radial, spots, tidy) with pins; proposed 0.3.0 (see CHANGELOG Unreleased); 0.2.0 still awaits the owner's push and tag; LineProfile spline work remains another session's.
+
 **Hand-off 2026-10-20:** done: D12 wording in CLAUDE.md, docs and test comments (c9b0f28); the uncommitted spline-order work (LineProfile, spline pins) is untouched; next: that change's owner commits it, then convert the tests that assert numerics exactly against a Python reference to written per-function tolerances (a code change, one per release).
 
 ## 0.2.0 release commit (2026-10-16)

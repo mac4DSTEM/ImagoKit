@@ -22,7 +22,7 @@
 //  pixels). They are not moment estimates: 4√λ is skimage's.
 //
 //  ACCURACY: labels, area, bounding box and `touchesEdge` are exact. The moments are sums of integers shifted by the
-//  centroid, in Double: they agree with scikit-image's float64 values to a relative 1e-12.
+//  centroid, in Double: they agree with scikit-image's float64 values to 1e-12 (relative above 1, absolute below).
 //
 
 import Foundation
@@ -80,6 +80,8 @@ public nonisolated enum Segmentation {
         case sizeMismatch(expected: Int, got: Int)
         case negativeDimension
         case labelOutOfRange(Int32)
+        /// A `LabelImage` with a negative count, a negative dimension or a size that overflows.
+        case invalidLabelImage
     }
 
     // MARK: Labelling
@@ -102,7 +104,9 @@ public nonisolated enum Segmentation {
     private static func grow(count: Int, width: Int, height: Int, connectivity: Connectivity,
                              isForeground: (Int) -> Bool, same: (Int, Int) -> Bool) throws -> LabelImage {
         guard width >= 0, height >= 0 else { throw SegmentationError.negativeDimension }
-        guard count == width * height else { throw SegmentationError.sizeMismatch(expected: width * height, got: count) }
+        let (product, overflow) = width.multipliedReportingOverflow(by: height)
+        guard !overflow else { throw SegmentationError.invalidLabelImage }
+        guard count == product else { throw SegmentationError.sizeMismatch(expected: product, got: count) }
         var labels = [Int32](repeating: 0, count: count)
         var next: Int32 = 0
         var stack: [Int] = []
@@ -134,8 +138,11 @@ public nonisolated enum Segmentation {
     /// The measurements of every object 1...count of a label map, in label order. A label outside 0...count is refused.
     public static func objectMoments(_ image: LabelImage) throws -> [ObjectMoments] {
         let w = image.width, h = image.height
-        guard image.labels.count == w * h else { throw SegmentationError.sizeMismatch(expected: w * h, got: image.labels.count) }
+        let (product, overflow) = w.multipliedReportingOverflow(by: h)
+        guard w >= 0, h >= 0, image.count >= 0, !overflow else { throw SegmentationError.invalidLabelImage }
+        guard image.labels.count == product else { throw SegmentationError.sizeMismatch(expected: product, got: image.labels.count) }
         let n = image.count
+        guard n <= image.labels.count else { throw SegmentationError.invalidLabelImage }
         for l in image.labels where l < 0 || Int(l) > n { throw SegmentationError.labelOutOfRange(l) }
         var members = [[Int]](repeating: [], count: n)
         for (i, l) in image.labels.enumerated() where l > 0 { members[Int(l) - 1].append(i) }
@@ -174,15 +181,8 @@ public nonisolated enum Segmentation {
         else { orientation = 0.5 * atan2(-2 * tb, tc - ta) }
 
         // The long axis in image coordinates (x = column, y = row): the larger eigenvector of [[ccc, crc], [crc, crr]].
-        var vx: Double, vy: Double
-        if crc != 0 { vx = l1 - crr; vy = crc }
-        else if ccc >= crr { vx = 1; vy = 0 }
-        else { vx = 0; vy = 1 }
-        let norm = (vx * vx + vy * vy).squareRoot()
-        if norm > 0 { vx /= norm; vy /= norm }
-        var degrees = atan2(vy, vx) * 180 / Double.pi
-        while degrees <= -90 { degrees += 180 }
-        while degrees > 90 { degrees -= 180 }
+        // Half the angle of the doubled-angle form: no cancellation when the covariance is nearly diagonal; in (−90, 90].
+        let degrees = 0.5 * atan2(2 * crc, ccc - crr) * 180 / Double.pi
         let ax = cos(degrees * Double.pi / 180), ay = sin(degrees * Double.pi / 180)
         var uMin = Double.greatestFiniteMagnitude, uMax = -Double.greatestFiniteMagnitude
         var vMin = Double.greatestFiniteMagnitude, vMax = -Double.greatestFiniteMagnitude

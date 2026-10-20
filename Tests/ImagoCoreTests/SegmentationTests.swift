@@ -121,6 +121,20 @@ private func close(_ a: Double, _ b: Double, rel: Double) -> Bool { abs(a - b) <
         #expect(try Segmentation.label(board, width: 9, height: 8, connectivity: .four).count == board.filter { $0 }.count)
     }
 
+    @Test func nearlySymmetricObjectsKeepTheirAxis() throws {
+        // vertical bars of odd length (inexact centroid), a horizontal one, and a 45-degree diagonal
+        for n in [3, 7, 9, 11] {
+            var v = [Bool](repeating: false, count: 13 * 13), hz = v, diag = v
+            for i in 0..<n { v[(1 + i) * 13 + 5] = true; hz[5 * 13 + 1 + i] = true; diag[(1 + i) * 13 + 1 + i] = true }
+            let ov = try #require(Segmentation.objectMoments(Segmentation.label(v, width: 13, height: 13)).first)
+            let oh = try #require(Segmentation.objectMoments(Segmentation.label(hz, width: 13, height: 13)).first)
+            let od = try #require(Segmentation.objectMoments(Segmentation.label(diag, width: 13, height: 13)).first)
+            #expect(abs(abs(ov.orientationDegrees) - 90) < 1e-9 && abs(ov.lengthPx - Double(n)) < 1e-12 && abs(ov.widthPx - 1) < 1e-12)
+            #expect(abs(oh.orientationDegrees) < 1e-9 && abs(oh.lengthPx - Double(n)) < 1e-12 && abs(oh.widthPx - 1) < 1e-12)
+            #expect(abs(od.orientationDegrees - 45) < 1e-9 && abs(od.lengthPx - (1 + Double(n - 1) * 2.0.squareRoot())) < 1e-9)
+        }
+    }
+
     @Test func refusals() throws {
         #expect(throws: Segmentation.SegmentationError.sizeMismatch(expected: 6, got: 5)) {
             try Segmentation.label([Bool](repeating: true, count: 5), width: 2, height: 3)
@@ -133,5 +147,14 @@ private func close(_ a: Double, _ b: Double, rel: Double) -> Bool { abs(a - b) <
         #expect(try Segmentation.objectMoments(empty).isEmpty)
         let bad = Segmentation.LabelImage(width: 1, height: 1, labels: [3], count: 1)
         #expect(throws: Segmentation.SegmentationError.labelOutOfRange(3)) { try Segmentation.objectMoments(bad) }
+        for broken in [Segmentation.LabelImage(width: 1, height: 1, labels: [0], count: -1),
+                       Segmentation.LabelImage(width: -1, height: -1, labels: [0], count: 0),
+                       Segmentation.LabelImage(width: Int.max, height: 2, labels: [], count: 0),
+                       Segmentation.LabelImage(width: 1, height: 1, labels: [0], count: Int.max)] {
+            #expect(throws: Segmentation.SegmentationError.invalidLabelImage) { try Segmentation.objectMoments(broken) }
+        }
+        #expect(throws: Segmentation.SegmentationError.invalidLabelImage) {
+            try Segmentation.label([], width: Int.max, height: 2)
+        }
     }
 }
