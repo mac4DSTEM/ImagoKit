@@ -1,5 +1,7 @@
 # ImagoKit status
 
+**Hand-off 2026-10-20:** done: D12 wording in CLAUDE.md, docs and test comments (c9b0f28); the uncommitted spline-order work (LineProfile, spline pins) is untouched; next: that change's owner commits it, then convert the tests that assert numerics exactly against a Python reference to written per-function tolerances (a code change, one per release).
+
 ## 0.2.0 release commit (2026-10-16)
 
 Version 0.2.0: the calibration units, measurement, histogram, line profile and display numerics for macTEM, on top of the
