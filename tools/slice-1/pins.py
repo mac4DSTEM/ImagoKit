@@ -1,6 +1,6 @@
 """Slice 1a pins (docs/registration-slice-1.md section 2): the spectrum, radial profile, spot and angle fixtures.
 
-    ../tools/memcap.sh -- References/oracle-venv/bin/python -I -B tools/slice-1/pins.py
+    ../tools/memcap.sh -- ../References/python/skimage/bin/python -I -B tools/slice-1/pins.py
 
 Run from the repository root, before the Swift code (the registration's rule). Steps:
   1. macTEM's fft-parity and spot-parity harness scripts at MACTEM_COMMIT are extracted with `git show` from ../macTEM (never

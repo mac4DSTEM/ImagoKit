@@ -1,7 +1,7 @@
 # Benchmarks against NumPy, SciPy and scikit-image
 
 Run 2026-10-21 on the audit session (ImagoKit 0.6.0 sources). **Header.** Apple M5 Pro, macOS (Darwin 27.0.0), Swift 6.4
-(swiftlang-6.4.0.34.1), `swift test -c release`; Python 3.12.14 from `refs/skimage` with NumPy 2.5.4, SciPy 1.18.1,
+(swiftlang-6.4.0.34.1), `swift test -c release`; Python 3.12.14 from `References/python/skimage` with NumPy 2.5.4, SciPy 1.18.1,
 scikit-image 0.26.0 (single-threaded `np.fft`/`ndimage`). **Method.** The same function, dtype and input size on both sides
 (uniform random pixels 30 to 70); one warm-up call, then five timed calls; the table shows the median and (min–max) in
 milliseconds. FFTs reuse their plan (`FFT2D`, `FFT2DDouble`; NumPy caches its own); `rfft2`, `butterworth`, the shifts,

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """The Python side of docs/benchmarks.md: the same functions, sizes and dtypes as Tests/ImagoBenchmarks/Benchmarks.swift.
   ../refs/skimage/bin/python -I -B tools/benchmarks/bench.py /path/python.json [--large]
-One warm-up call, five timed calls, milliseconds. Single-threaded NumPy FFT and SciPy filters, as installed in refs/skimage.
+One warm-up call, five timed calls, milliseconds. Single-threaded NumPy FFT and SciPy filters, as installed in References/python/skimage.
 """
 import json
 import sys

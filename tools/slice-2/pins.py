@@ -1,6 +1,6 @@
 """Slice 2 pins (docs/registration-slice-2.md sections 2 to 4): phase correlation, shifts, drift series and aligned sums.
 
-    ../tools/memcap.sh -- References/oracle-venv/bin/python -I -B tools/slice-2/pins.py
+    ../tools/memcap.sh -- ../References/python/skimage/bin/python -I -B tools/slice-2/pins.py
 
 Run from the repository root, before the Swift code (the registration's rule). Steps:
   1. The three oracle sources are checked against the registration's sha256 values (scikit-image 0.26.0
@@ -32,7 +32,7 @@ FULL = os.path.join(ROOT, ".build", "pins-full", "alignment")
 FIX = os.path.join(ROOT, "Tests", "ImagoAlignmentTests", "Fixtures")
 BUDGET = 4 * 1024 * 1024
 
-SITE = os.path.join(ROOT, "References", "oracle-venv", "lib", "python3.14", "site-packages")
+SITE = os.path.join(ROOT, "..", "References", "python", "skimage", "lib", "python3.12", "site-packages")
 SHA256 = {
     "skimage/registration/_phase_cross_correlation.py":
         "c37ea680db40565e06b47a7cc6de2fec93d1230cab32ba5ddd280d23eebd6512",

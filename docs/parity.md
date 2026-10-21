@@ -1,7 +1,7 @@
 # Parity with the references' documented API
 
 The checklist that makes "complete" a measured claim: one row per function or option group of the Python counterparts
-a micrograph user reaches for, walked from the sources on disk (`refs/skimage/lib/python3.12/site-packages`: NumPy 2.5.4, SciPy
+a micrograph user reaches for, walked from the sources on disk (`References/python/skimage/lib/python3.12/site-packages`: NumPy 2.5.4, SciPy
 1.18.1, scikit-image 0.26.0; run 2026-10-21). States: **present** (ported, pinned, tested), **partial** (a subset, named),
 **missing**. Priority: **study** (on Paul's path: the TEM study and the two apps' open kit asks), **useful**, **not planned**
 (with the reason). The tolerance column is the one the counterpart's own test file uses for that function (D17); the

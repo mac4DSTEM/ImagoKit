@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Generate the colour-table pins; run from the package root:
-../tools/memcap.sh -- ../References/ImagoKit/oracle-venv/bin/python -I -B tools/colormap/pins.py [APP_LUT_JSON]
+../tools/memcap.sh -- ../References/python/skimage/bin/python -I -B tools/colormap/pins.py [APP_LUT_JSON]
 
 Writes Tests/ImagoCoreTests/Fixtures/colormap-pins.json.
 
