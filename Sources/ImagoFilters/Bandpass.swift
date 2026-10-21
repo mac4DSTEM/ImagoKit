@@ -15,6 +15,8 @@ import ImagoCore
 public nonisolated enum BandpassFilters {
     /// `skimage.filters.difference_of_gaussians(image, low_sigma, high_sigma, mode='nearest', cval=0, truncate=4.0)`.
     /// `highSigma` defaults to 1.6 × `lowSigma` per axis; a high sigma below the low sigma on an axis is refused.
+    @_specialize(where S == Float)
+    @_specialize(where S == Double)
     public static func differenceOfGaussians<S: BinaryFloatingPoint & Sendable>(
         _ a: [S], rows: Int, columns: Int, lowSigma: (row: Double, column: Double),
         highSigma: (row: Double, column: Double)? = nil, mode: BoundaryMode = .nearest, cval: Double = 0, truncate: Double = 4
@@ -58,7 +60,7 @@ public nonisolated enum BandpassFilters {
     }
 
     /// The mask, `rows × columns`, in Double: `1/(1+q²^order)` (× q²^order for a high pass), square-rooted when not squared.
-    public static func butterworthMask(rows: Int, columns: Int, cutoffFrequencyRatio: Double, highPass: Bool, order: Double,
+    static func butterworthMask(rows: Int, columns: Int, cutoffFrequencyRatio: Double, highPass: Bool, order: Double,
                                        squaredButterworth: Bool) -> [Double] {
         let q2 = q2Grid(rows, columns, cutoffFrequencyRatio)
         return q2.map { maskValue($0, order, highPass, squaredButterworth) }
@@ -92,8 +94,8 @@ public nonisolated enum BandpassFilters {
         forward: ([S], Int, Int) throws -> ([S], [S]), inverse: ([S], [S], Int, Int, [S]) throws -> [S],
         cast: (Double) -> S
     ) throws -> [S] {
-        guard rows > 0, columns > 0, a.count == rows * columns else { throw FilterError.shape }
-        guard npad >= 0, cutoff.isFinite, cutoff > 0, cutoff <= 0.5 else { throw FilterError.cutoff }
+        guard rows > 0, columns > 0, rows <= Int.max / columns, a.count == rows * columns else { throw FilterError.shape }
+        guard npad >= 0, npad < (1 << 20), cutoff.isFinite, cutoff > 0, cutoff <= 0.5 else { throw FilterError.cutoff }
         var image = a, h = rows, w = columns
         if npad > 0 {
             h = rows + 2 * npad; w = columns + 2 * npad
@@ -114,8 +116,11 @@ public nonisolated enum BandpassFilters {
             }
             return cast(maskValue(q, order, highPass, squared))
         }
-        let (re, im) = try forward(image, h, w)
-        let filtered = try inverse(re, im, h, w, mask)
+        let filtered: [S]
+        do {
+            let (re, im) = try forward(image, h, w)
+            filtered = try inverse(re, im, h, w, mask)
+        } catch is FFTSurfaceError { throw FilterError.setup }
         guard npad > 0 else { return filtered }
         var out = [S](repeating: 0, count: rows * columns)
         for r in 0..<rows { for c in 0..<columns { out[r * columns + c] = filtered[(r + npad) * w + c + npad] } }

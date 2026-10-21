@@ -283,7 +283,7 @@ public nonisolated struct LineProfile: Sendable {
     /// SciPy's prefiltered B-spline coefficients of an image, padded as `_prepad_for_spline_filter` does.
     package nonisolated struct SplineField {
         let coefficients: [Double]
-        let rows: Int, cols: Int
+        package let rows: Int, cols: Int
         let pad: Int
         let order: Int
         let boundary: Boundary
@@ -323,7 +323,7 @@ public nonisolated struct LineProfile: Sendable {
         }
 
         /// One axis: the (order + 1) tap indices (mapped by the boundary; −1 is a `cval` tap) and the B-spline weights.
-        private func taps(_ x: Double, _ n: Int) -> (indices: [Int], weights: [Double]) {
+        package func taps(_ x: Double, _ n: Int) -> (indices: [Int], weights: [Double]) {
             let shifted = x + Double(pad)
             // SciPy folds the coordinate for mirror, reflect and wrap; nearest and constant keep it (the taps carry the edge).
             let cc = boundary == .nearest || boundary == .gridConstant ? shifted : LineProfile.mapped(shifted, n, boundary)
@@ -343,6 +343,18 @@ public nonisolated struct LineProfile: Sendable {
                 }
             }
             return (indices, weights)
+        }
+
+        /// The tap sum for one output pixel from its precomputed row and column taps (`taps(_, rows)` / `taps(_, cols)`).
+        package func value(rowTaps a: (indices: [Int], weights: [Double]), columnTaps b: (indices: [Int], weights: [Double]),
+                           cval: Double) -> Double {
+            var t = 0.0
+            for (i, wi) in zip(a.indices, a.weights) {
+                for (j, wj) in zip(b.indices, b.weights) {
+                    t += (i < 0 || j < 0 ? cval : coefficients[i * cols + j]) * wi * wj
+                }
+            }
+            return t
         }
 
         package func value(row: Double, col: Double, cval: Double) -> Double {

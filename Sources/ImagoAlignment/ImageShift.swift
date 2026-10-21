@@ -88,8 +88,11 @@ public nonisolated enum ImageShift {
         let w = image.width, h = image.height
         let field = LineProfile.SplineField(image, order: order.rawValue, boundary: boundary, cval: cval)
         var out = [Float](repeating: 0, count: w * h)
+        // The taps of an axis depend on that axis's coordinate alone: built once per row and per column.
+        let rowTaps = (0..<h).map { field.taps(Double($0) - shift.row, field.rows) }
+        let columnTaps = (0..<w).map { field.taps(Double($0) - shift.column, field.cols) }
         for r in 0..<h { for c in 0..<w {
-            out[r * w + c] = Float(field.value(row: Double(r) - shift.row, col: Double(c) - shift.column, cval: cval))
+            out[r * w + c] = Float(field.value(rowTaps: rowTaps[r], columnTaps: columnTaps[c], cval: cval))
         } }
         return out
     }

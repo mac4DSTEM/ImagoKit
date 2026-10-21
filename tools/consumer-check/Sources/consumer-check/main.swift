@@ -294,5 +294,34 @@ let spotsText = SpotsCSV.text(rows: [SpotsCSV.Row(number: 1, measured: csvSpot, 
                               maskEdge: 2, notes: [], header: csvHeader, title: "spots", validation: "v", lineage: "l")
 check(spotsText?.hasSuffix("\n1,1,1,1,0,1,1,1,0,2,1,2,1\n") == true, "public spots CSV")
 
+// 0.6.0: the FFT surface, the filters, peaks, masked registration, spline shifts, on hand-computable inputs.
+check((try? FFTSurface.fftshift([0, 1, 2, 3, 4], rows: 1, columns: 5)) == [3, 4, 0, 1, 2], "public fftshift")
+check((try? FFTSurface.ifftshift([3, 4, 0, 1, 2], rows: 1, columns: 5)) == [0, 1, 2, 3, 4], "public ifftshift")
+let flatImage = ComplexImage<Double>(rows: 4, columns: 4, real: [Double](repeating: 1, count: 16))
+let onesSpectrum = try FFTSurface.fft2(flatImage, norm: .ortho)
+check(abs(onesSpectrum.re[0] - 4) < 1e-12 && abs(onesSpectrum.re[5]) < 1e-12, "public fft2 ortho of a constant")
+let half = try FFTSurface.rfft2(real: [Double](repeating: 1, count: 16), rows: 4, columns: 4)
+check(half.columns == 3 && abs(half.re[0] - 16) < 1e-12, "public rfft2 shape and DC")
+check(abs(try FFTSurface.irfft2(half, columns: 4)[7] - 1) < 1e-12, "public irfft2 round trip")
+check((try? SeparableFilters.uniformFilter([Double](repeating: 2, count: 12), rows: 3, columns: 4, size: (3, 3), mode: .nearest))?
+    .allSatisfy { abs($0 - 2) < 1e-12 } == true, "public uniform filter keeps a constant")
+check((try? SeparableFilters.gaussianFilter([Float](repeating: 5, count: 20), rows: 4, columns: 5, sigma: (1, 1)))?
+    .allSatisfy { abs($0 - 5) < 1e-5 } == true, "public Gaussian filter keeps a constant")
+check((try? BandpassFilters.butterworth([Double](repeating: 3, count: 64), rows: 8, columns: 8, cutoffFrequencyRatio: 0.2, highPass: true))?
+    .allSatisfy { abs($0) < 1e-12 } == true, "public high-pass Butterworth removes a constant")
+check(abs(((try? WindowFunction.window2D(.hann, rows: 9, columns: 9))?[40] ?? 0) - 1) < 1e-12, "public window")
+let peakImage: [Float] = (0..<49).map { $0 == 24 ? 2 : ($0 == 10 ? 1 : 0) }
+check((try? PeakLocalMax.find(peakImage, rows: 7, columns: 7, minDistance: 1))?.map { [$0.row, $0.column] } == [[3, 3], [1, 3]],
+      "public peak_local_max")
+check(SpotMeasurementError.noPower != SpotMeasurementError.nonFinite, "public noPower and nonFinite")
+check((try? SpotMeasurement.measure(try Micrograph(width: 16, height: 16, pixels: [Float](repeating: 1, count: 256)),
+                                    clickRow: 3, clickColumn: 9)) == nil, "a flat window is refused")
+let squareImage = try Micrograph(width: 8, height: 8, pixels: (0..<64).map { Float((abs(sin(Double($0) * 12.9898) * 43758.5453)).truncatingRemainder(dividingBy: 1)) })
+check((try? ImageShift.shift(squareImage, by: .zero, order: .cubic, mode: .mirror))?.pixels.enumerated()
+    .allSatisfy { abs($0.element - squareImage.pixels[$0.offset]) < 1e-4 } == true, "public cubic shift by zero")
+let maskAll = [Bool](repeating: true, count: 64)
+check((try? PhaseCorrelation.registerMasked(reference: squareImage, moving: squareImage, referenceMask: maskAll))
+    == PixelShift(row: 0, column: 0), "public masked registration of an image with itself")
+
 print("consumer-check summary: \(checks) checks, \(failures) failures")
 if failures > 0 { exit(1) }

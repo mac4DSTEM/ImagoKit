@@ -1,53 +1,147 @@
 # Parity with the references' documented API
 
-The checklist that makes "complete" a measured claim : each row is a function of a reference's
-documented API that a micrograph user reaches for, with its state here. Updated at every tag.
-States: **done** (ported, pinned, tested), **partial** (a subset of the parameters, named), **registered** (in a
-registration, no code yet), **absent**.
-Numerics are held to the tolerance the Python package's own tests use; readers, I/O, indices and metadata are exact.
+The checklist that makes "complete" a measured claim: one row per function or option group of the Python counterparts
+a micrograph user reaches for, walked from the sources on disk (`refs/skimage/lib/python3.12/site-packages`: NumPy 2.5.4, SciPy
+1.18.1, scikit-image 0.26.0; run 2026-10-21). States: **present** (ported, pinned, tested), **partial** (a subset, named),
+**missing**. Priority: **study** (on Paul's path: the TEM study and the two apps' open kit asks), **useful**, **not planned**
+(with the reason). The tolerance column is the one the counterpart's own test file uses for that function (D17); the
+scikit-image 0.26.0 wheel ships no test files, so there its functions are held to `assert_allclose` dtype defaults.
+Numerics are never held stricter than that; readers, I/O, indices and metadata are exact.
 
-Totals at 0.2.0 (32 rows): 17 done, 8 partial, 7 absent, 0 registered. Unreleased (0.3.0) adds the rows marked below.
+**Totals: 77 rows of the Python counterparts: 17 present, 13 partial, 47 missing.** By priority: 25 study, 33 useful, 19 not planned. (At 0.5.0 the same table had 32 rows: 17 present, 8 partial, 7 missing.) The kit-only rows at the end are not counted.
+
 
 ## NumPy 2.5.4, `numpy.fft`
 
-| Function | State | Where | Notes |
-|---|---|---|---|
-| `fft(x)`, `ifft(x)` on complex 1D input | partial | `ImagoFFT.FFT1D`, `FFT1DDouble` (0.1.1) | radix-2 positive lengths only; split-complex in-place arrays; both directions unnormalised (`ifft(norm="forward")`); divide inverse output by n for default NumPy scaling. Pins at 1, 2, 4, 8, 64, 256, 1024; complex-bin error ≤ 1e-5 (Float) / 1e-12 (Double) × max(1, magnitude of oracle). No `axis=`, `n=` resizing, or padding |
-| `fft2(x)` on a real 2D array, any shape | done | `ImagoCore` `FFT2D`, `FFT2DDouble` | exact N-point DFT for every length (no padding); Float32 and Float64 paths; `s=`, `axes=` and `norm=` other than `"backward"` absent |
-| `ifft2(X)` | done | `FFT2D`, `FFT2DDouble` | `norm="backward"` (1/(nx·ny)) only |
-| `fftshift`, `ifftshift` (2D) | partial | `PowerSpectrum`, `MaskedInverseFFT` | inside the products, not as a public function yet |
-| `fftfreq(n, d)` | done | `PowerSpectrum.frequencies`, `FFT2D.fftfreq` | `fftshift(fftfreq)` order; asserted exact today (D12 allows a written tolerance) |
-| `rfft2`, `irfft2`, `fftn`, `hfft` | absent | | |
-| `numpy.hanning(n)` | done | `SpotMeasurement.hanning` | the window of the spot estimator |
+| Function or option group | State | Kit symbol | Counterpart tolerance (source) | Priority | Notes |
+|---|---|---|---|---|---|
+| `fft2`, `ifft2` on a real or complex 2D array, any shape | present | `FFTSurface.fft2/ifft2`, `FFT2D`, `FFT2DDouble` | numpy/fft/tests/test_pocketfft.py: atol 1e-6 (rtol 1e-7) | study | exact N-point DFT for every length, Float32 and Float64; 81 pinned shape/axes/norm cases |
+| `axes=` and `norm=` (backward, forward, ortho) on `fft2`/`ifft2` | present (0.6.0) | `FFTAxes`, `FFTNorm` | numpy/fft/tests/test_pocketfft.py: atol 1e-6 (rtol 1e-7) | study | axes are axis 0, axis 1 or both |
+| `s=` (resize before transforming) on `fft2`/`ifft2` | missing |  | numpy/fft/tests/test_pocketfft.py: atol 1e-6 (rtol 1e-7) | useful | zero-pad or crop by the caller today |
+| `rfft2`, `irfft2` (with `s`, `norm`) | present (0.6.0) | `FFTSurface.rfft2/irfft2` | numpy/fft/tests/test_pocketfft.py: atol 1e-6 (rtol 1e-7) | study | computed through the complex transform and truncated, so about 2x the work of a real-input transform (benchmarks) |
+| `fftshift`, `ifftshift` (2D, `axes`) | present (0.6.0) | `FFTSurface.fftshift/ifftshift` | numpy/fft/tests/test_helper.py: assert_array_almost_equal (decimal 6) | study | any element type; exact |
+| `fftfreq` | present | `FFT2D.fftfreq`, `PowerSpectrum.frequencies` | exact (NumPy: test_helper.py decimal 6) | study |  |
+| `rfftfreq` | missing |  | numpy/fft/tests/test_helper.py: assert_array_almost_equal (decimal 6) | useful | one line |
+| `fft`, `ifft` on a complex 1D array | partial | `FFT1D`, `FFT1DDouble` | numpy/fft/tests/test_pocketfft.py: atol 1e-6 (rtol 1e-7) | useful | radix-2 positive lengths only, no `axis=`, `n=`, `norm=`; the Double 1D runs on `vDSP_DFT_zop` |
+| `rfft`, `irfft`, `hfft`, `ihfft` (1D real) | missing |  | numpy/fft/tests/test_pocketfft.py: atol 1e-6 (rtol 1e-7) | useful | ACOM (DiffractoKit) needs a 1D FFT of any length |
+| `fftn`, `ifftn`, `rfftn`, `irfftn` (n-dimensional) | missing |  | numpy/fft/tests/test_pocketfft.py: atol 1e-6 (rtol 1e-7) | not planned | images are 2D; 3D/4D transforms belong to the consumers that need them |
 
-## NumPy 2.5.4, `numpy.histogram`
+## NumPy 2.5.4, other
 
-| Function | State | Where | Notes |
-|---|---|---|---|
-| `histogram(a, bins=int, range=None or (lo, hi))` on a float32 array | done | `IntensityHistogram.histogram` (0.2.0) | non-finite pixels dropped first (`a[np.isfinite(a)]`); counts exact and float32 edges asserted exact today (D12: within the written tolerance) on 40 pinned cases, NumPy's `ValueError`s as `HistogramError`; an overflowing `last - first` is refused (NumPy continues with non-finite edges); the `mean` field is not NumPy's. float64 input, array or string `bins`, `weights`, `density` absent. `compute` is the variant that keeps the statistics where NumPy raises |
+| Function or option group | State | Kit symbol | Counterpart tolerance (source) | Priority | Notes |
+|---|---|---|---|---|---|
+| `histogram(a, bins=int, range=...)` on a float32 array | present | `IntensityHistogram.histogram` | exact counts (numpy/lib/tests/test_histograms.py) | study | array/string `bins`, `weights`, `density`, float64 input absent |
+| `hanning(n)` | present | `SpotMeasurement.hanning` | numpy/lib/tests/test_function_base.py: assert_almost_equal (decimal 7) | study |  |
 
-## SciPy 1.18.1, `scipy.ndimage` and `scipy.fft`
+## SciPy 1.18.1, `scipy.ndimage` filters
 
-| Function | State | Where | Notes |
-|---|---|---|---|
-| `ndimage.median_filter(size=3, mode="nearest")` | partial | `HRTEMFilter` step A1 | 3 × 3, nearest, inside the filter only |
-| `ndimage.map_coordinates(order=1, mode="nearest")` | partial | `HRTEMFilter.radialProfile` | order 1, nearest, on circles about the centre |
-| `ndimage.shift(order=0 or 1)` | partial | `ImageShift.shift` | all seven modes (`constant`, `nearest`, `wrap`, `reflect`, `mirror`, `grid-constant`, `grid-wrap`) and `cval`, 2D, one real channel; `order` 2 to 5 (the spline prefilter) absent; `output=` and `prefilter=` absent |
-| `ndimage.fourier_shift` | partial | `ImageShift.fourierShift`, `fourierShiftWithResidual` | `real(ifft2(fourier_shift(fft2(x), s)))` of a real 2D image, with the largest imaginary part reported; `n=` and `axis=` (real-FFT input) absent |
-| `ndimage.gaussian_filter`, `uniform_filter`, `zoom`, `rotate` | absent | | |
+| Function or option group | State | Kit symbol | Counterpart tolerance (source) | Priority | Notes |
+|---|---|---|---|---|---|
+| `gaussian_filter` order 0: `sigma` per axis, `truncate`, `mode` (reflect, constant, nearest, mirror, wrap), `cval` | present (0.6.0) | `SeparableFilters.gaussianFilter` | scipy/ndimage/tests/test_filters.py: assert_array_almost_equal (decimal 6) | study | Float32/Float64 (intermediate rounded to the input dtype as SciPy does); `grid-constant`/`grid-wrap` are the same as `constant`/`wrap` in a filter; 140 pinned cases |
+| `gaussian_filter` derivative `order` 1 to 4, `radius=`, `axes=` | missing |  | scipy/ndimage/tests/test_filters.py: assert_array_almost_equal (decimal 6) | useful | gradients for GPA and edge work |
+| `gaussian_filter1d`, `uniform_filter1d`, `correlate1d`, `convolve1d` | missing |  | scipy/ndimage/tests/test_filters.py: assert_array_almost_equal (decimal 6) | useful | the 2D separable passes exist privately |
+| `uniform_filter` (`size` per axis, five modes, `cval`) | present (0.6.0) | `SeparableFilters.uniformFilter` | scipy/ndimage/tests/test_filters.py: assert_array_almost_equal (decimal 6) | study | origin 0 only; running sum; 120 pinned cases |
+| `median_filter`, `percentile_filter`, `rank_filter` | partial | `HRTEMFilter` step A1 | scipy/ndimage/tests/test_filters.py: assert_array_almost_equal (decimal 6) | useful | only 3x3 nearest inside the HRTEM filter; no public general-size or footprint call |
+| `maximum_filter`, `minimum_filter` (+1d) | partial | `PeakLocalMax` (private window maximum) | scipy/ndimage/tests/test_filters.py: assert_array_almost_equal (decimal 6) | useful | square window, nearest mode, inside `peak_local_max` only |
+| `correlate`, `convolve` (n-dimensional kernels) | missing |  | scipy/ndimage/tests/test_filters.py: assert_array_almost_equal (decimal 6) | useful |  |
+| `sobel`, `prewitt`, `laplace`, `gaussian_laplace`, `gaussian_gradient_magnitude`, `generic_laplace`, `generic_gradient_magnitude` | missing |  | scipy/ndimage/tests/test_filters.py: assert_array_almost_equal (decimal 6) | useful |  |
+| `generic_filter`, `generic_filter1d`, `vectorized_filter` | missing |  | scipy/ndimage/tests/test_filters.py: assert_array_almost_equal (decimal 6) | not planned | arbitrary Python callbacks have no Swift counterpart |
+| `fourier_gaussian`, `fourier_uniform`, `fourier_ellipsoid` | missing |  | scipy/ndimage/tests/test_fourier.py: assert_array_almost_equal (decimal 6) | useful | Fourier-domain filters |
+| `fourier_shift` | partial | `ImageShift.fourierShift`, `fourierShiftWithResidual` | scipy/ndimage/tests/test_fourier.py: decimal 6 | study | real(ifft2(fourier_shift(fft2(x), s))) of a real 2D image; `n=` and `axis=` (real-FFT input) absent |
 
-## scikit-image 0.26.0
+## SciPy 1.18.1, `scipy.ndimage` interpolation
 
-| Function | State | Where | Notes |
-|---|---|---|---|
-| `measure.profile_line` | partial | `LineProfile` (0.2.0) | orders 0 to 5, modes `constant` `nearest` `reflect` `mirror` `wrap`, `linewidth`, `cval`, `reduce_func` (mean, sum, min, max, median, closure) and `reduce_func=None`; `.float32` asserted exact today against scikit-image on a float32 image (368 pinned profiles; D12: within the written tolerance), `.float64` within 8.9e-16 of the image maximum; spline orders 2 to 5 (0.4.0) within 1e-13 float64 / 2e-6 float32 of the image maximum (1080 pinned profiles); multichannel absent; width below 1 and a degenerate segment throw |
-| `registration.phase_cross_correlation` (with `upsample_factor`) | partial | `PhaseCorrelation.register`, `DriftSeries` | real-space images of one size, integer `upsample_factor` (1 to 1024), `normalization` `"phase"` or `None`; the shift, the error and the phase difference; no masks (`reference_mask`, `moving_mask`, `overlap_ratio`), no `disambiguate`, no `space="fourier"` |
-| a drift series and an aligned sum (not in scikit-image) | done | `DriftSeries`, `AlignedSum` | `.first`, `.mean`, `.previous` references; Fourier or bilinear summing with the overlap count |
-| `measure.label` (`connectivity` 1 and 2, `background`) | done (unreleased) | `Segmentation.label`, `label(values:background:)` | masks and integer maps; labels asserted exact on 29 masks and 3 value maps; `return_num` is `count`; n-dimensional input absent |
-| `measure.regionprops`: `area`, `bbox`, `centroid`, `inertia_tensor`, `inertia_tensor_eigvals`, `axis_major_length`, `axis_minor_length`, `orientation` | partial (unreleased) | `Segmentation.objectMoments` | 888 objects; area and bbox exact, moments to 1e-12 (relative above 1, absolute below); no intensity image, perimeter, Euler number, solidity, `coords` or other properties |
-| `filters.butterworth`, `filters.difference_of_gaussians`, `filters.window` | absent | | bandpass, planned |
-| `feature.peak_local_max` | absent | | atom columns, planned |
-| `restoration.denoise_*` | absent | | denoising, planned |
+| Function or option group | State | Kit symbol | Counterpart tolerance (source) | Priority | Notes |
+|---|---|---|---|---|---|
+| `shift`, order 0 and 1, seven modes, `cval` | present | `ImageShift.shift` | scipy/ndimage/tests/test_interpolation.py: assert_array_almost_equal (decimal 6) | study | 2D, one real channel; `output=` absent |
+| `shift`, order 2 to 5 (B-spline, `prefilter=True`) | partial (0.6.0) | `ImageShift.shift` with `ShiftOrder.quadratic…quintic` | scipy/ndimage/tests/test_interpolation.py: assert_array_almost_equal (decimal 6) | study | modes `grid-constant`, `nearest`, `reflect`, `mirror`, `grid-wrap` (500 pinned cases); `constant` and `wrap` are refused by name; `prefilter=False` absent |
+| `map_coordinates` | partial | `LineProfile` (orders 0 to 5, five modes, line samples), `HRTEMFilter.radialProfile` | scipy/ndimage/tests/test_interpolation.py: assert_array_almost_equal (decimal 6) | useful | no public general coordinate array call |
+| `affine_transform`, `geometric_transform` | missing |  | scipy/ndimage/tests/test_interpolation.py: assert_array_almost_equal (decimal 6) | useful |  |
+| `zoom` | missing |  | scipy/ndimage/tests/test_interpolation.py: assert_array_almost_equal (decimal 6) | study | study row 3; needs the same spline machinery plus the grid-corner rule of `zoom` |
+| `rotate` | missing |  | scipy/ndimage/tests/test_interpolation.py: assert_array_almost_equal (decimal 6) | study | study row 3 |
+| `spline_filter`, `spline_filter1d` | partial | `LineProfile.SplineField` (package) | scipy/ndimage/tests/test_interpolation.py: assert_array_almost_equal (decimal 6) | useful | used by `profile_line` and spline shifts, not public |
+
+## SciPy 1.18.1, `scipy.ndimage` measurements and morphology
+
+| Function or option group | State | Kit symbol | Counterpart tolerance (source) | Priority | Notes |
+|---|---|---|---|---|---|
+| `label` (structure 4/8-connectivity) | present | `Segmentation.label` | scipy/ndimage/tests/test_measurements.py: assert_array_almost_equal / exact labels | study | 2D only |
+| `center_of_mass`, `sum`, `mean`, `variance`, `standard_deviation`, `minimum`, `maximum`, `median`, `*_position`, `extrema`, `histogram`, `labeled_comprehension`, `value_indices`, `find_objects` | partial | `Segmentation.objectMoments` | scipy/ndimage/tests/test_measurements.py: assert_array_almost_equal / exact labels | useful | area, bounding box and second moments only |
+| `binary_erosion`, `binary_dilation`, `binary_opening`, `binary_closing`, `binary_fill_holes`, `binary_propagation`, `binary_hit_or_miss`, `generate_binary_structure`, `iterate_structure` | missing |  | scipy/ndimage/tests/test_morphology.py: exact (boolean) / decimal 6 | useful | masks for atom columns and particles |
+| `grey_erosion`, `grey_dilation`, `grey_opening`, `grey_closing`, `morphological_gradient`, `morphological_laplace`, `white_tophat`, `black_tophat` | missing |  | scipy/ndimage/tests/test_morphology.py: exact (boolean) / decimal 6 | not planned | no consumer yet (`white_tophat` is a background tool; revisit with `rolling_ball`) |
+| `distance_transform_edt`, `_cdt`, `_bf`, `watershed_ift` | missing |  | scipy/ndimage/tests/test_morphology.py: exact (boolean) / decimal 6 | not planned | no consumer yet |
+
+## scikit-image 0.26.0, `filters`
+
+| Function or option group | State | Kit symbol | Counterpart tolerance (source) | Priority | Notes |
+|---|---|---|---|---|---|
+| `butterworth` (`cutoff_frequency_ratio`, `high_pass`, `order`, `squared_butterworth`, `npad`) | present (0.6.0) | `BandpassFilters.butterworth` | scikit-image 0.26.0 ships no tests in its wheel: assert_allclose dtype defaults (rtol 1e-7 f64, 1e-5 f32) | study | 0.26.0's `npad` default is 0, not 64; `cutoffFrequencyRatio` 0 is refused (scikit-image answers NaN); `channel_axis` absent; 120 pinned cases |
+| `difference_of_gaussians` (`low_sigma`, `high_sigma`, `mode`, `cval`, `truncate`) | present (0.6.0) | `BandpassFilters.differenceOfGaussians` | scikit-image 0.26.0 ships no tests in its wheel: assert_allclose dtype defaults (rtol 1e-7 f64, 1e-5 f32) | study | `channel_axis` absent; high < low refused |
+| `window` (2D shape) | partial (0.6.0) | `Window.window2D`, `Window.window1D` | scikit-image 0.26.0 ships no tests in its wheel: assert_allclose dtype defaults (rtol 1e-7 f64, 1e-5 f32) | study | boxcar, hann, hamming, blackman, blackmanharris, nuttall, flattop, bartlett, tukey, gaussian, kaiser (11 of `get_window`'s 25 names); other `warp_kwargs`, n-D shapes absent |
+| `gaussian` (`sigma`, `mode='nearest'`, `truncate`) | present (0.6.0) | `SeparableFilters.gaussianFilter(mode: .nearest)` | scikit-image 0.26.0 ships no tests in its wheel: assert_allclose dtype defaults (rtol 1e-7 f64, 1e-5 f32) | study | same code as `ndimage.gaussian_filter`; `preserve_range`, `channel_axis` absent |
+| `median`, `unsharp_mask` | missing |  | scikit-image 0.26.0 ships no tests in its wheel: assert_allclose dtype defaults (rtol 1e-7 f64, 1e-5 f32) | useful |  |
+| `sobel`, `prewitt`, `scharr`, `farid`, `roberts` and their `_h`/`_v`/diagonal variants, `laplace` | missing |  | scikit-image 0.26.0 ships no tests in its wheel: assert_allclose dtype defaults (rtol 1e-7 f64, 1e-5 f32) | useful | gradient kernels |
+| `threshold_otsu`, `_li`, `_mean`, `_isodata`, `_minimum`, `_triangle`, `_yen`, `_multiotsu`, `_local`, `_niblack`, `_sauvola`, `try_all_threshold`, `apply_hysteresis_threshold` | missing |  | scikit-image 0.26.0 ships no tests in its wheel: assert_allclose dtype defaults (rtol 1e-7 f64, 1e-5 f32) | useful | masks for particle and atom-column work |
+| `frangi`, `meijering`, `sato`, `hessian`, `gabor`, `gabor_kernel`, `rank`, `rank_order`, `correlate_sparse` | missing |  | scikit-image 0.26.0 ships no tests in its wheel: assert_allclose dtype defaults (rtol 1e-7 f64, 1e-5 f32) | not planned | ridge, texture and rank filters: no consumer |
+| `wiener`, `LPIFilter2D`, `filter_forward`, `filter_inverse` | missing |  | scikit-image 0.26.0 ships no tests in its wheel: assert_allclose dtype defaults (rtol 1e-7 f64, 1e-5 f32) | not planned | the HRTEM Wiener filter is `HRTEMFilter`; these are generic deconvolution |
+
+## scikit-image 0.26.0, `feature`
+
+| Function or option group | State | Kit symbol | Counterpart tolerance (source) | Priority | Notes |
+|---|---|---|---|---|---|
+| `peak_local_max` (`min_distance`, `threshold_abs`, `threshold_rel`, `exclude_border`, `num_peaks`, `p_norm`) | partial (0.6.0) | `PeakLocalMax.find` | exact indices (integer output) | study | `footprint=`, `labels=`, `num_peaks_per_label` and n-D absent; 166 pinned cases, coordinates exact |
+| `corner_peaks` | missing |  | scikit-image 0.26.0 ships no tests in its wheel: assert_allclose dtype defaults (rtol 1e-7 f64, 1e-5 f32) | useful | built on `peak_local_max` |
+| `match_template` | missing |  | scikit-image 0.26.0 ships no tests in its wheel: assert_allclose dtype defaults (rtol 1e-7 f64, 1e-5 f32) | useful | atom columns by template |
+| `blob_dog`, `blob_log`, `blob_doh` | missing |  | scikit-image 0.26.0 ships no tests in its wheel: assert_allclose dtype defaults (rtol 1e-7 f64, 1e-5 f32) | useful | atom-column finding |
+| `canny`, `corner_harris`, `corner_shi_tomasi`, `corner_foerstner`, `corner_kitchen_rosenfeld`, `corner_moravec`, `corner_fast`, `corner_orientations`, `corner_subpix` | missing |  | scikit-image 0.26.0 ships no tests in its wheel: assert_allclose dtype defaults (rtol 1e-7 f64, 1e-5 f32) | not planned | natural-image detectors |
+| `hessian_matrix`, `hessian_matrix_det`, `hessian_matrix_eigvals`, `structure_tensor`, `structure_tensor_eigenvalues`, `shape_index` | missing |  | scikit-image 0.26.0 ships no tests in its wheel: assert_allclose dtype defaults (rtol 1e-7 f64, 1e-5 f32) | not planned |  |
+| `ORB`, `SIFT`, `BRIEF`, `CENSURE`, `daisy`, `hog`, `local_binary_pattern`, `haar_like_feature`, `multiblock_lbp`, `fisher_vector`, `learn_gmm`, `Cascade`, `match_descriptors`, `graycomatrix`, `graycoprops`, `multiscale_basic_features`, `draw_*`, `plot_matched_features` | missing |  | scikit-image 0.26.0 ships no tests in its wheel: assert_allclose dtype defaults (rtol 1e-7 f64, 1e-5 f32) | not planned | descriptors and texture: no consumer |
+
+## scikit-image 0.26.0, `measure`
+
+| Function or option group | State | Kit symbol | Counterpart tolerance (source) | Priority | Notes |
+|---|---|---|---|---|---|
+| `profile_line` (`order` 0 to 5, five modes, `linewidth`, `reduce_func`, `cval`) | partial | `LineProfile` | decimal 6; measured 3.9e-15 f64, 4.7e-7 f32 of image maximum | study | multichannel absent; width below 1 and degenerate segments throw |
+| `label` | present | `Segmentation.label` | exact | study | n-D absent |
+| `regionprops`, `regionprops_table` | partial | `Segmentation.objectMoments` | scikit-image 0.26.0 ships no tests in its wheel: assert_allclose dtype defaults (rtol 1e-7 f64, 1e-5 f32) | useful | area, bbox, centroid, inertia tensor and its eigenvalues, axis lengths, orientation (8 of ~35 properties) |
+| `centroid`, `inertia_tensor`, `inertia_tensor_eigvals`, `moments`, `moments_central`, `moments_normalized`, `moments_coords`, `moments_coords_central` | partial | `Segmentation.objectMoments` | scikit-image 0.26.0 ships no tests in its wheel: assert_allclose dtype defaults (rtol 1e-7 f64, 1e-5 f32) | useful | per labelled object only; no free functions on an array |
+| `block_reduce` | missing |  | scikit-image 0.26.0 ships no tests in its wheel: assert_allclose dtype defaults (rtol 1e-7 f64, 1e-5 f32) | useful | binning |
+| `find_contours`, `approximate_polygon`, `subdivide_polygon`, `points_in_poly`, `grid_points_in_poly`, `perimeter`, `perimeter_crofton`, `euler_number`, `moments_hu` | missing |  | scikit-image 0.26.0 ships no tests in its wheel: assert_allclose dtype defaults (rtol 1e-7 f64, 1e-5 f32) | not planned | no consumer |
+| `CircleModel`, `EllipseModel`, `LineModelND`, `ransac` | missing |  | scikit-image 0.26.0 ships no tests in its wheel: assert_allclose dtype defaults (rtol 1e-7 f64, 1e-5 f32) | not planned | DiffractoKit fits ellipses to rings |
+| `shannon_entropy`, `blur_effect`, `pearson_corr_coeff`, `manders_*`, `intersection_coeff`, `marching_cubes`, `mesh_surface_area` | missing |  | scikit-image 0.26.0 ships no tests in its wheel: assert_allclose dtype defaults (rtol 1e-7 f64, 1e-5 f32) | not planned |  |
+
+## scikit-image 0.26.0, `registration`
+
+| Function or option group | State | Kit symbol | Counterpart tolerance (source) | Priority | Notes |
+|---|---|---|---|---|---|
+| `phase_cross_correlation` (real space, `upsample_factor`, `normalization`) | present | `PhaseCorrelation.register` | scikit-image 0.26.0 ships no tests in its wheel: assert_allclose dtype defaults (rtol 1e-7 f64, 1e-5 f32) | study | integer upsample 1 to 1024 |
+| `phase_cross_correlation` with `reference_mask`, `moving_mask`, `overlap_ratio` | present (0.6.0) | `PhaseCorrelation.registerMasked`, `maskedCorrelation` | scikit-image 0.26.0 ships no tests in its wheel: assert_allclose dtype defaults (rtol 1e-7 f64, 1e-5 f32) | study | returns the shift only (scikit-image's error and phase difference are NaN there); 24 pinned cases; exact-tie maxima are not reproducible across FFT lengths |
+| `phase_cross_correlation` `space='fourier'`, `disambiguate=True` | missing |  | scikit-image 0.26.0 ships no tests in its wheel: assert_allclose dtype defaults (rtol 1e-7 f64, 1e-5 f32) | useful |  |
+| `optical_flow_ilk`, `optical_flow_tvl1` | missing |  | scikit-image 0.26.0 ships no tests in its wheel: assert_allclose dtype defaults (rtol 1e-7 f64, 1e-5 f32) | not planned |  |
+
+## scikit-image 0.26.0, `restoration`
+
+| Function or option group | State | Kit symbol | Counterpart tolerance (source) | Priority | Notes |
+|---|---|---|---|---|---|
+| `denoise_tv_chambolle`, `denoise_tv_bregman` | missing |  | scikit-image 0.26.0 ships no tests in its wheel: assert_allclose dtype defaults (rtol 1e-7 f64, 1e-5 f32) | useful | study row 3 as time allows |
+| `denoise_nl_means`, `denoise_bilateral`, `denoise_wavelet`, `denoise_invariant`, `calibrate_denoiser`, `cycle_spin`, `estimate_sigma` | missing |  | scikit-image 0.26.0 ships no tests in its wheel: assert_allclose dtype defaults (rtol 1e-7 f64, 1e-5 f32) | useful |  |
+| `richardson_lucy`, `wiener`, `unsupervised_wiener` | missing |  | scikit-image 0.26.0 ships no tests in its wheel: assert_allclose dtype defaults (rtol 1e-7 f64, 1e-5 f32) | useful | deconvolution |
+| `rolling_ball`, `ball_kernel`, `ellipsoid_kernel` | missing |  | scikit-image 0.26.0 ships no tests in its wheel: assert_allclose dtype defaults (rtol 1e-7 f64, 1e-5 f32) | useful | background subtraction |
+| `inpaint_biharmonic`, `unwrap_phase` | missing |  | scikit-image 0.26.0 ships no tests in its wheel: assert_allclose dtype defaults (rtol 1e-7 f64, 1e-5 f32) | not planned |  |
+
+## scikit-image 0.26.0, `transform`, `exposure`, `segmentation`, `morphology`
+
+| Function or option group | State | Kit symbol | Counterpart tolerance (source) | Priority | Notes |
+|---|---|---|---|---|---|
+| `transform.rotate`, `rescale`, `resize`, `warp`, `warp_coords` | missing |  | scikit-image 0.26.0 ships no tests in its wheel: assert_allclose dtype defaults (rtol 1e-7 f64, 1e-5 f32) | study | study row 3 (`ndimage.zoom` and `rotate` first) |
+| `transform.warp_polar`, `downscale_local_mean`, `resize_local_mean` | missing |  | scikit-image 0.26.0 ships no tests in its wheel: assert_allclose dtype defaults (rtol 1e-7 f64, 1e-5 f32) | useful | polar unwrap of diffraction rings |
+| `transform.AffineTransform`, `EuclideanTransform`, `SimilarityTransform`, `ProjectiveTransform`, `PolynomialTransform`, `PiecewiseAffineTransform`, `ThinPlateSplineTransform`, `estimate_transform`, `matrix_transform`, `swirl` | missing |  | scikit-image 0.26.0 ships no tests in its wheel: assert_allclose dtype defaults (rtol 1e-7 f64, 1e-5 f32) | not planned | no consumer |
+| `transform.hough_*`, `radon`, `iradon`, `iradon_sart`, `frt2`, `ifrt2`, `pyramid_*`, `integral_image`, `integrate`, `order_angles_golden_ratio` | missing |  | scikit-image 0.26.0 ships no tests in its wheel: assert_allclose dtype defaults (rtol 1e-7 f64, 1e-5 f32) | not planned |  |
+| `exposure.rescale_intensity`, `adjust_gamma`, `adjust_log`, `adjust_sigmoid`, `equalize_hist`, `cumulative_distribution`, `match_histograms`, `is_low_contrast` | missing |  | scikit-image 0.26.0 ships no tests in its wheel: assert_allclose dtype defaults (rtol 1e-7 f64, 1e-5 f32) | useful | `DisplayNormalization` covers display only |
+| `exposure.equalize_adapthist`, `exposure.histogram` | missing |  | scikit-image 0.26.0 ships no tests in its wheel: assert_allclose dtype defaults (rtol 1e-7 f64, 1e-5 f32) | not planned |  |
+| `segmentation.watershed`, `clear_border`, `expand_labels`, `relabel_sequential`, `find_boundaries`, `flood`, `flood_fill` | missing |  | scikit-image 0.26.0 ships no tests in its wheel: assert_allclose dtype defaults (rtol 1e-7 f64, 1e-5 f32) | useful |  |
+| `segmentation.slic`, `felzenszwalb`, `quickshift`, `random_walker`, `chan_vese`, `active_contour`, level sets, `join_segmentations`, `mark_boundaries`, `inverse_gaussian_gradient` | missing |  | scikit-image 0.26.0 ships no tests in its wheel: assert_allclose dtype defaults (rtol 1e-7 f64, 1e-5 f32) | not planned |  |
+| `morphology.remove_small_objects`, `remove_small_holes`, `disk`, `square`, `binary_*`, `skeletonize`, `thin`, `medial_axis`, `convex_hull_image`, and the rest | missing |  | scikit-image 0.26.0 ships no tests in its wheel: assert_allclose dtype defaults (rtol 1e-7 f64, 1e-5 f32) | not planned | revisit with `ndimage.binary_*` |
 
 ## Not from a Python package
 

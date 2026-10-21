@@ -164,6 +164,8 @@ public nonisolated enum FFTSurface {
         case .both:
             guard let fft = make(w, h) else { throw FFTSurfaceError.setup }
             fft.transform(re: &re, im: &im, forward: forward, scaleInverse: false)
+        case .axis1 where w == 1: break
+        case .axis0 where h == 1: break
         case .axis1:
             guard let fft = make(w, 1) else { throw FFTSurfaceError.setup }
             var rr = [F.Scalar](repeating: 0, count: w), ri = rr
@@ -197,25 +199,25 @@ public nonisolated enum FFTSurface {
 }
 
 /// `Float` and `Double`, so numeric code can be written once over the precision and still reach `FFTSurface`.
-public protocol FFTSurfaceScalar: BinaryFloatingPoint, Sendable {
+package protocol FFTSurfaceScalar: BinaryFloatingPoint, Sendable {
     static func fft2(_ x: ComplexImage<Self>, axes: FFTAxes, norm: FFTNorm) throws -> ComplexImage<Self>
     static func ifft2(_ x: ComplexImage<Self>, axes: FFTAxes, norm: FFTNorm) throws -> ComplexImage<Self>
 }
 
 extension Float: FFTSurfaceScalar {
-    public static func fft2(_ x: ComplexImage<Float>, axes: FFTAxes, norm: FFTNorm) throws -> ComplexImage<Float> {
+    package static func fft2(_ x: ComplexImage<Float>, axes: FFTAxes, norm: FFTNorm) throws -> ComplexImage<Float> {
         try FFTSurface.fft2(x, axes: axes, norm: norm)
     }
-    public static func ifft2(_ x: ComplexImage<Float>, axes: FFTAxes, norm: FFTNorm) throws -> ComplexImage<Float> {
+    package static func ifft2(_ x: ComplexImage<Float>, axes: FFTAxes, norm: FFTNorm) throws -> ComplexImage<Float> {
         try FFTSurface.ifft2(x, axes: axes, norm: norm)
     }
 }
 
 extension Double: FFTSurfaceScalar {
-    public static func fft2(_ x: ComplexImage<Double>, axes: FFTAxes, norm: FFTNorm) throws -> ComplexImage<Double> {
+    package static func fft2(_ x: ComplexImage<Double>, axes: FFTAxes, norm: FFTNorm) throws -> ComplexImage<Double> {
         try FFTSurface.fft2(x, axes: axes, norm: norm)
     }
-    public static func ifft2(_ x: ComplexImage<Double>, axes: FFTAxes, norm: FFTNorm) throws -> ComplexImage<Double> {
+    package static func ifft2(_ x: ComplexImage<Double>, axes: FFTAxes, norm: FFTNorm) throws -> ComplexImage<Double> {
         try FFTSurface.ifft2(x, axes: axes, norm: norm)
     }
 }

@@ -22,7 +22,7 @@ extension PhaseCorrelation {
     /// The masked correlation surface, `(M.height + R.height − 1) × (M.width + R.width − 1)` row-major, as
     /// `cross_correlate_masked(moving, reference, movingMask, referenceMask, mode='full', axes=(0, 1))`.
     public static func maskedCorrelation(reference: Micrograph, moving: Micrograph, referenceMask: [Bool], movingMask: [Bool],
-                                         overlapRatio: Double = 0.3, precision: Precision = .float64) throws -> (values: [Double], rows: Int, columns: Int) {
+                                         overlapRatio: Double = 0.3, precision: Precision = .float32) throws -> (values: [Double], rows: Int, columns: Int) {
         switch precision {
         case .float32:
             let r = try masked(Float.self, reference, moving, referenceMask, movingMask, overlapRatio)
@@ -65,6 +65,8 @@ extension PhaseCorrelation {
     private static func masked<S: FFTSurfaceScalar>(_ type: S.Type, _ reference: Micrograph, _ moving: Micrograph,
                                                     _ referenceMask: [Bool], _ movingMask: [Bool], _ overlapRatio: Double) throws
         -> (values: [S], rows: Int, columns: Int) {
+        guard overlapRatio >= 0, overlapRatio <= 1 else { throw AlignmentError.overlapRatio(overlapRatio) }
+        guard referenceMask.contains(true), movingMask.contains(true) else { throw AlignmentError.emptyMask }
         guard referenceMask.count == reference.pixels.count else {
             throw AlignmentError.maskCount(expected: reference.pixels.count, actual: referenceMask.count)
         }

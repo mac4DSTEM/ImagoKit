@@ -46,6 +46,9 @@ let package = Package(
                     swiftSettings: settings),
         .testTarget(name: "ImagoFiltersTests", dependencies: ["ImagoCore", "ImagoFFT", "ImagoFilters"], exclude: ["Fixtures"],
                     swiftSettings: settings),
+        // The benchmark harness (tools/benchmarks/README: IMAGO_BENCH=1); without that variable its one test returns at once.
+        .testTarget(name: "ImagoBenchmarks", dependencies: ["ImagoCore", "ImagoFFT", "ImagoFilters", "ImagoAlignment"],
+                    swiftSettings: settings),
         .testTarget(name: "ImagoAlignmentTests", dependencies: ["ImagoCore", "ImagoAlignment"], exclude: ["Fixtures"],
                     swiftSettings: settings),
     ],

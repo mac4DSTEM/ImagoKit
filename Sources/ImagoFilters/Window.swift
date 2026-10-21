@@ -16,7 +16,7 @@ public nonisolated enum WindowType: Sendable, Equatable {
     case kaiser(beta: Double)
 }
 
-public nonisolated enum Window {
+public nonisolated enum WindowFunction {
     /// `scipy.signal.get_window(type, count, fftbins=False)`: the symmetric 1D window.
     public static func window1D(_ type: WindowType, count m: Int) throws -> [Double] {
         guard m >= 0 else { throw FilterError.parameter("count") }

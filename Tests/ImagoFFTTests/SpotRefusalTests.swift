@@ -1,4 +1,4 @@
-// A powerless or non-finite window is refused by name instead of answering NaN (macTEM's ask, ROADMAP ImagoKit study row 1).
+// A powerless or non-finite window is refused by name instead of answering NaN (ROADMAP ImagoKit study row 1).
 // Truth: NumPy's reading of the estimator gives 0/0 for a constant window (hanning × (x − mean) = 0), so there is no number to match.
 import Foundation
 import ImagoCore

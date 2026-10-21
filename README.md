@@ -24,8 +24,13 @@ package is built and tested on macOS only. Linux is not supported yet.
 | `ImagoFilters` | the HRTEM average background subtraction filter (ABSF) and Wiener filter (Kilaas 1998, as D. R. G. Mitchell's DigitalMicrograph script describes them) | a float64 NumPy/SciPy reading of the same steps (`scipy.ndimage.median_filter`, `map_coordinates`) | 0.0.2 |
 | `ImagoAlignment` | phase cross-correlation with sub-pixel refinement, sub-pixel shifts, drift series and aligned stack sums | `skimage.registration.phase_cross_correlation`, `scipy.ndimage.shift`, `fourier_shift` | 0.1.0 |
 
+Since 0.6.0: `ImagoCore.FFTSurface` (`fft2`/`ifft2` with `axes` and `norm`, `rfft2`/`irfft2`, `fftshift`/`ifftshift`),
+`ImagoFilters` `SeparableFilters` (`gaussian_filter`, `uniform_filter`), `BandpassFilters` (`butterworth`,
+`difference_of_gaussians`), `WindowFunction`, `PeakLocalMax`, spline-order `ImageShift` and masked `PhaseCorrelation`.
+`docs/parity.md` lists every function of the references and where it stands; `docs/benchmarks.md` has the timings.
+
 Planned, not yet available: GPA strain (Hÿtch, Snoeck and Kilaas 1998), atom-column finding (Atomap, GPL-3.0,
-in a module of its own), bandpass and denoising filters (scikit-image, SciPy).
+in a module of its own), denoising (scikit-image `restoration`), `ndimage.zoom` and `rotate`.
 
 ## Complex 1D FFT
 
@@ -67,7 +72,7 @@ NumPy 2.5.4 pins cover lengths 1, 2, 4, 8, 64, 256 and 1024. The tests state the
 ```text
 // Package.swift
 dependencies: [
-    .package(url: "https://github.com/mac4DSTEM/ImagoKit.git", exact: "0.5.0"),
+    .package(url: "https://github.com/mac4DSTEM/ImagoKit.git", exact: "0.6.0"),
 ],
 targets: [
     .target(name: "MyApp", dependencies: [
@@ -156,6 +161,7 @@ reference within its own tolerance; `docs/parity.md` lists each function, its st
 - iOS 18 builds but has never been run on a device or simulator; macOS 15 is declared but built and tested on macOS 27 only.
 - A first call of a vDSP 1D FFT or DFT size can differ by one Float32 ulp.
 - Float32 tolerances are claims on the planted and pinned cases, not proofs for every input.
+- Spline-order shifts refuse the `constant` and `wrap` modes; the masked registration returns the shift only, and a symmetric pair with exactly tied maxima is not reproducible (`docs/open-items.md`).
 - No number is validated on a microscope; the HRTEM filters have never been compared with DigitalMicrograph.
 - Not yet checked on a raw (counts) HRTEM image; the available TIFFs are 8-bit renders.
 

@@ -85,3 +85,10 @@ func fftshiftMatchesNumPyExactly(_ c: SurfacePins.Shift) throws {
     #expect(throws: FFTSurfaceError.shape) { try FFTSurface.fftshift([1, 2, 3], rows: 2, columns: 2) }
     #expect(throws: FFTSurfaceError.shape) { try FFTSurface.rfft2(real: [Double](), rows: 0, columns: 0) }
 }
+
+@Test func singleLengthAxesAreTheIdentity() throws {
+    let x = ComplexImage<Double>(rows: 1, columns: 5, re: [1, 2, 3, 4, 5], im: [0, 0, 0, 0, 0])
+    #expect(try FFTSurface.fft2(x, axes: .axis0).re == x.re)
+    let y = ComplexImage<Double>(rows: 4, columns: 1, re: [1, 2, 3, 4], im: [0, 0, 0, 0])
+    #expect(try FFTSurface.fft2(y, axes: .axis1).re == y.re)
+}

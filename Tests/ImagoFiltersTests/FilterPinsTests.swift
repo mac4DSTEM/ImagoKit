@@ -125,6 +125,6 @@ func butterworthMatchesSciKitImage(_ c: FilterPins.Butter) throws {
 @Test(arguments: FilterPins.all.windows)
 func windowsMatchSciPyAndSciKitImage(_ c: FilterPins.Win) throws {
     let m = max(c.h, c.w)
-    match64(try Window.window1D(c.windowType, count: m), c.window1d, "get_window \(c)")
-    match64(try Window.window2D(c.windowType, rows: c.h, columns: c.w), c.window2d, "window \(c)")
+    match64(try WindowFunction.window1D(c.windowType, count: m), c.window1d, "get_window \(c)")
+    match64(try WindowFunction.window2D(c.windowType, rows: c.h, columns: c.w), c.window2d, "window \(c)")
 }

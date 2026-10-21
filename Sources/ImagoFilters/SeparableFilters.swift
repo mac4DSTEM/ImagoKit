@@ -41,6 +41,8 @@ public nonisolated enum FilterError: Error, Equatable, Sendable {
 
 public nonisolated enum SeparableFilters {
     /// `ndimage.gaussian_filter(a, sigma=(row, column), truncate=, mode=, cval=)` (order 0).
+    @_specialize(where S == Float)
+    @_specialize(where S == Double)
     public static func gaussianFilter<S: BinaryFloatingPoint & Sendable>(_ a: [S], rows: Int, columns: Int,
                                                               sigma: (row: Double, column: Double), truncate: Double = 4,
                                                               mode: BoundaryMode = .reflect, cval: Double = 0) throws -> [S] {
@@ -49,6 +51,7 @@ public nonisolated enum SeparableFilters {
             throw FilterError.parameter("sigma")
         }
         guard truncate.isFinite, truncate > 0 else { throw FilterError.parameter("truncate") }
+        guard max(sigma.row, sigma.column) * truncate < Double(1 << 24) else { throw FilterError.parameter("sigma · truncate") }
         var data = a.map(Double.init)
         if sigma.row > 1e-15 { data = alongAxis0(data, rows, columns, kernel: gaussianKernel(sigma.row, truncate), mode, cval, S.self) }
         if sigma.column > 1e-15 { data = alongAxis1(data, rows, columns, kernel: gaussianKernel(sigma.column, truncate), mode, cval, S.self) }
@@ -56,10 +59,12 @@ public nonisolated enum SeparableFilters {
     }
 
     /// `ndimage.uniform_filter(a, size=(row, column), mode=, cval=)`.
+    @_specialize(where S == Float)
+    @_specialize(where S == Double)
     public static func uniformFilter<S: BinaryFloatingPoint & Sendable>(_ a: [S], rows: Int, columns: Int, size: (row: Int, column: Int),
                                                              mode: BoundaryMode = .reflect, cval: Double = 0) throws -> [S] {
         guard rows > 0, columns > 0, a.count == rows * columns else { throw FilterError.shape }
-        guard size.row >= 1, size.column >= 1 else { throw FilterError.parameter("size") }
+        guard size.row >= 1, size.column >= 1, max(size.row, size.column) < (1 << 24) else { throw FilterError.parameter("size") }
         var data = a.map(Double.init)
         if size.row > 1 { data = boxAxis0(data, rows, columns, size.row, mode, cval, S.self) }
         if size.column > 1 { data = boxAxis1(data, rows, columns, size.column, mode, cval, S.self) }
@@ -67,7 +72,7 @@ public nonisolated enum SeparableFilters {
     }
 
     /// SciPy's `_gaussian_kernel1d(sigma, 0, int(truncate·sigma + 0.5))`.
-    public static func gaussianKernel(_ sigma: Double, _ truncate: Double = 4) -> [Double] {
+    static func gaussianKernel(_ sigma: Double, _ truncate: Double = 4) -> [Double] {
         let radius = Int(truncate * sigma + 0.5)
         let s2 = sigma * sigma
         var k = (-radius...radius).map { exp(-0.5 / s2 * Double($0 * $0)) }
@@ -101,8 +106,10 @@ public nonisolated enum SeparableFilters {
     private static func extended(_ line: UnsafeBufferPointer<Double>, _ before: Int, _ after: Int, _ mode: BoundaryMode,
                                  _ cval: Double, into ext: inout [Double]) {
         let n = line.count
-        for i in -before..<(n + after) {
-            ext[i + before] = map(i, n, mode).map { line[$0] } ?? cval
+        ext.withUnsafeMutableBufferPointer { e in
+            for i in 0..<n { e[before + i] = line[i] }
+            for i in stride(from: -before, to: 0, by: 1) { e[i + before] = map(i, n, mode).map { line[$0] } ?? cval }
+            for i in n..<(n + after) { e[i + before] = map(i, n, mode).map { line[$0] } ?? cval }
         }
     }
 

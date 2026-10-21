@@ -133,6 +133,10 @@ public nonisolated enum AlignmentError: Error, Equatable, Sendable, LocalizedErr
     case splineMode(ShiftMode)
     /// A mask holds `actual` values for an image of `expected` pixels.
     case maskCount(expected: Int, actual: Int)
+    /// A mask is true nowhere: there is nothing to correlate.
+    case emptyMask
+    /// `overlapRatio` is outside [0, 1].
+    case overlapRatio(Double)
 
     public var errorDescription: String? {
         switch self {
@@ -152,6 +156,10 @@ public nonisolated enum AlignmentError: Error, Equatable, Sendable, LocalizedErr
             "The Fourier transform of a \(w) × \(h) image could not be set up."
         case .splineMode(let mode):
             "The \(mode.rawValue) mode is not available at spline orders 2 to 5; use grid-constant, nearest, reflect, mirror or grid-wrap."
+        case .emptyMask:
+            "A mask has no valid pixel."
+        case .overlapRatio(let r):
+            "The overlap ratio \(r) must lie between 0 and 1."
         case .maskCount(let expected, let actual):
             "A mask holds \(actual) values for an image of \(expected) pixels."
         }
