@@ -1,5 +1,7 @@
 # ImagoKit status
 
+**Hand-off 2026-10-21:** done: LineProfile spline orders 2 to 5 committed with its tests, `Thumbnail` capped init; the bilinear-fold ask is already met by `.float64` + `.linear` + `.reflect`; ScaleBar/LengthUnit naming is the app's rename (no kit change); proposed 0.3.0 (CHANGELOG Unreleased) awaits the owner's push and tag after 0.2.0; next: nothing owed by the kit. (Hot-pixel speed is CuboKit's, not ImagoKit's.)
+
 **Hand-off 2026-10-20 (later):** unreleased on main, not pushed: Colormap tables, Segmentation (skimage label/regionprops), chart samples, CSV writers (radial, spots, tidy) with pins; proposed 0.3.0 (see CHANGELOG Unreleased); 0.2.0 still awaits the owner's push and tag; LineProfile spline work remains another session's.
 
 **Hand-off 2026-10-20:** done: D12 wording in CLAUDE.md, docs and test comments (c9b0f28); the uncommitted spline-order work (LineProfile, spline pins) is untouched; next: that change's owner commits it, then convert the tests that assert numerics exactly against a Python reference to written per-function tolerances (a code change, one per release).

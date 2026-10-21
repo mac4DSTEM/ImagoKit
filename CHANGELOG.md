@@ -6,10 +6,17 @@ Every number is held by regression tests against NumPy 2.5.4, SciPy 1.18.1 and s
 
 ## Unreleased (proposed 0.3.0)
 
-0.2.0 is released-pending (the owner pushes and tags it); the spline-order work in `LineProfile` is another session's and is
-not in this entry. Everything below is additive.
+0.2.0 is released-pending (the owner pushes and tags it). Everything below is additive.
 
 ### Added
+- `LineProfile` at spline orders 2 to 5 (`ProfileOrder.quadratic` … `.quintic`): SciPy's B-spline prefilter (`ni_splines.c` poles
+  and gain, mirror/reflect/wrap initialisation, the 12-pixel pre-pad for `constant`/`nearest`) and tap sums, all five modes.
+  Pinned against 1080 `skimage.measure.profile_line` cases (`tools/measure/spline_pins.py`): `.float64` within 1e-13 of the
+  image maximum (measured 3.9e-15), `.float32` within 2e-6 (measured 4.7e-7). Cost: one pass over the image per call.
+- `Thumbnail.init?(width:height:normalized:maxSide:)`: the initialiser that enforces a cap (macTEM's 96 = `defaultMaxSide`).
+- The app's bilinear fold needs no new option: `LineProfile.sample(order: .linear, mode: .reflect, reduce: .mean,
+  arithmetic: .float64)` is it (pinned in `float64PathIsTheConsumersNamedVariant`, gap 4e-15). The app wraps the two refusals
+  (width below 1, a degenerate segment) itself.
 - `ImagoCore.Colormap` (`viridis`, `inferno`, `gray`, `rdbu`): the 256-entry RGBA tables and `color(at:)`, with
   `DisplayMapping.init(low:high:gamma:colormap:)` and `DisplayMapping.sampleRGB(_:_:)` (the linearly filtered table lookup).
   The tables are the display's anchor maps, NOT matplotlib's (matplotlib is not in the pinned environment); pinned byte for byte

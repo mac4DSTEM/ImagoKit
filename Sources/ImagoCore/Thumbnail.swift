@@ -24,6 +24,13 @@ public nonisolated struct Thumbnail: Sendable, Equatable {
         self.normalized = normalized
     }
 
+    /// As `init?(width:height:normalized:)`, and nil as well when a side is over `maxSide` (the consumer's cap, for example
+    /// `defaultMaxSide`): a reader that cannot make a thumbnail of that size answers nil, it never makes a wrong one.
+    public init?(width: Int, height: Int, normalized: [Float], maxSide: Int) {
+        guard width <= maxSide, height <= maxSide else { return nil }
+        self.init(width: width, height: height, normalized: normalized)
+    }
+
     /// The thumbnail of a `width × height` image of display-normalised pixels (values in [0, 1] or `invalidValue`). nil
     /// when a side or `maxSide` is under 1 or the count is not `width × height`. An image whose longer side is at most
     /// `maxSide` is returned as it is (no upscaling). Otherwise the longer side becomes `maxSide` and the shorter keeps the

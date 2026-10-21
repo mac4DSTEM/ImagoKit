@@ -119,6 +119,14 @@ private func displayLabel(_ unit: String) -> String {
         #expect(Thumbnail(width: 0, height: 3, normalized: []) == nil)
     }
 
+    @Test func theCappedInitRefusesASideOverTheCap() {
+        let p = [Float](repeating: 0.5, count: 97 * 2)
+        #expect(Thumbnail(width: 97, height: 2, normalized: p, maxSide: Thumbnail.defaultMaxSide) == nil)
+        #expect(Thumbnail(width: 97, height: 2, normalized: p, maxSide: 97)?.width == 97)
+        #expect(Thumbnail(width: 2, height: 97, normalized: p, maxSide: 96) == nil)
+        #expect(Thumbnail(width: 2, height: 3, normalized: p, maxSide: 96) == nil)       // the count is still checked
+    }
+
     @Test func aBoxWithNoValidPixelIsTheSentinel() throws {
         var p = [Float](repeating: 0.5, count: 200 * 100)
         for y in 0..<100 { for x in 0..<20 { p[y * 200 + x] = -1 } }
