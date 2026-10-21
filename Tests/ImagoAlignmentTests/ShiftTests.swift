@@ -154,7 +154,7 @@ struct ShiftClosedForms {
     @Test func aZeroShiftIsTheIdentity() throws {
         let image = noise(9, 7, seed: 31)
         for m in ShiftMode.allCases {
-            for o in ShiftOrder.allCases {
+            for o in [ShiftOrder.nearest, .linear] {
                 #expect(try ImageShift.shift(image, by: .zero, order: o, mode: m, precision: .float64) == image, "\(m) \(o)")
             }
         }

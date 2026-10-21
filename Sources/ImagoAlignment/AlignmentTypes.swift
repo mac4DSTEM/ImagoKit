@@ -63,12 +63,15 @@ public nonisolated struct ImageRegistration: Sendable, Equatable {
     }
 }
 
-/// The interpolation order of a shift (SciPy's `order` 0 and 1; the cubic spline is a later slice).
+/// The interpolation order of a shift (SciPy's `order` 0 to 5; 2 to 5 are B-splines on the prefiltered coefficients).
 public nonisolated enum ShiftOrder: Int, Sendable, Equatable, Hashable, CaseIterable {
     /// The nearest input pixel (the coordinate rounded half up after the mode's mapping).
     case nearest = 0
     /// Bilinear on the four neighbours.
     case linear = 1
+    /// B-spline of degree 2 to 5 (SciPy's prefilter, `prefilter=True`); modes `gridConstant`, `nearest`, `reflect`, `mirror`
+    /// and `gridWrap` only (`AlignmentError.splineMode` for `constant` and `wrap`).
+    case quadratic = 2, cubic = 3, quartic = 4, quintic = 5
 }
 
 /// How a shift fills what lies outside the image: SciPy 1.18.1's modes, with their names.
@@ -126,6 +129,10 @@ public nonisolated enum AlignmentError: Error, Equatable, Sendable, LocalizedErr
     case shiftCount(expected: Int, actual: Int)
     /// The Fourier transform of a `width × height` image could not be set up.
     case fftSetup(width: Int, height: Int)
+    /// A spline order (2 to 5) was asked with the `constant` or `wrap` mode, whose spline coordinate rule is not ported.
+    case splineMode(ShiftMode)
+    /// A mask holds `actual` values for an image of `expected` pixels.
+    case maskCount(expected: Int, actual: Int)
 
     public var errorDescription: String? {
         switch self {
@@ -143,6 +150,10 @@ public nonisolated enum AlignmentError: Error, Equatable, Sendable, LocalizedErr
             "\(actual) shifts were given for \(expected) frames."
         case .fftSetup(let w, let h):
             "The Fourier transform of a \(w) × \(h) image could not be set up."
+        case .splineMode(let mode):
+            "The \(mode.rawValue) mode is not available at spline orders 2 to 5; use grid-constant, nearest, reflect, mirror or grid-wrap."
+        case .maskCount(let expected, let actual):
+            "A mask holds \(actual) values for an image of \(expected) pixels."
         }
     }
 }

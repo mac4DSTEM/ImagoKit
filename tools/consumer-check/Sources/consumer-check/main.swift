@@ -132,7 +132,7 @@ for e in [HRTEMFilterError.oddSize(33), .tooSmall(16), .pixelCount(expected: 4, 
 check(PixelShift.zero == PixelShift(row: 0, column: 0) && PixelShift(row: 1, column: 2).column == 2, "PixelShift")
 check(Normalization.allCases.count == 2 && Normalization.phase.rawValue == "phase" && Normalization.unnormalized.rawValue == "unnormalized",
       "Normalization")
-check(ShiftOrder.nearest.rawValue == 0 && ShiftOrder.linear.rawValue == 1 && ShiftOrder.allCases.count == 2, "ShiftOrder")
+check(ShiftOrder.nearest.rawValue == 0 && ShiftOrder.linear.rawValue == 1 && ShiftOrder.allCases.count == 6, "ShiftOrder")
 check(ShiftMode.allCases.map(\.rawValue) == ["constant", "nearest", "wrap", "reflect", "mirror", "grid-constant", "grid-wrap"],
       "ShiftMode names are SciPy's")
 check(AlignmentMethod.allCases.count == 2 && DriftReference.allCases.map(\.rawValue) == ["first", "mean", "previous"],

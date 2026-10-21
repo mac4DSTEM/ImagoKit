@@ -24,6 +24,9 @@ public nonisolated enum ImageShift {
                              mode: ShiftMode = .constant, cval: Double = 0,
                              precision: Precision = .float32) throws -> Micrograph {
         try checkShift(shift, index: 0)
+        if order.rawValue >= 2 {
+            return try rebuilt(image, try splineShifted(image, shift, order, mode, cval))
+        }
         let pixels: [Float]
         switch precision {
         case .float32:
@@ -66,6 +69,29 @@ public nonisolated enum ImageShift {
             residual = imag
         }
         return (try rebuilt(image, pixels), residual)
+    }
+
+    /// `ndimage.shift(order: 2 to 5, prefilter=True)`: the image prefiltered once into B-spline coefficients in Double (the
+    /// path `LineProfile` uses for `profile_line`), each output pixel the tap sum at (row − s_row, column − s_col), written as
+    /// Float32. Both precisions give these pixels, as SciPy rounds to the input dtype.
+    static func splineShifted(_ image: Micrograph, _ shift: PixelShift, _ order: ShiftOrder, _ mode: ShiftMode,
+                              _ cval: Double) throws -> [Float] {
+        let boundary: LineProfile.Boundary
+        switch mode {
+        case .gridConstant: boundary = .gridConstant
+        case .nearest: boundary = .nearest
+        case .reflect: boundary = .reflect
+        case .mirror: boundary = .mirror
+        case .gridWrap: boundary = .gridWrap
+        case .constant, .wrap: throw AlignmentError.splineMode(mode)
+        }
+        let w = image.width, h = image.height
+        let field = LineProfile.SplineField(image, order: order.rawValue, boundary: boundary, cval: cval)
+        var out = [Float](repeating: 0, count: w * h)
+        for r in 0..<h { for c in 0..<w {
+            out[r * w + c] = Float(field.value(row: Double(r) - shift.row, col: Double(c) - shift.column, cval: cval))
+        } }
+        return out
     }
 
     static func checkShift(_ shift: PixelShift, index: Int) throws {
@@ -239,6 +265,8 @@ public nonisolated enum ImageShift {
             case .nearest:
                 let start = Int((cc + 0.5).rounded(.down))
                 out.append(AxisSample(constant: false, i0: neighbour(start, n, mode), i1: 0, w0: 1, w1: 0))
+            case .quadratic, .cubic, .quartic, .quintic:
+                preconditionFailure("spline orders go through splineShifted")
             case .linear:
                 let floor = cc.rounded(.down)
                 let start = Int(floor)

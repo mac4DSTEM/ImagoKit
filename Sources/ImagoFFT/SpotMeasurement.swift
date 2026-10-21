@@ -30,6 +30,11 @@ public nonisolated enum SpotMeasurementError: Error, Equatable, Sendable {
     case outside(row: Int, col: Int)
     /// One of two spots compared has |q| = 0.
     case zeroFrequency
+    /// The image (or crop) holds a NaN or an infinity: its spectrum is not defined.
+    case nonFinite
+    /// The window has no power once its mean is removed (a constant image or crop), or none in the 5 × 5 window about the
+    /// snapped bin: there is no spot to centre on, and the centroid would be 0/0.
+    case noPower
 }
 
 public nonisolated struct SpotMeasurement: Sendable, Equatable {
@@ -85,6 +90,10 @@ public nonisolated struct SpotMeasurement: Sendable, Equatable {
         let (dx, ux) = LengthUnit.realSampling(source.x), (dy, uy) = LengthUnit.realSampling(source.y)
         guard ux == uy else { throw SpotMeasurementError.mixedUnits(ux, uy) }
 
+        // A NaN or infinity makes every bin undefined; a constant window has no power after the mean is removed.
+        guard source.pixels.allSatisfy({ $0.isFinite }) else { throw SpotMeasurementError.nonFinite }
+        if let lo = source.pixels.min(), let hi = source.pixels.max(), lo == hi { throw SpotMeasurementError.noPower }
+
         // Mean removed, Hann applied, in Double; the Float32 path's FFT takes Float.
         let mean = source.pixels.reduce(0.0) { $0 + Double($1) } / Double(w * h)
         let hx = hanning(w), hy = hanning(h)
@@ -127,6 +136,7 @@ public nonisolated struct SpotMeasurement: Sendable, Equatable {
             let v = p(r, c)
             sum += v; sumR += v * Double(r); sumC += v * Double(c)
         } }
+        guard sum > 0, sum.isFinite else { throw SpotMeasurementError.noPower }
         let centroidRow = sumR / sum, centroidCol = sumC / sum
         let qx = (centroidCol - Double(cc0)) * (1.0 / (Double(w) * dx))
         let qy = (centroidRow - Double(cr0)) * (1.0 / (Double(h) * dy))

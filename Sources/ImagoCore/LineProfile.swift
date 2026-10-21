@@ -177,7 +177,7 @@ public nonisolated struct LineProfile: Sendable {
         return out
     }
 
-    private nonisolated enum Boundary { case gridConstant, nearest, reflect, mirror, gridWrap
+    package nonisolated enum Boundary { case gridConstant, nearest, reflect, mirror, gridWrap
         init(_ mode: ProfileMode) {
             switch mode {
             case .constant: self = .gridConstant
@@ -281,14 +281,14 @@ public nonisolated struct LineProfile: Sendable {
     // MARK: splines (orders 2 to 5)
 
     /// SciPy's prefiltered B-spline coefficients of an image, padded as `_prepad_for_spline_filter` does.
-    private nonisolated struct SplineField {
+    package nonisolated struct SplineField {
         let coefficients: [Double]
         let rows: Int, cols: Int
         let pad: Int
         let order: Int
         let boundary: Boundary
 
-        init(_ image: Micrograph, order: Int, boundary: Boundary, cval: Double) {
+        package init(_ image: Micrograph, order: Int, boundary: Boundary, cval: Double) {
             self.order = order
             self.boundary = boundary
             pad = boundary == .nearest || boundary == .gridConstant ? 12 : 0
@@ -345,7 +345,7 @@ public nonisolated struct LineProfile: Sendable {
             return (indices, weights)
         }
 
-        func value(row: Double, col: Double, cval: Double) -> Double {
+        package func value(row: Double, col: Double, cval: Double) -> Double {
             let a = taps(row, rows), b = taps(col, cols)
             var t = 0.0
             for (i, wi) in zip(a.indices, a.weights) {
