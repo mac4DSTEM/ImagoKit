@@ -4,6 +4,7 @@
 // correlation (test_masked_phase_cross_correlation.py upstream, not shipped in the wheel) is held to assert_allclose
 // defaults for float64 (rtol 1e-7, atol 1e-7) and 1e-4 absolute for float32 (the FFT length differs from SciPy's fast length).
 import Foundation
+import ImagoKitTestSupport
 import ImagoAlignment
 import ImagoCore
 import Testing
@@ -13,7 +14,7 @@ struct SplineShiftPin: Decodable, Sendable, CustomStringConvertible {
     var description: String { "\(h)x\(w) o\(order) \(mode) \(shift)" }
     static let all: [SplineShiftPin] = {
         struct File: Decodable { let cases: [SplineShiftPin] }
-        let url = URL(fileURLWithPath: #filePath).deletingLastPathComponent().appendingPathComponent("Fixtures/spline-shift-pins.json")
+        let url = FixtureDirs.fixtures(of: "ImagoAlignmentTests").appendingPathComponent("spline-shift-pins.json")
         return try! JSONDecoder().decode(File.self, from: Data(contentsOf: url)).cases
     }()
 }
@@ -25,7 +26,7 @@ struct MaskedPin: Decodable, Sendable, CustomStringConvertible {
     var description: String { "\(dtype) ref \(rh)x\(rw) mov \(mh)x\(mw) r\(ratio)" }
     static let all: [MaskedPin] = {
         struct File: Decodable { let cases: [MaskedPin] }
-        let url = URL(fileURLWithPath: #filePath).deletingLastPathComponent().appendingPathComponent("Fixtures/masked-registration-pins.json")
+        let url = FixtureDirs.fixtures(of: "ImagoAlignmentTests").appendingPathComponent("masked-registration-pins.json")
         return try! JSONDecoder().decode(File.self, from: Data(contentsOf: url)).cases
     }()
 }

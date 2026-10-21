@@ -1,21 +1,22 @@
 // The masked inverse FFT against NumPy 2.5.4 (registration-slice-1.md 1.2, section 3, 5.3).
 import Foundation
+import ImagoKitTestSupport
 import ImagoCore
 import ImagoFFT
 import Testing
 
-private let cases = Pins.fft.filter { $0.kind == "ifft" }
+private let cases = FFTPins.fft.filter { $0.kind == "ifft" }
 private let band: [Precision: Double] = [.float32: 1e-5, .float64: 1e-12]
 
 @Test(arguments: cases, Precision.allCases)
 func maskedInverseMatchesNumPy(_ c: FFTPin, _ precision: Precision) throws {
-    let image = Pins.image(Pins.floats(c.input, section: "fft"), width: c.width, height: c.height,
+    let image = FFTPins.image(FFTPins.floats(c.input, section: "fft"), width: c.width, height: c.height,
                            scaleX: c.scale_x, scaleY: c.scale_y, units: c.units)
     let spots = c.spots!.map { MaskedInverseFFT.Spot(kx: $0.kx, ky: $0.ky, radius: $0.r, edge: $0.e) }
     let result = try MaskedInverseFFT.compute(image, spots: spots, precision: precision)
-    let want = Pins.doubles(c.ifft!, section: "fft")
+    let want = FFTPins.doubles(c.ifft!, section: "fft")
     let top = want.map(abs).max()!
-    let worst = Pins.relativeToMaximum(result.image.doubles, want)
+    let worst = FFTPins.relativeToMaximum(result.image.doubles, want)
     #expect(worst <= band[precision]!, "real image: \(worst) of the maximum, band \(band[precision]!)")
     #expect(result.imaginaryMax <= band[precision]! * top, "imaginary residual \(result.imaginaryMax / top) of the maximum")
     #expect(result.image.precision == precision && result.spots == spots)

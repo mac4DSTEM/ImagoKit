@@ -41,15 +41,18 @@ let package = Package(
         // Phase cross-correlation with sub-pixel refinement, shifts of order 0 and
         // 1 and the Fourier shift, drift series and aligned stack sums, on both precisions.
         .target(name: "ImagoAlignment", dependencies: ["ImagoCore"], swiftSettings: settings),
-        .testTarget(name: "ImagoCoreTests", dependencies: ["ImagoCore"], exclude: ["Fixtures"], swiftSettings: settings),
-        .testTarget(name: "ImagoFFTTests", dependencies: ["ImagoCore", "ImagoFFT"], exclude: ["Fixtures"],
+        // Test support, not a product: where the committed fixtures live (they stay beside the test targets that first used them).
+        .target(name: "ImagoKitTestSupport", dependencies: ["ImagoCore"], path: "Tests/ImagoKitTestSupport", swiftSettings: settings),
+        // The fast unit tests: closed forms, refusals, display and CSV logic. `swift test -c release --parallel --skip ImagoKitParityTests`.
+        .testTarget(name: "ImagoCoreTests", dependencies: ["ImagoCore", "ImagoKitTestSupport"], exclude: ["Fixtures"], swiftSettings: settings),
+        .testTarget(name: "ImagoFFTTests", dependencies: ["ImagoCore", "ImagoFFT", "ImagoKitTestSupport"], exclude: ["Fixtures"],
                     swiftSettings: settings),
-        .testTarget(name: "ImagoFiltersTests", dependencies: ["ImagoCore", "ImagoFFT", "ImagoFilters"], exclude: ["Fixtures"],
+        .testTarget(name: "ImagoAlignmentTests", dependencies: ["ImagoCore", "ImagoAlignment", "ImagoKitTestSupport"], exclude: ["Fixtures"],
                     swiftSettings: settings),
-        // The benchmark harness (tools/benchmarks/README: IMAGO_BENCH=1); without that variable its one test returns at once.
-        .testTarget(name: "ImagoBenchmarks", dependencies: ["ImagoCore", "ImagoFFT", "ImagoFilters", "ImagoAlignment"],
-                    swiftSettings: settings),
-        .testTarget(name: "ImagoAlignmentTests", dependencies: ["ImagoCore", "ImagoAlignment"], exclude: ["Fixtures"],
+        // The comparisons with the pinned NumPy, SciPy and scikit-image values (Fixtures stay in the four old test folders), and the
+        // benchmark harness (tools/benchmarks/README: IMAGO_BENCH=1; without that variable its one test returns at once).
+        .testTarget(name: "ImagoKitParityTests",
+                    dependencies: ["ImagoCore", "ImagoFFT", "ImagoFilters", "ImagoAlignment", "ImagoKitTestSupport"],
                     swiftSettings: settings),
     ],
     swiftLanguageModes: [.v6]

@@ -1,6 +1,7 @@
 // The HRTEM filters against the float64 NumPy/SciPy reading of the same steps (macTEM's hrtem-filter-parity at 3d17311,
 // pinned by tools/slice-1/pins.py), with that harness's checks (registration-slice-1.md section 3, 5.5, amendment 7).
 import Foundation
+import ImagoKitTestSupport
 import ImagoCore
 import ImagoFFT
 import ImagoFilters
@@ -23,10 +24,10 @@ struct HRTEMPin: Decodable, Sendable, CustomStringConvertible {
 }
 
 enum HRTEMPins {
-    static let fixtures = URL(fileURLWithPath: #filePath).deletingLastPathComponent().appendingPathComponent("Fixtures")
+    static let fixtures = FixtureDirs.fixtures(of: "ImagoFiltersTests")
     static let full: URL? = ProcessInfo.processInfo.environment["IMAGOKIT_PINS_FULL"].map {
         URL(fileURLWithPath: $0).appendingPathComponent("hrtem").appendingPathComponent("ref")
-    }
+    }.flatMap { FileManager.default.fileExists(atPath: $0.appendingPathComponent("manifest.json").path) ? $0 : nil }
     private struct File: Decodable { let hrtem: [HRTEMPin] }
     private struct Harness: Decodable { let cases: [HRTEMPin] }
     static let folder = full ?? fixtures.appendingPathComponent("hrtem")

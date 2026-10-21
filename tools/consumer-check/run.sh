@@ -20,7 +20,7 @@ if ! swift build --disable-dependency-cache --jobs 2 -c debug >$log 2>&1; then
 fi
 warnings=$(grep -c "warning:" $log || true)
 (( warnings == 0 )) || { grep "warning:" $log | head >&2; die "$warnings warning(s) in the build" }
-if grep -qE "ImagoCoreTests|ImagoFFTTests|ImagoFiltersTests|ImagoAlignmentTests" $log; then
+if grep -qE "ImagoCoreTests|ImagoFFTTests|ImagoAlignmentTests|ImagoKitParityTests|ImagoKitTestSupport" $log; then
   die "the build log names a test-only target"
 fi
 bin=$(swift build --disable-dependency-cache --jobs 2 -c debug --show-bin-path)

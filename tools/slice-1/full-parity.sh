@@ -11,4 +11,4 @@ cd "${0:A:h}/../.."
 for f in fft/ref/manifest.json spot/ref/manifest.json angle/manifest.json hrtem/ref/manifest.json; do
   [[ -f .build/pins-full/$f ]] || { print -u2 "full-parity: .build/pins-full/$f is missing; run tools/slice-1/pins.py first"; exit 1 }
 done
-IMAGOKIT_PINS_FULL=$PWD/.build/pins-full swift test -c release --filter 'ImagoFFTTests|ImagoFiltersTests'
+IMAGOKIT_PINS_FULL=$PWD/.build/pins-full swift test -c release --filter ImagoKitParityTests

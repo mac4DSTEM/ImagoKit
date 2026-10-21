@@ -4,6 +4,7 @@
 // Each case: one warm-up call, then five timed calls; the JSON holds all five times in milliseconds. The Python side is
 // tools/benchmarks/bench.py on the same sizes and dtypes; tools/benchmarks/report.py joins the two files.
 import Foundation
+import ImagoKitTestSupport
 import ImagoAlignment
 import ImagoCore
 import ImagoFFT

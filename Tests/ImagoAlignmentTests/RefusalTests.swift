@@ -2,6 +2,7 @@
 import Foundation
 import ImagoAlignment
 import ImagoCore
+import ImagoKitTestSupport
 import Testing
 
 @Suite("Refusals")
@@ -32,9 +33,9 @@ struct Refusals {
     @Test func nonFinitePixels() throws {
         var pixels = a.pixels
         pixels[10] = .nan
-        let bad = Pins.image(pixels, width: 8, height: 8)
+        let bad = try! Micrograph(width: 8, height: 8, pixels: pixels)
         pixels[10] = .infinity
-        let inf = Pins.image(pixels, width: 8, height: 8)
+        let inf = try! Micrograph(width: 8, height: 8, pixels: pixels)
         #expect(refused { try PhaseCorrelation.register(reference: a, moving: bad) } == .nonFinitePixel(index: 1))
         #expect(refused { try PhaseCorrelation.register(reference: inf, moving: a) } == .nonFinitePixel(index: 0))
         #expect(refused { try DriftSeries.estimate([a, bad]) } == .nonFinitePixel(index: 1))

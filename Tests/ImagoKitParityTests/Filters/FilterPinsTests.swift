@@ -4,6 +4,7 @@
 // rtol 1e-7 + atol 1e-6 (scipy/ndimage/tests/test_filters.py uses decimal 6), Float32 to 1e-5 of the largest magnitude.
 // scikit-image's wheel ships no tests (checked in References/python/skimage), so its functions use the same dtype defaults.
 import Foundation
+import ImagoKitTestSupport
 import ImagoCore
 import ImagoFilters
 import Testing
@@ -50,7 +51,7 @@ struct FilterPins: Decodable, Sendable {
     }
     let gauss: [Gauss]; let uniform: [Uniform]; let dog: [DoG]; let butter: [Butter]; let windows: [Win]
     static let all: FilterPins = {
-        let url = URL(fileURLWithPath: #filePath).deletingLastPathComponent().appendingPathComponent("Fixtures/filter-pins.json")
+        let url = FixtureDirs.fixtures(of: "ImagoFiltersTests").appendingPathComponent("filter-pins.json")
         return try! JSONDecoder().decode(FilterPins.self, from: Data(contentsOf: url))
     }()
 }

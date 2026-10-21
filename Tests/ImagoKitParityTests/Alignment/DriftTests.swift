@@ -1,14 +1,15 @@
 // Drift series and aligned sums (registration-slice-2.md section 1, 3.4 and 4): a 12-frame stack of the planted image with a
 // random-walk drift, against the planted drift, scikit-image's series, the cumulated pairwise shifts, and SciPy's sums.
 import Foundation
+import ImagoKitTestSupport
 import ImagoAlignment
 import ImagoCore
 import Testing
 
 private func frames(_ file: String, _ pin: DriftPin) -> [Micrograph] {
-    let all = Pins.floats(file)
+    let all = AlignmentPins.floats(file)
     let n = pin.size * pin.size
-    return (0..<pin.frames).map { Pins.image(Array(all[($0 * n)..<(($0 + 1) * n)]), width: pin.size, height: pin.size) }
+    return (0..<pin.frames).map { AlignmentPins.image(Array(all[($0 * n)..<(($0 + 1) * n)]), width: pin.size, height: pin.size) }
 }
 
 private let kinds: [(String, DriftReference)] = [("first", .first), ("mean", .mean), ("previous", .previous)]
@@ -17,7 +18,7 @@ private let kinds: [(String, DriftReference)] = [("first", .first), ("mean", .me
 struct DriftSeriesTests {
     /// The recovered drift against the planted one: within 0.05 px for `.first` and `.mean` (relative to frame 0's shift),
     /// 0.05·√k for `.previous`.
-    @Test(arguments: Pins.drift, [Precision.float32, Precision.float64])
+    @Test(arguments: AlignmentPins.drift, [Precision.float32, Precision.float64])
     func recoversThePlantedDrift(_ pin: DriftPin, _ precision: Precision) throws {
         let stack = frames(pin.noisy, pin)
         for (name, reference) in kinds {
@@ -37,7 +38,7 @@ struct DriftSeriesTests {
     }
 
     /// The series against scikit-image's on the same frames: equal, except where the pins flag a near-tie (then within 1/u).
-    @Test(arguments: Pins.drift, [Precision.float32, Precision.float64])
+    @Test(arguments: AlignmentPins.drift, [Precision.float32, Precision.float64])
     func matchesScikitImagesSeries(_ pin: DriftPin, _ precision: Precision) throws {
         let stack = frames(pin.noisy, pin)
         for (name, reference) in kinds {
@@ -75,7 +76,7 @@ struct DriftSeriesTests {
     }
 
     /// `.previous` is the cumulated pairwise shifts, exactly: the same additions in the same order.
-    @Test(arguments: Pins.drift, [Precision.float32, Precision.float64])
+    @Test(arguments: AlignmentPins.drift, [Precision.float32, Precision.float64])
     func previousCumulatesThePairwiseShiftsExactly(_ pin: DriftPin, _ precision: Precision) throws {
         let stack = frames(pin.noisy, pin)
         let series = try DriftSeries.estimate(stack, reference: .previous, upsampleFactor: pin.u, precision: precision)
@@ -105,12 +106,12 @@ struct DriftSeriesTests {
     }
 
     /// `.mean` registers every frame (frame 0 included) onto the mean of the unshifted frames.
-    @Test(arguments: Pins.drift)
+    @Test(arguments: AlignmentPins.drift)
     func meanRegistersOntoTheMeanImage(_ pin: DriftPin) throws {
         let stack = frames(pin.noisy, pin)
         var sum = [Double](repeating: 0, count: pin.size * pin.size)
         for f in stack { for i in 0..<sum.count { sum[i] += Double(f.pixels[i]) } }
-        let mean = Pins.image(sum.map { Float($0 / Double(pin.frames)) }, width: pin.size, height: pin.size)
+        let mean = AlignmentPins.image(sum.map { Float($0 / Double(pin.frames)) }, width: pin.size, height: pin.size)
         let series = try DriftSeries.estimate(stack, reference: .mean, upsampleFactor: pin.u, precision: .float32)
         for k in 0..<pin.frames {
             let direct = try PhaseCorrelation.register(reference: mean, moving: stack[k], upsampleFactor: pin.u,
@@ -155,7 +156,7 @@ struct AlignedSumTests {
         return out
     }
 
-    @Test(arguments: Pins.drift, [Precision.float32, Precision.float64])
+    @Test(arguments: AlignmentPins.drift, [Precision.float32, Precision.float64])
     func againstScipyAndTheClosedForms(_ pin: DriftPin, _ precision: Precision) throws {
         for method in AlignmentMethod.allCases { try check(pin, precision, method) }
     }
@@ -164,14 +165,14 @@ struct AlignedSumTests {
         let stack = frames(pin.clean, pin)
         let shifts = pin.sum_shifts.map { PixelShift(row: $0[0], column: $0[1]) }
         let result = try AlignedSum.sum(stack, shifts: shifts, method: method, precision: precision)
-        let oracle = Pins.doubles(method == .fourier ? pin.sum_fourier : pin.sum_bilinear)
+        let oracle = AlignmentPins.doubles(method == .fourier ? pin.sum_fourier : pin.sum_bilinear)
         let top = oracle.map(abs).max()!
         let worst = zip(result.sum.pixels, oracle).map { abs(Double($0) - $1) }.max()! / top
         let limit = method == .fourier ? (precision == .float64 ? 1e-7 : 1e-5) : (precision == .float64 ? 1e-7 : 1e-6)
         band("sum.\(method.rawValue).\(precision.rawValue)", worst, limit, pin.name)
         #expect(worst <= limit, "sum \(worst)")
         // The counts: the pin's (SciPy-independent closed form in NumPy) and this test's own re-derivation.
-        let want = method == .fourier ? [Int](repeating: pin.frames, count: pin.size * pin.size) : Pins.int32s(pin.sum_count)
+        let want = method == .fourier ? [Int](repeating: pin.frames, count: pin.size * pin.size) : AlignmentPins.int32s(pin.sum_count)
         #expect(result.counts == want)
         if method == .bilinear { #expect(result.counts == counts(pin.sum_shifts, pin.size)) }
         // The mean is sum / count, 0 where the count is 0.
@@ -187,7 +188,7 @@ struct AlignedSumTests {
     /// shifts by hand. A 4 × 5 grid (4 rows, 5 columns), shifts (0, 0), (1, 0), (0.5, 0), (0, −2), (−1, −1.5).
     @Test(arguments: [Precision.float32, Precision.float64])
     func frameCountsAtTheFootprintEdges(_ precision: Precision) throws {
-        let ones = Pins.image([Float](repeating: 1, count: 20), width: 5, height: 4)
+        let ones = AlignmentPins.image([Float](repeating: 1, count: 20), width: 5, height: 4)
         let shifts = [PixelShift.zero, PixelShift(row: 1, column: 0), PixelShift(row: 0.5, column: 0),
                       PixelShift(row: 0, column: -2), PixelShift(row: -1, column: -1.5)]
         let result = try AlignedSum.sum(Array(repeating: ones, count: 5), shifts: shifts, method: .bilinear, precision: precision)
@@ -221,7 +222,7 @@ struct AlignedSumTests {
 
     /// Planted truth: the Fourier aligned mean of the noise-free drifted stack is the unshifted image (frame 0's content);
     /// the bilinear mean correlates above 0.999 with it where all frames overlap.
-    @Test(arguments: Pins.drift)
+    @Test(arguments: AlignmentPins.drift)
     func theAlignedMeanIsTheUnshiftedImage(_ pin: DriftPin) throws {
         let stack = frames(pin.clean, pin)
         let image = stack[0].pixels.map(Double.init)
@@ -250,7 +251,7 @@ struct AlignedSumTests {
     }
 
     /// Estimating the drift, then summing with the estimate, gives back the structure: the full path.
-    @Test(arguments: Pins.drift)
+    @Test(arguments: AlignmentPins.drift)
     func theEstimatedDriftAlignsTheNoisyStack(_ pin: DriftPin) throws {
         let noisy = frames(pin.noisy, pin)
         let series = try DriftSeries.estimate(noisy, reference: .first, upsampleFactor: pin.u, precision: .float64)

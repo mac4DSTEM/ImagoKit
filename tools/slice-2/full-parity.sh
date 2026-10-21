@@ -13,7 +13,7 @@ cd "${0:A:h}/../.."
   print -u2 "full-parity: .build/pins-full/alignment/slice-2-pins.json is missing; run tools/slice-2/pins.py first"; exit 1 }
 log=.build/pins-full/alignment-full-parity.log
 set +e
-IMAGOKIT_BANDS=1 IMAGOKIT_PINS_FULL=$PWD/.build/pins-full swift test -c release --filter 'ImagoAlignmentTests' >$log 2>&1
+IMAGOKIT_BANDS=1 IMAGOKIT_PINS_FULL=$PWD/.build/pins-full swift test -c release --filter ImagoKitParityTests >$log 2>&1
 rc=$?
 set -e
 grep -E "^(✘|✔ Test run|✘ Test run|Test run)" $log | tail -5 || true

@@ -1,15 +1,16 @@
 // Spectrum and radial profile against NumPy 2.5.4 and the planted truth (registration-slice-1.md sections 3, 5.1).
 import Foundation
+import ImagoKitTestSupport
 import ImagoCore
 import ImagoFFT
 import Testing
 
-private let spectra = Pins.fft.filter { $0.kind == "spectrum" }
-private let profiles = Pins.fft.filter { $0.kind == "profile" }
+private let spectra = FFTPins.fft.filter { $0.kind == "spectrum" }
+private let profiles = FFTPins.fft.filter { $0.kind == "profile" }
 private let bands: [Precision: (spectrum: Double, profile: Double)] = [.float32: (1e-5, 1e-5), .float64: (1e-12, 1e-11)]
 
 private func input(_ c: FFTPin) -> Micrograph {
-    Pins.image(Pins.floats(c.input, section: "fft"), width: c.width, height: c.height,
+    FFTPins.image(FFTPins.floats(c.input, section: "fft"), width: c.width, height: c.height,
                scaleX: c.scale_x, scaleY: c.scale_y, units: c.units)
 }
 
@@ -20,16 +21,16 @@ private func crop(_ c: FFTPin) -> PixelCrop? {
 @Test(arguments: spectra, Precision.allCases)
 func spectrumMatchesNumPy(_ c: FFTPin, _ precision: Precision) throws {
     let s = try PowerSpectrum.compute(input(c), crop: crop(c), precision: precision)
-    let wantPower = Pins.doubles(c.power!, section: "fft")
+    let wantPower = FFTPins.doubles(c.power!, section: "fft")
     let band = bands[precision]!.spectrum
-    let power = Pins.relativeToMaximum(s.power.doubles, wantPower)
+    let power = FFTPins.relativeToMaximum(s.power.doubles, wantPower)
     #expect(power <= band, "power: \(power) of the maximum, band \(band)")
-    let magnitude = Pins.relativeToMaximum(s.magnitude.doubles, wantPower.map { $0.squareRoot() })
+    let magnitude = FFTPins.relativeToMaximum(s.magnitude.doubles, wantPower.map { $0.squareRoot() })
     #expect(magnitude <= band, "magnitude: \(magnitude) of the maximum, band \(band)")
     #expect(s.power.precision == precision)
     // The axes are NumPy's fftshift(fftfreq(n, d)); asserted exact today (D12 allows a written tolerance).
-    #expect(s.axisX == Pins.doubles(c.axis_x!, section: "fft"))
-    #expect(s.axisY == Pins.doubles(c.axis_y!, section: "fft"))
+    #expect(s.axisX == FFTPins.doubles(c.axis_x!, section: "fft"))
+    #expect(s.axisY == FFTPins.doubles(c.axis_y!, section: "fft"))
     #expect(s.unitsX == c.axis_units && s.unitsY == c.axis_units)
 }
 
@@ -57,9 +58,9 @@ func cropEqualsTheCroppedImage(_ c: FFTPin, _ precision: Precision) throws {
     let b = try PowerSpectrum.compute(cropped, precision: precision)
     // The same computation twice; equal to one Float32 ulp, not bit for bit (a first vDSP call can differ, amendment 8).
     let band = precision == .float32 ? 1e-6 : 1e-14
-    #expect(Pins.relativeToMaximum(a.power.doubles, b.power.doubles) <= band && a.axisX == b.axisX && a.axisY == b.axisY)
+    #expect(FFTPins.relativeToMaximum(a.power.doubles, b.power.doubles) <= band && a.axisX == b.axisX && a.axisY == b.axisY)
     // The crop's pixels are the harness's cropped input, and its origin moved by the offset.
-    #expect(cropped.pixels == Pins.floats(c.cropped_input ?? c.name + ".cropped.in.f32", section: "fft"))
+    #expect(cropped.pixels == FFTPins.floats(c.cropped_input ?? c.name + ".cropped.in.f32", section: "fft"))
     #expect(cropped.x?.origin == -Double(region.col) && cropped.y?.origin == -Double(region.row))
 }
 
@@ -67,8 +68,8 @@ func cropEqualsTheCroppedImage(_ c: FFTPin, _ precision: Precision) throws {
 func radialProfileMatchesNumPy(_ c: FFTPin, _ precision: Precision) throws {
     let s = try PowerSpectrum.compute(input(c), precision: precision)
     let p = try RadialProfile.compute(s, width: c.bin_width_given)
-    let want = Pins.doubles(c.pmean!, section: "fft")
-    let counts = Pins.ints(c.pcount!, section: "fft")
+    let want = FFTPins.doubles(c.pmean!, section: "fft")
+    let counts = FFTPins.ints(c.pcount!, section: "fft")
     #expect(p.width == c.bin_width!)
     #expect(p.count == counts)
     try #require(p.mean.count == want.count)

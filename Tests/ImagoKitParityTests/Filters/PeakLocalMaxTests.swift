@@ -1,6 +1,7 @@
 // skimage.feature.peak_local_max against scikit-image 0.26.0 (tools/peaks/pins.py): coordinates exact, in order.
 // scikit-image's wheel ships no tests (checked in References/python/skimage); indices are integers, so the comparison is exact.
 import Foundation
+import ImagoKitTestSupport
 import ImagoFilters
 import ImagoCore
 import Testing
@@ -12,7 +13,7 @@ struct PeakPin: Decodable, Sendable, CustomStringConvertible {
     var description: String { "\(h)x\(w) \(dtype) d\(min_distance) abs\(String(describing: threshold_abs)) rel\(String(describing: threshold_rel)) border\(String(describing: border)) n\(String(describing: num_peaks)) p\(String(describing: p_norm))" }
     static let all: [PeakPin] = {
         struct File: Decodable { let cases: [PeakPin] }
-        let url = URL(fileURLWithPath: #filePath).deletingLastPathComponent().appendingPathComponent("Fixtures/peak-pins.json")
+        let url = FixtureDirs.fixtures(of: "ImagoFiltersTests").appendingPathComponent("peak-pins.json")
         return try! JSONDecoder().decode(File.self, from: Data(contentsOf: url)).cases
     }()
 }
@@ -55,7 +56,7 @@ struct InfPin: Decodable, Sendable {
     }
     static let all: [InfPin] = {
         struct File: Decodable { let cases: [InfPin] }
-        let url = URL(fileURLWithPath: #filePath).deletingLastPathComponent().appendingPathComponent("Fixtures/peak-inf-pins.json")
+        let url = FixtureDirs.fixtures(of: "ImagoFiltersTests").appendingPathComponent("peak-inf-pins.json")
         return try! JSONDecoder().decode(File.self, from: Data(contentsOf: url)).cases
     }()
 }

@@ -1,5 +1,6 @@
 // The pins of tools/measure/pins.py: numpy.histogram, skimage.measure.profile_line and closed-form measurements.
 import Foundation
+import ImagoKitTestSupport
 
 struct MeasurePins: Decodable, Sendable {
     struct Versions: Decodable, Sendable { let numpy, scipy, skimage, python: String }
@@ -45,8 +46,7 @@ struct MeasurePins: Decodable, Sendable {
     let measure: [Measure]
 
     static func load() throws -> MeasurePins {
-        let url = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
-            .appendingPathComponent("Fixtures/measure-pins.json")
+        let url = FixtureDirs.fixtures(of: "ImagoCoreTests").appendingPathComponent("measure-pins.json")
         return try JSONDecoder().decode(MeasurePins.self, from: Data(contentsOf: url))
     }
 }

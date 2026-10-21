@@ -14,12 +14,12 @@ non-power-of-two (500²); masked registration, which costs eleven transforms of 
 Reproduce (under the suite's memory cap, one benchmark at a time machine-wide):
 
 ```sh
-IMAGO_BENCH=1 IMAGO_BENCH_OUT=/tmp/swift.json ../tools/memcap.sh -- swift test -c release --filter ImagoBenchmarks
+IMAGO_BENCH=1 IMAGO_BENCH_OUT=/tmp/swift.json ../tools/memcap.sh -- swift test -c release --filter ImagoKitParityTests.benchmarks
 ../tools/memcap.sh -- ../refs/skimage/bin/python -I -B tools/benchmarks/bench.py /tmp/python.json
 python3 tools/benchmarks/report.py /tmp/swift.json /tmp/python.json
 ```
 
-The harness is `Tests/ImagoBenchmarks/Benchmarks.swift` (its one test returns at once unless `IMAGO_BENCH=1`);
+The harness is `Tests/ImagoKitParityTests/Benchmarks/Benchmarks.swift` (its one test returns at once unless `IMAGO_BENCH=1`);
 `tools/benchmarks/bench.py` is the Python side. "kit / Python" below 1 means the kit is faster.
 
 ## Kit CPU against Python

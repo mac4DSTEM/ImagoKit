@@ -1,6 +1,7 @@
 // ImageMeasurement, IntensityHistogram and LineProfile against the pins of tools/measure/pins.py (NumPy 2.5.4,
 // SciPy 1.18.1, scikit-image 0.26.0) and planted closed forms.
 import Foundation
+import ImagoKitTestSupport
 import ImagoCore
 import Testing
 

@@ -1,6 +1,7 @@
 // ndimage.shift (orders 0 and 1, seven modes) and fourier_shift (registration-slice-2.md 3.2, 3.3 and 3.4): the pinned
 // cases on both paths, the closed forms of the modes and ties, and the Fourier shift's definition.
 import Foundation
+import ImagoKitTestSupport
 import ImagoAlignment
 import ImagoCore
 import Testing
@@ -17,16 +18,16 @@ private func mode(_ name: String) -> ShiftMode { ShiftMode(rawValue: name)! }
 struct ShiftAgainstOracle {
     /// The Float64 engine (package access) within 1e-12 of the case's maximum; the Float32 engine within 1e-6; the public
     /// calls return Float32 pixels, so they equal the Float32 rounding of the reference (half an ulp, 6e-8 of the maximum).
-    @Test(arguments: Pins.shift.combos)
+    @Test(arguments: AlignmentPins.shift.combos)
     func everyModeAndOrder(_ combo: ShiftComboPin) throws {
-        let pins = Pins.shift
-        let expected = Pins.doubles(combo.file)
+        let pins = AlignmentPins.shift
+        let expected = AlignmentPins.doubles(combo.file)
         let order = ShiftOrder(rawValue: combo.order)!
         var offset = 0
         var worst64 = 0.0, worst32 = 0.0, worstPublic64 = 0.0, worstPublic32 = 0.0
         for im in pins.images {
-            let pixels = Pins.floats(im.file)
-            let image = Pins.image(pixels, width: im.width, height: im.height)
+            let pixels = AlignmentPins.floats(im.file)
+            let image = AlignmentPins.image(pixels, width: im.width, height: im.height)
             var f64 = [Double](), f32 = [Double](), pub64 = [Double](), pub32 = [Double](), want = [Double]()
             for s in pins.shifts {
                 let shift = PixelShift(row: s[0], column: s[1])
@@ -59,12 +60,12 @@ struct ShiftAgainstOracle {
         #expect(offset == expected.count)
     }
 
-    @Test(arguments: Pins.fourier.images)
+    @Test(arguments: AlignmentPins.fourier.images)
     func fourierShift(_ im: FourierImagePin) throws {
-        let pins = Pins.fourier
-        let pixels = Pins.floats(im.file)
-        let image = Pins.image(pixels, width: im.width, height: im.height)
-        let expected = Pins.doubles(im.out)
+        let pins = AlignmentPins.fourier
+        let pixels = AlignmentPins.floats(im.file)
+        let image = AlignmentPins.image(pixels, width: im.width, height: im.height)
+        let expected = AlignmentPins.doubles(im.out)
         let count = im.width * im.height
         let top = pixels.map { abs(Double($0)) }.max()!
         var worst64 = 0.0, worst32 = 0.0, worstPublic64 = 0.0

@@ -1,5 +1,6 @@
 // Spot spacings and the angle between spots against NumPy 2.5.4 and the planted lattices (registration sections 3, 5.2, 5.4).
 import Foundation
+import ImagoKitTestSupport
 import ImagoCore
 import ImagoFFT
 import Testing
@@ -7,9 +8,9 @@ import Testing
 private let centroidBand: [Precision: Double] = [.float32: 1e-6, .float64: 1e-10]
 private let angleBand: [Precision: Double] = [.float32: 1e-6, .float64: 1e-9]
 
-@Test(arguments: Pins.spot, Precision.allCases)
+@Test(arguments: FFTPins.spot, Precision.allCases)
 func spotMatchesNumPyAndThePlant(_ c: SpotPin, _ precision: Precision) throws {
-    let image = Pins.image(Pins.floats(c.input, section: "spot"), width: c.width, height: c.height,
+    let image = FFTPins.image(FFTPins.floats(c.input, section: "spot"), width: c.width, height: c.height,
                            scaleX: c.scale_x, scaleY: c.scale_y, units: c.units)
     if c.kind == "refusal" {
         let expected: SpotMeasurementError = c.error == "nearEdge" ? .nearEdge : .nearDC
@@ -30,9 +31,9 @@ func spotMatchesNumPyAndThePlant(_ c: SpotPin, _ precision: Precision) throws {
     #expect(m.units == "nm" && m.reciprocalUnits == "1/nm" && m.dNanometres == m.d)
 }
 
-@Test(arguments: Pins.angle, Precision.allCases)
+@Test(arguments: FFTPins.angle, Precision.allCases)
 func angleMatchesNumPyAndThePlant(_ c: AnglePin, _ precision: Precision) throws {
-    let image = Pins.image(Pins.floats(c.input, section: "angle"), width: c.width, height: c.height,
+    let image = FFTPins.image(FFTPins.floats(c.input, section: "angle"), width: c.width, height: c.height,
                            scaleX: c.scale_x, scaleY: c.scale_y, units: c.units)
     var spots: [SpotMeasurement] = []
     for s in c.spots {

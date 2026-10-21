@@ -2,6 +2,7 @@
 // Fixtures/slice-1a-pins.json, or — when IMAGOKIT_PINS_FULL names a folder (tools/slice-1/full-parity.sh sets it to
 // .build/pins-full) — every case, read from the harness manifests there.
 import Foundation
+import ImagoKitTestSupport
 import ImagoCore
 
 struct CropPin: Decodable, Sendable { let row, col, height, width: Int }
@@ -48,11 +49,11 @@ struct AnglePin: Decodable, Sendable, CustomStringConvertible {
     var description: String { name }
 }
 
-enum Pins {
-    static let fixtures = URL(fileURLWithPath: #filePath).deletingLastPathComponent().appendingPathComponent("Fixtures")
-    static let repository = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
-        .deletingLastPathComponent()
+enum FFTPins {
+    static let fixtures = FixtureDirs.fixtures(of: "ImagoFFTTests")
+    static let repository = FixtureDirs.repository
     static let full: URL? = ProcessInfo.processInfo.environment["IMAGOKIT_PINS_FULL"].map { URL(fileURLWithPath: $0) }
+        .flatMap { FileManager.default.fileExists(atPath: $0.appendingPathComponent("fft/ref/manifest.json").path) ? $0 : nil }
 
     private struct Committed: Decodable { let fft: [FFTPin]; let spot: [SpotPin]; let angle: [AnglePin] }
     private struct Harness<C: Decodable>: Decodable { let cases: [C] }

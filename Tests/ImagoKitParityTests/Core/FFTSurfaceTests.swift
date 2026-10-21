@@ -2,6 +2,7 @@
 // Tolerance: numpy/fft/tests/test_pocketfft.py asserts `assert_allclose(..., atol=1e-6)` (rtol 1e-7 default) on these
 // compositions; Float64 is held to that, Float32 to 1e-5 of the largest magnitude (the upstream float32 tolerance).
 import Foundation
+import ImagoKitTestSupport
 import Testing
 @testable import ImagoCore
 
@@ -23,7 +24,7 @@ struct SurfacePins: Decodable, Sendable {
     }
     let fft: [FFT]; let rfft: [RFFT]; let shift: [Shift]
     static let all: SurfacePins = {
-        let url = URL(fileURLWithPath: #filePath).deletingLastPathComponent().appendingPathComponent("Fixtures/fft-surface-pins.json")
+        let url = FixtureDirs.fixtures(of: "ImagoCoreTests").appendingPathComponent("fft-surface-pins.json")
         return try! JSONDecoder().decode(SurfacePins.self, from: Data(contentsOf: url))
     }()
 }

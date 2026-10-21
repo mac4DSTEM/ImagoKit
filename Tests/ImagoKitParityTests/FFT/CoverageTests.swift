@@ -1,22 +1,23 @@
 // Tests added after the Gate B refuter on eb042aa (registration amendment 5): the spot's crop path, the case counts, and the
 // public members and refusals no other test asserts.
 import Foundation
+import ImagoKitTestSupport
 import ImagoCore
 import ImagoFFT
 import Testing
 
 @Test func everyPinnedCaseIsLoaded() {
     // A truncated manifest must not pass with fewer cases.
-    let expected = Pins.full == nil ? (fft: 19, spot: 25, angle: 4) : (fft: 19, spot: 41, angle: 30)
-    #expect(Pins.fft.count == expected.fft && Pins.spot.count == expected.spot && Pins.angle.count == expected.angle,
-            "fft \(Pins.fft.count), spot \(Pins.spot.count), angle \(Pins.angle.count)")
-    #expect(Pins.spot.contains { $0.neighbour } && Pins.spot.contains { $0.tier == "noisy" })
+    let expected = FFTPins.full == nil ? (fft: 19, spot: 25, angle: 4) : (fft: 19, spot: 41, angle: 30)
+    #expect(FFTPins.fft.count == expected.fft && FFTPins.spot.count == expected.spot && FFTPins.angle.count == expected.angle,
+            "fft \(FFTPins.fft.count), spot \(FFTPins.spot.count), angle \(FFTPins.angle.count)")
+    #expect(FFTPins.spot.contains { $0.neighbour } && FFTPins.spot.contains { $0.tier == "noisy" })
 }
 
 @Test(arguments: Precision.allCases)
 func spotOnACropIsTheSpotOfTheCroppedImage(_ precision: Precision) throws {
-    let c = try #require(Pins.spot.first { $0.name == "noisy256-k10-r0" })
-    let image = Pins.image(Pins.floats(c.input, section: "spot"), width: c.width, height: c.height,
+    let c = try #require(FFTPins.spot.first { $0.name == "noisy256-k10-r0" })
+    let image = FFTPins.image(FFTPins.floats(c.input, section: "spot"), width: c.width, height: c.height,
                            scaleX: c.scale_x, scaleY: c.scale_y, units: c.units)
     let region = PixelCrop(row: 40, col: 16, height: 192, width: 224)
     // The planted spot's bin in the crop's spectrum: its frequency in index units scales with the crop's size.

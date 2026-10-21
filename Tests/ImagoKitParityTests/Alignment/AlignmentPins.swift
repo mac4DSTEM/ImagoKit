@@ -2,6 +2,7 @@
 // Fixtures/slice-2-pins.json, or, when IMAGOKIT_PINS_FULL names a folder (tools/slice-2/full-parity.sh sets it to
 // .build/pins-full), every case, read from alignment/slice-2-pins.json there.
 import Foundation
+import ImagoKitTestSupport
 import ImagoAlignment
 import ImagoCore
 
@@ -68,11 +69,12 @@ struct OraclePair: Decodable, Sendable {
     let eps64, eps32: [Double]
 }
 
-enum Pins {
-    static let fixtures = URL(fileURLWithPath: #filePath).deletingLastPathComponent().appendingPathComponent("Fixtures")
+enum AlignmentPins {
+    static let fixtures = FixtureDirs.fixtures(of: "ImagoAlignmentTests")
+    /// The full set, when IMAGOKIT_PINS_FULL names a folder that holds it (one `--filter ImagoKitParityTests` serves every full-parity script).
     static let full: URL? = ProcessInfo.processInfo.environment["IMAGOKIT_PINS_FULL"].map {
         URL(fileURLWithPath: $0).appendingPathComponent("alignment")
-    }
+    }.flatMap { FileManager.default.fileExists(atPath: $0.appendingPathComponent("slice-2-pins.json").path) ? $0 : nil }
     static var folder: URL { full ?? fixtures }
 
     private struct Manifest: Decodable {

@@ -1,6 +1,7 @@
 // Phase correlation (registration-slice-2.md 3.1, 3.4 and 4): the pinned cases against scikit-image on both precisions, the
 // planted shifts against their truth, and the closed forms of the integer stage (the midpoint, the region, a length-1 axis).
 import Foundation
+import ImagoKitTestSupport
 import ImagoAlignment
 import ImagoCore
 import Testing
@@ -13,22 +14,12 @@ func band(_ label: String, _ value: Double, _ limit: Double, _ pin: String) {
 }
 
 func images(_ pin: RegisterPin) -> (Micrograph, Micrograph) {
-    (Pins.image(Pins.floats(pin.ref), width: pin.width, height: pin.height),
-     Pins.image(Pins.floats(pin.mov), width: pin.width, height: pin.height))
+    (AlignmentPins.image(AlignmentPins.floats(pin.ref), width: pin.width, height: pin.height),
+     AlignmentPins.image(AlignmentPins.floats(pin.mov), width: pin.width, height: pin.height))
 }
 
 func difference(_ r: ImageRegistration, _ o: OraclePin) -> Double {
     max(abs(r.shift.row - o.shift[0]), abs(r.shift.column - o.shift[1]))
-}
-
-/// A random-looking, structure-rich image for the closed forms (a small LCG, deterministic).
-func noise(_ width: Int, _ height: Int, seed: UInt64) -> Micrograph {
-    var state = seed
-    let pixels: [Float] = (0..<(width * height)).map { _ in
-        state = state &* 6364136223846793005 &+ 1442695040888963407
-        return Float(Double(state >> 33) / Double(1 << 31)) * 100
-    }
-    return Pins.image(pixels, width: width, height: height)
 }
 
 /// `image` displaced by the integers (rows, columns): out[i, j] = in[(i + dr) mod h, (j + dc) mod w], the moving image
@@ -41,7 +32,7 @@ func rolled(_ image: Micrograph, _ dr: Int, _ dc: Int) -> Micrograph {
             out[i * w + j] = image.pixels[(((i + dr) % h + h) % h) * w + ((j + dc) % w + w) % w]
         }
     }
-    return Pins.image(out, width: w, height: h)
+    return AlignmentPins.image(out, width: w, height: h)
 }
 
 /// Whether `shift` lies in the bounding box [row min, row max, column min, column max] (to `slack`).
@@ -85,7 +76,7 @@ struct RegistrationAgainstOracle {
         }
     }
 
-    @Test(arguments: Pins.register)
+    @Test(arguments: AlignmentPins.register)
     func float64(_ pin: RegisterPin) throws {
         let (ref, mov) = images(pin)
         let r = try PhaseCorrelation.register(reference: ref, moving: mov, upsampleFactor: pin.u,
@@ -95,7 +86,7 @@ struct RegistrationAgainstOracle {
         #expect(r.upsampleFactor == pin.u && r.normalization == pin.norm && r.precision == .float64)
     }
 
-    @Test(arguments: Pins.register)
+    @Test(arguments: AlignmentPins.register)
     func float32(_ pin: RegisterPin) throws {
         let (ref, mov) = images(pin)
         let r = try PhaseCorrelation.register(reference: ref, moving: mov, upsampleFactor: pin.u,
@@ -108,7 +99,7 @@ struct RegistrationAgainstOracle {
 
 @Suite("Planted shifts (section 4)")
 struct PlantedShifts {
-    static let gated = Pins.register.filter { $0.truth != nil && $0.truth_band != nil }
+    static let gated = AlignmentPins.register.filter { $0.truth != nil && $0.truth_band != nil }
 
     @Test(arguments: PlantedShifts.gated, [Precision.float32, Precision.float64])
     func recoversThePlantedShift(_ pin: RegisterPin, _ precision: Precision) throws {
@@ -233,13 +224,13 @@ struct RegistrationClosedForms {
     /// normalisation: CCmax = 2·Σr², src_amp = Σr², target_amp = 4·Σr², so error = √|1 − 4/4| = 0.
     @Test func theErrorOfAScaledCopyIsZeroAndAnInvertedCopyHasPhaseDifferencePi() throws {
         let image = noise(16, 12, seed: 23)
-        let doubled = Pins.image(image.pixels.map { $0 * 2 }, width: 16, height: 12)
+        let doubled = AlignmentPins.image(image.pixels.map { $0 * 2 }, width: 16, height: 12)
         let a = try PhaseCorrelation.register(reference: image, moving: doubled, normalization: .unnormalized,
                                               precision: .float64)
         #expect(a.error < 1e-7 && abs(a.phaseDifference) < 1e-12)
         // The negated image: the correlation peak is −Σr² at the origin, but |CC| peaks at the origin all the same, with
         // the phase difference π (atan2(−0, −x) = π: the imaginary part is rounding noise of either sign).
-        let negated = Pins.image(image.pixels.map { -$0 }, width: 16, height: 12)
+        let negated = AlignmentPins.image(image.pixels.map { -$0 }, width: 16, height: 12)
         let b = try PhaseCorrelation.register(reference: image, moving: negated, normalization: .unnormalized,
                                               precision: .float64)
         #expect(b.shift == .zero && abs(abs(b.phaseDifference) - Double.pi) < 1e-9, "phase \(b.phaseDifference)")
@@ -257,7 +248,7 @@ struct RegistrationClosedForms {
 
     /// Frames that are identically zero have no amplitude: the error is NaN, as scikit-image's (which warns), not a refusal.
     @Test func zeroImagesGiveAnErrorOfNaN() throws {
-        let zero = Pins.image([Float](repeating: 0, count: 64), width: 8, height: 8)
+        let zero = AlignmentPins.image([Float](repeating: 0, count: 64), width: 8, height: 8)
         let r = try PhaseCorrelation.register(reference: zero, moving: zero, precision: .float64)
         #expect(r.shift == .zero && r.error.isNaN)
     }
