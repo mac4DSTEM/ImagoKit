@@ -4,7 +4,8 @@
 //  maximum of their (2 · min_distance + 1)² window (edge-replicated, SciPy's `mode='nearest'`) and above the threshold, the
 //  border cut off, ordered by decreasing intensity (stable, row-major among equals), thinned so that kept peaks lie at least
 //  `minDistance` apart in the p-norm (greedy in that order: a kept peak removes every later one closer than `minDistance`),
-//  cut to `numPeaks`. A constant image has no peak. Indices are exact against scikit-image.
+//  cut to `numPeaks`. A constant image has no peak. Indices are exact against scikit-image. ±infinite pixels are ordinary extremes
+//  (as scikit-image); a NaN pixel is refused (scikit-image answers by its comparisons with NaN, which depend on the threshold).
 //
 
 import Foundation
@@ -35,7 +36,7 @@ public nonisolated enum PeakLocalMax {
     ) throws -> [PeakCoordinate] {
         guard rows > 0, columns > 0 else { throw FilterError.shape }
         guard rows <= Int.max / columns, a.count == rows * columns else { throw FilterError.shape }
-        guard a.allSatisfy({ $0.isFinite }) else { throw FilterError.parameter("non-finite pixel") }
+        guard !a.contains(where: { $0.isNaN }) else { throw FilterError.parameter("NaN pixel") }   // ±infinity is an ordinary extreme, as in scikit-image
         guard minDistance >= 0 else { throw FilterError.parameter("minDistance") }
         guard pNorm >= 1 else { throw FilterError.parameter("pNorm") }
         if let numPeaks, numPeaks < 0 { throw FilterError.parameter("numPeaks") }

@@ -54,7 +54,7 @@ Numerics are never held stricter than that; readers, I/O, indices and metadata a
 | Function or option group | State | Kit symbol | Counterpart tolerance (source) | Priority | Notes |
 |---|---|---|---|---|---|
 | `shift`, order 0 and 1, seven modes, `cval` | present | `ImageShift.shift` | scipy/ndimage/tests/test_interpolation.py: assert_array_almost_equal (decimal 6) | study | 2D, one real channel; `output=` absent |
-| `shift`, order 2 to 5 (B-spline, `prefilter=True`) | partial (0.6.0) | `ImageShift.shift` with `ShiftOrder.quadratic…quintic` | scipy/ndimage/tests/test_interpolation.py: assert_array_almost_equal (decimal 6) | study | modes `grid-constant`, `nearest`, `reflect`, `mirror`, `grid-wrap` (500 pinned cases); `constant` and `wrap` are refused by name; `prefilter=False` absent |
+| `shift`, order 2 to 5 (B-spline, `prefilter=True`) | partial (0.6.0) | `ImageShift.shift` with `ShiftOrder.quadratic…quintic` | scipy/ndimage/tests/test_interpolation.py: assert_array_almost_equal (decimal 6) | study | modes `grid-constant`, `nearest`, `reflect`, `mirror`, `grid-wrap` (500 pinned cases, held to decimal 6 = 1.5e-6 in both precisions since 0.6.1); `constant` and `wrap` are refused by name; `prefilter=False` absent |
 | `map_coordinates` | partial | `LineProfile` (orders 0 to 5, five modes, line samples), `HRTEMFilter.radialProfile` | scipy/ndimage/tests/test_interpolation.py: assert_array_almost_equal (decimal 6) | useful | no public general coordinate array call |
 | `affine_transform`, `geometric_transform` | missing |  | scipy/ndimage/tests/test_interpolation.py: assert_array_almost_equal (decimal 6) | useful |  |
 | `zoom` | missing |  | scipy/ndimage/tests/test_interpolation.py: assert_array_almost_equal (decimal 6) | study | study row 3; needs the same spline machinery plus the grid-corner rule of `zoom` |
@@ -89,7 +89,7 @@ Numerics are never held stricter than that; readers, I/O, indices and metadata a
 
 | Function or option group | State | Kit symbol | Counterpart tolerance (source) | Priority | Notes |
 |---|---|---|---|---|---|
-| `peak_local_max` (`min_distance`, `threshold_abs`, `threshold_rel`, `exclude_border`, `num_peaks`, `p_norm`) | partial (0.6.0) | `PeakLocalMax.find` | exact indices (integer output) | study | `footprint=`, `labels=`, `num_peaks_per_label` and n-D absent; 166 pinned cases, coordinates exact |
+| `peak_local_max` (`min_distance`, `threshold_abs`, `threshold_rel`, `exclude_border`, `num_peaks`, `p_norm`) | partial (0.6.0) | `PeakLocalMax.find` | exact indices (integer output) | study | `footprint=`, `labels=`, `num_peaks_per_label` and n-D absent; 166 pinned cases plus 7 with ±infinite pixels (0.6.1), coordinates exact; a NaN pixel is refused (`FilterError.parameter("NaN pixel")`): scikit-image answers by its NaN comparisons, which depend on the threshold, and no study input holds NaN. Registered deviation |
 | `corner_peaks` | missing |  | scikit-image 0.26.0 ships no tests in its wheel: assert_allclose dtype defaults (rtol 1e-7 f64, 1e-5 f32) | useful | built on `peak_local_max` |
 | `match_template` | missing |  | scikit-image 0.26.0 ships no tests in its wheel: assert_allclose dtype defaults (rtol 1e-7 f64, 1e-5 f32) | useful | atom columns by template |
 | `blob_dog`, `blob_log`, `blob_doh` | missing |  | scikit-image 0.26.0 ships no tests in its wheel: assert_allclose dtype defaults (rtol 1e-7 f64, 1e-5 f32) | useful | atom-column finding |

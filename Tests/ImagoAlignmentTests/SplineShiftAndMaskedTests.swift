@@ -1,6 +1,6 @@
 // ndimage.shift at spline orders 2 to 5 and the masked phase_cross_correlation against SciPy 1.18.1 / scikit-image 0.26.0
-// (tools/alignment/pins.py). Tolerances: SciPy's shift tests compare to decimal 6 (test_interpolation.py); the float32
-// outputs here are rounded from Double, so they are held to 1e-5 of the image maximum (the float32 default). The masked
+// (tools/alignment/pins.py). Tolerances: SciPy's shift tests compare to decimal 6 (test_interpolation.py), that is |difference| < 1.5e-6,
+// and both precisions are held to it (0.6.1; they were 1e-5 of the image maximum before, looser). The masked
 // correlation (test_masked_phase_cross_correlation.py upstream, not shipped in the wheel) is held to assert_allclose
 // defaults for float64 (rtol 1e-7, atol 1e-7) and 1e-4 absolute for float32 (the FFT length differs from SciPy's fast length).
 import Foundation
@@ -39,9 +39,8 @@ func splineShiftMatchesSciPy(_ c: SplineShiftPin) throws {
     for precision in Precision.allCases {
         let got = try ImageShift.shift(image, by: PixelShift(row: c.shift[0], column: c.shift[1]), order: order, mode: mode,
                                        cval: c.cval, precision: precision)
-        let top = max(c.x.map(abs).max()!, abs(c.cval))
         let worst = zip(got.pixels, c.y).map { abs(Double($0) - $1) }.max()!
-        #expect(worst <= 1e-5 * top, "\(c) \(precision): \(worst) vs \(1e-5 * top)")
+        #expect(worst <= 1.5e-6, "\(c) \(precision): \(worst) vs 1.5e-6")
     }
 }
 

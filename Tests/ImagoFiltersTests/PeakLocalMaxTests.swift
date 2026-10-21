@@ -39,3 +39,40 @@ func peakLocalMaxMatchesSciKitImage(_ c: PeakPin) throws {
     #expect(throws: FilterError.self) { try PeakLocalMax.find([Float.nan, 1, 2, 3], rows: 2, columns: 2) }
     #expect(PeakCoordinate(row: 1, column: 2).row == 1)
 }
+
+/// 0.6.1: infinite pixels are accepted and match scikit-image 0.26.0 (tools/peaks/inf_pins.py); a NaN pixel stays refused.
+struct InfPin: Decodable, Sendable {
+    let h, w: Int; let dtype: String; let x: [Pixel]; let min_distance: Int; let border: Bool
+    let threshold_abs: Double?; let num_peaks: Int?; let peaks: [[Int]]
+    enum Pixel: Decodable, Sendable {
+        case number(Double), inf, negInf
+        init(from decoder: Decoder) throws {
+            let c = try decoder.singleValueContainer()
+            if let v = try? c.decode(Double.self) { self = .number(v); return }
+            self = try c.decode(String.self) == "inf" ? .inf : .negInf
+        }
+        var value: Double { switch self { case .number(let v): return v; case .inf: return .infinity; case .negInf: return -.infinity } }
+    }
+    static let all: [InfPin] = {
+        struct File: Decodable { let cases: [InfPin] }
+        let url = URL(fileURLWithPath: #filePath).deletingLastPathComponent().appendingPathComponent("Fixtures/peak-inf-pins.json")
+        return try! JSONDecoder().decode(File.self, from: Data(contentsOf: url)).cases
+    }()
+}
+
+@Test func peakLocalMaxOnInfinitePixelsMatchesSciKitImage() throws {
+    #expect(InfPin.all.count == 7)
+    for c in InfPin.all {
+        let border: PeakBorder = c.border ? .minDistance : .width(row: 0, column: 0)
+        let got: [PeakCoordinate]
+        if c.dtype == "float32" {
+            got = try PeakLocalMax.find(c.x.map { Float($0.value) }, rows: c.h, columns: c.w, minDistance: c.min_distance,
+                                        thresholdAbs: c.threshold_abs, excludeBorder: border, numPeaks: c.num_peaks)
+        } else {
+            got = try PeakLocalMax.find(c.x.map(\.value), rows: c.h, columns: c.w, minDistance: c.min_distance,
+                                        thresholdAbs: c.threshold_abs, excludeBorder: border, numPeaks: c.num_peaks)
+        }
+        #expect(got.map { [$0.row, $0.column] } == c.peaks, "\(c.h)x\(c.w) \(c.dtype) d\(c.min_distance)")
+    }
+    #expect(throws: FilterError.self) { try PeakLocalMax.find([Double.nan, 1, 2, 3], rows: 2, columns: 2) }
+}
