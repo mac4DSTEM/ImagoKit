@@ -2,7 +2,10 @@
 //  FFT2DDouble.swift (ImagoCore)
 //  The reference path (registration-slice-1.md 1.1, amendment 2): FFT2D.swift translated line by line to Double — the vDSP
 //  `…D` calls, DSPDoubleSplitComplex, Double twiddles — with the same plans and the same small-power-of-two exception.
-//  A change to FFT2D.swift is made here too, in the same commit.
+//  A change to FFT2D.swift is made here too, in the same commit. One exception, on purpose: the radix-2 Double calls
+//  (`vDSP_fft_zipD`, `vDSP_fft2d_zipD`) are 5 to 7 times slower than `vDSP_DFT_zop` from 128² up, so this file runs
+//  every power-of-two axis, and Bluestein's padded transforms, through `DFTPairD` and keeps the radix-2 call only as the
+//  fallback when vDSP has no DFT plan (agreement with the radix-2 path 1.6e-15, machine precision).
 //
 
 import Foundation
@@ -87,6 +90,8 @@ nonisolated private final class BluesteinPlanD: @unchecked Sendable {
     package let paddedLength: Int
     package let paddedLog2: vDSP_Length
     package let setup: FFTSetupD
+    /// The padded transform on `vDSP_DFT_zop`, when vDSP has a plan for `paddedLength`; `setup` serves the filter spectra.
+    package let padded: DFTPairD?
     /// w_n = exp(−iπ n²/N) for n < N (the FORWARD chirp; inverse = conj).
     package let chirpRe: [Double]
     package let chirpIm: [Double]
@@ -107,6 +112,7 @@ nonisolated private final class BluesteinPlanD: @unchecked Sendable {
         self.paddedLength = padded
         self.paddedLog2 = log2Padded
         self.setup = setup
+        self.padded = DFTPairD(length: padded)
 
         var wRe = [Double](repeating: 0, count: length)
         var wIm = [Double](repeating: 0, count: length)
@@ -155,7 +161,7 @@ nonisolated private final class BluesteinPlanD: @unchecked Sendable {
     }
 
     /// Exact length-N DFT of one line. `scratchRe/Im` must hold
-    /// `paddedLength` floats each; they are caller-owned so concurrent
+    /// `2 * paddedLength` doubles each (the second half is the out-of-place target of the padded DFT); they are caller-owned so concurrent
     /// workers never share them.
     package func execute(
         forward: Bool,
@@ -187,7 +193,13 @@ nonisolated private final class BluesteinPlanD: @unchecked Sendable {
                     (scratchIm + length).update(repeating: 0, count: paddedLength - length)
                 }
                 // 2. A = FFT_M(a).
-                vDSP_fft_zipD(setup, &work, 1, paddedLog2, FFTDirection(kFFTDirection_Forward))
+                let alt = scratchRe + paddedLength, altIm = scratchIm + paddedLength
+                if let padded {
+                    padded.execute(forward: true, scratchRe, scratchIm, alt, altIm)
+                    work = DSPDoubleSplitComplex(realp: alt, imagp: altIm)
+                } else {
+                    vDSP_fft_zipD(setup, &work, 1, paddedLog2, FFTDirection(kFFTDirection_Forward))
+                }
                 // 3. A ·= B (the direction's precomputed filter spectrum).
                 let filterRe = forward ? filterForwardRe : filterInverseRe
                 let filterIm = forward ? filterForwardIm : filterInverseIm
@@ -201,7 +213,13 @@ nonisolated private final class BluesteinPlanD: @unchecked Sendable {
                     }
                 }
                 // 4. a = IFFT_M(A) / M (vDSP's inverse is unnormalized).
-                vDSP_fft_zipD(setup, &work, 1, paddedLog2, FFTDirection(kFFTDirection_Inverse))
+                if let padded {
+                    // `work` is the second half; the inverse lands back in the first.
+                    padded.execute(forward: false, alt, altIm, scratchRe, scratchIm)
+                    work = DSPDoubleSplitComplex(realp: scratchRe, imagp: scratchIm)
+                } else {
+                    vDSP_fft_zipD(setup, &work, 1, paddedLog2, FFTDirection(kFFTDirection_Inverse))
+                }
                 var scale = 1 / Double(paddedLength)
                 vDSP_vsmulD(scratchRe, 1, &scale, scratchRe, 1, m)
                 vDSP_vsmulD(scratchIm, 1, &scale, scratchIm, 1, m)
@@ -221,6 +239,12 @@ public nonisolated final class FFT2DDouble: FFT2DTransform, @unchecked Sendable 
     private let log2x: vDSP_Length
     private let log2y: vDSP_Length
     private let radix2Setup: FFTSetupD?
+    /// The power-of-two 2D path on `vDSP_DFT_zop` (rows, transpose, columns, transpose); nil when `radix2Setup` serves.
+    private let dft2DX: DFTPairD?
+    private let dft2DY: DFTPairD?
+    /// The power-of-two axes of the axis-wise path on `vDSP_DFT_zop`, ahead of `axisXSetup` / `axisYSetup`.
+    private let axisPairX: DFTPairD?
+    private let axisPairY: DFTPairD?
     private let axisXSetup: FFTSetupD?
     private let axisXLog: vDSP_Length
     private let axisXPlan: ExactRadixPlanD?
@@ -254,16 +278,25 @@ public nonisolated final class FFT2DDouble: FFT2DTransform, @unchecked Sendable 
         log2x = isRadix2 ? vDSP_Length(log2(Double(nx))) : 0
         log2y = isRadix2 ? vDSP_Length(log2(Double(ny))) : 0
         if isRadix2 {
-            guard let setup = vDSP_create_fftsetupD(
-                max(log2x, log2y), FFTRadix(kFFTRadix2)
-            ) else { return nil }
-            radix2Setup = setup
+            let pairX = DFTPairD(length: nx), pairY = DFTPairD(length: ny)
+            if let pairX, let pairY {
+                dft2DX = pairX; dft2DY = pairY
+                radix2Setup = nil
+            } else {
+                guard let setup = vDSP_create_fftsetupD(
+                    max(log2x, log2y), FFTRadix(kFFTRadix2)
+                ) else { return nil }
+                radix2Setup = setup
+                dft2DX = nil; dft2DY = nil
+            }
+            axisPairX = nil; axisPairY = nil
             axisXSetup = nil; axisXLog = 0; axisXPlan = nil
             axisYSetup = nil; axisYLog = 0; axisYPlan = nil
             forwardX = nil; inverseX = nil; forwardY = nil; inverseY = nil
             bluesteinX = nil; bluesteinY = nil
         } else {
             radix2Setup = nil
+            dft2DX = nil; dft2DY = nil
             let xRadix2Log = Self.exactPowerExponent(nx, radix: 2)
             let yRadix2Log = Self.exactPowerExponent(ny, radix: 2)
             let xPlan = Self.exactRadixPlan(length: nx)
@@ -281,6 +314,8 @@ public nonisolated final class FFT2DDouble: FFT2DTransform, @unchecked Sendable 
                 axisXLog = 0
             }
             axisXPlan = xPlan
+            axisPairX = xRadix2Log != nil ? DFTPairD(length: nx) : nil
+            axisPairY = yRadix2Log != nil ? DFTPairD(length: ny) : nil
             if let yRadix2Log {
                 guard let setup = vDSP_create_fftsetupD(
                     yRadix2Log, FFTRadix(kFFTRadix2)
@@ -338,7 +373,9 @@ public nonisolated final class FFT2DDouble: FFT2DTransform, @unchecked Sendable 
     public func transform(re: inout [Double], im: inout [Double],
                    forward: Bool, scaleInverse: Bool = true) {
         precondition(re.count == nx * ny && im.count == nx * ny)
-        if let radix2Setup {
+        if let dft2DX, let dft2DY {
+            transformPowerOfTwo(re: &re, im: &im, forward: forward, pairX: dft2DX, pairY: dft2DY)
+        } else if let radix2Setup {
             re.withUnsafeMutableBufferPointer { rp in
                 im.withUnsafeMutableBufferPointer { ip in
                     var split = DSPDoubleSplitComplex(realp: rp.baseAddress!, imagp: ip.baseAddress!)
@@ -353,8 +390,8 @@ public nonisolated final class FFT2DDouble: FFT2DTransform, @unchecked Sendable 
             // Per-call Bluestein scratch (padded length of the larger axis):
             // caller-owned like the data, so concurrent workers sharing this
             // plan never share a buffer.
-            let scratchCount = max(bluesteinX?.paddedLength ?? 0,
-                                   bluesteinY?.paddedLength ?? 0)
+            let scratchCount = 2 * max(bluesteinX?.paddedLength ?? 0,
+                                       bluesteinY?.paddedLength ?? 0)
             var scratchRe = [Double](repeating: 0, count: scratchCount)
             var scratchIm = [Double](repeating: 0, count: scratchCount)
             var horizontalRe = [Double](repeating: 0, count: nx * ny)
@@ -368,7 +405,7 @@ public nonisolated final class FFT2DDouble: FFT2DTransform, @unchecked Sendable 
                         horizontalIm.withUnsafeMutableBufferPointer { outputIm in
                             for y in 0..<ny {
                                 executeAxis(
-                                    fftSetup: axisXSetup, fftLog: axisXLog,
+                                    pair: axisPairX, fftSetup: axisXSetup, fftLog: axisXLog,
                                     exactPlan: axisXPlan,
                                     dftSetup: xSetup, bluestein: bluesteinX,
                                     length: nx, forward: forward,
@@ -397,7 +434,7 @@ public nonisolated final class FFT2DDouble: FFT2DTransform, @unchecked Sendable 
                         columnOutRe.withUnsafeMutableBufferPointer { outputRe in
                             columnOutIm.withUnsafeMutableBufferPointer { outputIm in
                                 executeAxis(
-                                    fftSetup: axisYSetup, fftLog: axisYLog,
+                                    pair: axisPairY, fftSetup: axisYSetup, fftLog: axisYLog,
                                     exactPlan: axisYPlan,
                                     dftSetup: ySetup, bluestein: bluesteinY,
                                     length: ny, forward: forward,
@@ -424,8 +461,28 @@ public nonisolated final class FFT2DDouble: FFT2DTransform, @unchecked Sendable 
         }
     }
 
+    /// Rows, transpose, columns, transpose, each row a `vDSP_DFT_zop` call (the unnormalised inverse is scaled by the caller).
+    private func transformPowerOfTwo(re: inout [Double], im: inout [Double], forward: Bool,
+                                     pairX: DFTPairD, pairY: DFTPairD) {
+        let count = nx * ny
+        var tRe = [Double](repeating: 0, count: count), tIm = [Double](repeating: 0, count: count)
+        var uRe = [Double](repeating: 0, count: count), uIm = [Double](repeating: 0, count: count)
+        re.withUnsafeMutableBufferPointer { r in im.withUnsafeMutableBufferPointer { i in
+        tRe.withUnsafeMutableBufferPointer { tr in tIm.withUnsafeMutableBufferPointer { ti in
+        uRe.withUnsafeMutableBufferPointer { ur in uIm.withUnsafeMutableBufferPointer { ui in
+            let (r, i, tr, ti, ur, ui) = (r.baseAddress!, i.baseAddress!, tr.baseAddress!, ti.baseAddress!,
+                                          ur.baseAddress!, ui.baseAddress!)
+            for y in 0..<ny { pairX.execute(forward: forward, r + y * nx, i + y * nx, tr + y * nx, ti + y * nx) }
+            vDSP_mtransD(tr, 1, ur, 1, vDSP_Length(nx), vDSP_Length(ny))
+            vDSP_mtransD(ti, 1, ui, 1, vDSP_Length(nx), vDSP_Length(ny))
+            for x in 0..<nx { pairY.execute(forward: forward, ur + x * ny, ui + x * ny, tr + x * ny, ti + x * ny) }
+            vDSP_mtransD(tr, 1, r, 1, vDSP_Length(ny), vDSP_Length(nx))
+            vDSP_mtransD(ti, 1, i, 1, vDSP_Length(ny), vDSP_Length(nx))
+        } } } } } }
+    }
+
     private func executeAxis(
-        fftSetup: FFTSetupD?, fftLog: vDSP_Length,
+        pair: DFTPairD?, fftSetup: FFTSetupD?, fftLog: vDSP_Length,
         exactPlan: ExactRadixPlanD?,
         dftSetup: vDSP_DFT_SetupD?, bluestein: BluesteinPlanD?,
         length: Int, forward: Bool,
@@ -433,6 +490,10 @@ public nonisolated final class FFT2DDouble: FFT2DTransform, @unchecked Sendable 
         _ outputRe: UnsafeMutablePointer<Double>, _ outputIm: UnsafeMutablePointer<Double>,
         scratch: (UnsafeMutablePointer<Double>?, UnsafeMutablePointer<Double>?)
     ) {
+        if let pair {
+            pair.execute(forward: forward, inputRe, inputIm, outputRe, outputIm)
+            return
+        }
         if let fftSetup {
             outputRe.update(from: inputRe, count: length)
             outputIm.update(from: inputIm, count: length)

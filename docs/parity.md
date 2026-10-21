@@ -60,6 +60,7 @@ Totals at 0.2.0 (32 rows): 17 done, 8 partial, 7 absent, 0 registered. Unrelease
 | the four display colour tables (viridis, inferno, gray, rdbu) | done (unreleased) | `Colormap`, `DisplayMapping.sampleRGB`: anchor tables, not matplotlib's maps (matplotlib is not in the pinned environment); bytes exact against a NumPy reading and an application's table bytes |
 | radial-chart samples (drawable bins, nearest bin, decade marks) and the spot-mask defaults | done (unreleased) | `RadialChartScale.samples`, `nearest`, `powerAxisMarks`, `FFTMask`: bit for bit against a NumPy reading |
 | CSV text: `%.17g` numbers, header values, cells, the radial-profile, spots and tidy results files | done (unreleased) | `CSVText`, `RadialProfileCSV`, `SpotsCSV`, `TidyResultsCSV`: byte for byte against an application's own writers on 46 seeded cases |
+| Line-profile CSV text (`# key: value` header, `%.17g` rows) | done (0.5.0) | `ProfileCSV`: the lines and order of macTEM's former writer, byte for byte |
 | axis as offset, scale, unit (RosettaSciIO convention) | done (0.2.0) | `value(at: 0) == offset`; round trip with `origin` |
 | Å per pixel, Å⁻¹ per pixel (Å⁻¹, nm⁻¹, mrad), canonical unit spellings | done (0.2.0) | closed forms (1 nm = 10 Å, mrad = 1/(1000 λ) Å⁻¹); every spelling pinned to the transcribed consumer table |
 | radial profile against physical \|q\| | done | a planted ring at known \|q\| |

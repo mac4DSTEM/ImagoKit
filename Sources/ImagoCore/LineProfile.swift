@@ -91,6 +91,11 @@ public nonisolated struct LineProfile: Sendable {
     /// The width averaged over, in pixels.
     public let width: Int
 
+    public init(samples: [Double], positions: [Double], unit: String, isPhysical: Bool, width: Int) {
+        self.samples = samples; self.positions = positions; self.unit = unit; self.isPhysical = isPhysical
+        self.width = width
+    }
+
     /// More samples than this is not a line anyone drew on an image.
     public static let maxSamples = 1 << 24
 

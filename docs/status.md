@@ -1,5 +1,7 @@
 # ImagoKit status
 
+**Hand-off 2026-10-21 (0.5.0):** done: Double FFT (2D, Bluestein, 1D) onto `vDSP_DFT_zop` (5-7x from 128², 1.6e-15 apart), `ProfileCSV` text writer (macTEM deletes its copy), public `LineProfile.init`; asks read from both apps' open-items: nothing else owed to ImagoKit (FFT-export adapter and the ScaleBar/LengthUnit renames are app-side); 0.5.0 awaits the owner's push and tag; next: nothing owed by the kit.
+
 **Hand-off 2026-10-21:** done: LineProfile spline orders 2 to 5 committed with its tests, `Thumbnail` capped init; the bilinear-fold ask is already met by `.float64` + `.linear` + `.reflect`; ScaleBar/LengthUnit naming is the app's rename (no kit change); 0.4.0 release commit (CHANGELOG 0.4.0; 0.3.0 is already tagged at bb7f953) awaits the owner's push and tag; next: nothing owed by the kit. (Hot-pixel speed is CuboKit's, not ImagoKit's.)
 
 **Hand-off 2026-10-20 (later):** unreleased on main, not pushed: Colormap tables, Segmentation (skimage label/regionprops), chart samples, CSV writers (radial, spots, tidy) with pins; proposed 0.3.0 (see CHANGELOG Unreleased); 0.2.0 still awaits the owner's push and tag; LineProfile spline work remains another session's.
