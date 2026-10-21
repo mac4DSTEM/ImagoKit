@@ -1,7 +1,7 @@
 //
 //  LineProfile.swift (ImagoCore)
 //  `skimage.measure.profile_line(image, src, dst, linewidth, order, mode, cval, reduce_func=...)` of a `Micrograph`, for
-//  orders 0 and 1, scikit-image 0.26.0 with SciPy 1.18.1's `ndimage.map_coordinates`.
+//  orders 0 to 5, scikit-image 0.26.0 with SciPy 1.18.1's `ndimage.map_coordinates`.
 //
 //  A PORT of skimage/measure/profile.py (`_line_profile_coordinates`, then `profile_line`): n = ⌈hypot(Δr, Δc) + 1⌉
 //  samples, `linspace` from the start to the end INCLUDING the end (one sample, at the start, for a zero-length line); at
@@ -17,7 +17,16 @@
 //  `.float64` keeps every sample in Double and reduces in Double: scikit-image on the same pixels widened to float64, to
 //  rounding of the sum. The tests state both gaps against the pinned NumPy output.
 //
-//  Absent: orders 2 to 5 (the spline prefilter), multichannel images, modes other than scikit-image's five.
+//  SPLINES (orders 2 to 5). As SciPy: the image is prefiltered once into B-spline coefficients (Float64, the poles and gain
+//  of ni_splines.c, the causal and anticausal recursions of `spline_filter1d`, mirror initialisation for "mirror" and
+//  "constant", reflect for "reflect" and "nearest", wrap for "wrap"), then each sample is the sum of (order + 1)² taps
+//  weighted by the B-spline. "constant" and "nearest" first pad the image by 12 pixels of `cval`, or of the edge pixel
+//  (`_prepad_for_spline_filter`); a tap beyond the padded array is `cval` ("constant") or the edge coefficient
+//  ("nearest", whose coordinate is NOT clamped, so the weights stay those of the true position); "reflect", "mirror"
+//  and "wrap" fold the coordinate and the tap indices. The whole image is filtered on every call: at order 2 to 5 a
+//  profile costs one pass over the image (and 8 bytes per pixel), as in SciPy.
+//
+//  Absent: multichannel images, modes other than scikit-image's five.
 //
 //  DEVIATION from scikit-image: a width below 1 (an empty axis, a NaN mean), a segment with a non-finite end, an end
 //  beyond 1e15 px or more than 2²⁴ samples throw (scikit-image would produce NaN, raise, lose every digit of the fold, or
@@ -44,6 +53,10 @@ public nonisolated enum ProfileMode: String, Sendable, Equatable, Hashable, Case
 public nonisolated enum ProfileOrder: Int, Sendable, Equatable, Hashable, CaseIterable {
     case nearest = 0
     case linear = 1
+    case quadratic = 2
+    case cubic = 3
+    case quartic = 4
+    case quintic = 5
 }
 
 /// The `reduce_func` applied across the width at each sample.
@@ -133,6 +146,8 @@ public nonisolated struct LineProfile: Sendable {
         let rowStep = n > 1 ? dRow / Double(n - 1) : 0         // numpy.linspace(src, dst, n)
         let colStep = n > 1 ? dCol / Double(n - 1) : 0
         let boundary = Boundary(mode)
+        let field = order.rawValue >= 2
+            ? SplineField(image, order: order.rawValue, boundary: boundary, cval: cval) : nil
         var out = [Double](repeating: 0, count: n * w)
         image.pixels.withUnsafeBufferPointer { pixels in
             for i in 0..<n {
@@ -146,8 +161,9 @@ public nonisolated struct LineProfile: Sendable {
                 for k in 0..<w {
                     let pRow = w > 1 && k == w - 1 ? rowEnd : Double(k) * perpRowStep + rowStart
                     let pCol = w > 1 && k == w - 1 ? colEnd : Double(k) * perpColStep + colStart
-                    var v = mapCoordinates(pixels, width: image.width, height: image.height, row: pRow, col: pCol,
-                                           order: order, boundary: boundary, cval: cval)
+                    var v = field.map { $0.value(row: pRow, col: pCol, cval: cval) }
+                        ?? mapCoordinates(pixels, width: image.width, height: image.height, row: pRow, col: pCol,
+                                          order: order, boundary: boundary, cval: cval)
                     if arithmetic == .float32 { v = Double(Float(v)) }
                     out[i * w + (w - 1 - k)] = v                // np.flip(pixels, axis=1)
                 }
@@ -237,6 +253,8 @@ public nonisolated struct LineProfile: Sendable {
             let floor = cc.rounded(.down)
             let f = cc - floor
             return Axis(i0: neighbour(Int(floor), n, boundary), i1: neighbour(Int(floor) + 1, n, boundary), w0: 1 - f, w1: f)
+        default:
+            preconditionFailure("orders 2 to 5 read a SplineField")
         }
     }
 
@@ -253,6 +271,88 @@ public nonisolated struct LineProfile: Sendable {
         t += value(a.i1, b.i1) * a.w1 * b.w1
         return t
     }
+
+
+    // MARK: splines (orders 2 to 5)
+
+    /// SciPy's prefiltered B-spline coefficients of an image, padded as `_prepad_for_spline_filter` does.
+    private nonisolated struct SplineField {
+        let coefficients: [Double]
+        let rows: Int, cols: Int
+        let pad: Int
+        let order: Int
+        let boundary: Boundary
+
+        init(_ image: Micrograph, order: Int, boundary: Boundary, cval: Double) {
+            self.order = order
+            self.boundary = boundary
+            pad = boundary == .nearest || boundary == .gridConstant ? 12 : 0
+            rows = image.height + 2 * pad
+            cols = image.width + 2 * pad
+            var c = [Double](repeating: boundary == .gridConstant ? cval : 0, count: rows * cols)
+            for r in 0..<rows {
+                let sr = min(max(r - pad, 0), image.height - 1)
+                for k in 0..<cols {
+                    let sc = min(max(k - pad, 0), image.width - 1)
+                    let inside = r >= pad && r < rows - pad && k >= pad && k < cols - pad
+                    if inside || boundary == .nearest { c[r * cols + k] = Double(image.pixels[sr * image.width + sc]) }
+                }
+            }
+            let kind: SplineBoundary = switch boundary {
+            case .mirror, .gridConstant: .mirror
+            case .reflect, .nearest: .reflect
+            case .gridWrap: .wrap
+            }
+            var line = [Double](repeating: 0, count: max(rows, cols))
+            for r in 0..<rows {                                   // along the columns (axis 1), then the rows (axis 0)
+                for k in 0..<cols { line[k] = c[r * cols + k] }
+                SplineFilter.filter(&line, count: cols, order: order, kind)
+                for k in 0..<cols { c[r * cols + k] = line[k] }
+            }
+            for k in 0..<cols {
+                for r in 0..<rows { line[r] = c[r * cols + k] }
+                SplineFilter.filter(&line, count: rows, order: order, kind)
+                for r in 0..<rows { c[r * cols + k] = line[r] }
+            }
+            coefficients = c
+        }
+
+        /// One axis: the (order + 1) tap indices (mapped by the boundary; −1 is a `cval` tap) and the B-spline weights.
+        private func taps(_ x: Double, _ n: Int) -> (indices: [Int], weights: [Double]) {
+            let shifted = x + Double(pad)
+            // SciPy folds the coordinate for mirror, reflect and wrap; nearest and constant keep it (the taps carry the edge).
+            let cc = boundary == .nearest || boundary == .gridConstant ? shifted : LineProfile.mapped(shifted, n, boundary)
+            let first = (order & 1 == 1 ? cc.rounded(.down) : (cc + 0.5).rounded(.down)) - Double(order / 2)
+            let start = Int(first)
+            let f = order & 1 == 1 ? cc - cc.rounded(.down) : cc - (cc + 0.5).rounded(.down)
+            var weights = [Double](repeating: 0, count: order + 1)
+            for k in 0...order { weights[k] = SplineFilter.basis(order, Double(k - order / 2) - f) }
+            var indices = [Int](repeating: 0, count: order + 1)
+            for k in 0...order {
+                let i = start + k
+                if i >= 0 && i < n { indices[k] = i; continue }
+                switch boundary {
+                case .gridConstant: indices[k] = -1
+                case .nearest: indices[k] = i < 0 ? 0 : n - 1
+                default: indices[k] = Int(LineProfile.mapped(Double(i), n, boundary))
+                }
+            }
+            return (indices, weights)
+        }
+
+        func value(row: Double, col: Double, cval: Double) -> Double {
+            let a = taps(row, rows), b = taps(col, cols)
+            var t = 0.0
+            for (i, wi) in zip(a.indices, a.weights) {
+                for (j, wj) in zip(b.indices, b.weights) {
+                    t += (i < 0 || j < 0 ? cval : coefficients[i * cols + j]) * wi * wj
+                }
+            }
+            return t
+        }
+    }
+
+    fileprivate nonisolated enum SplineBoundary { case mirror, reflect, wrap }
 
     // MARK: reductions along the width
 
@@ -302,6 +402,88 @@ public nonisolated struct LineProfile: Sendable {
             var n2 = n / 2
             n2 -= n2 % 8
             return pairwise(a, start, n2) + pairwise(a, start + n2, n - n2)
+        }
+    }
+}
+
+/// SciPy's `ni_splines.c`: the B-spline basis and the 1-D prefilter (`spline_filter1d`), orders 2 to 5.
+private nonisolated enum SplineFilter {
+    /// The poles to the digits SciPy carries (its closed forms lose about 12 digits to cancellation at orders 4 and 5).
+    static func poles(_ order: Int) -> [Double] {
+        switch order {
+        case 2: return [Double(8).squareRoot() - 3]
+        case 3: return [Double(3).squareRoot() - 2]
+        case 4: return [-0.361341225900220177092, -0.0137254292973391537]
+        default: return [-0.430575347099973791852, -0.043096288203264653822]
+        }
+    }
+
+    /// The centred cardinal B-spline of degree `d` at `t` (support (−(d+1)/2, (d+1)/2), half-open at the ends).
+    static func basis(_ d: Int, _ t: Double) -> Double {
+        if d == 0 { return t >= -0.5 && t < 0.5 ? 1 : 0 }
+        let h = Double(d + 1) / 2
+        return ((t + h) * basis(d - 1, t + 0.5) + (h - t) * basis(d - 1, t - 0.5)) / Double(d)
+    }
+
+    /// `spline_filter1d` of `c[0..<n]` in place, for the boundary kind SciPy's mode selects.
+    static func filter(_ c: inout [Double], count n: Int, order: Int, _ kind: LineProfile.SplineBoundary) {
+        if n < 2 { return }
+        let zs = poles(order)
+        var gain = 1.0
+        for z in zs { gain *= (1 - z) * (1 - 1 / z) }
+        for i in 0..<n { c[i] *= gain }
+        for z in zs {
+            let maxIter = Int((log(1e-15) / log(abs(z))).rounded(.up))
+            let truncated = maxIter < n
+            var c0: Double
+            switch kind {
+            case .mirror:
+                if truncated {
+                    var zi = z
+                    c0 = c[0]
+                    for i in 1..<maxIter { c0 += zi * c[i]; zi *= z }
+                } else {
+                    var zi = z
+                    let zn1 = pow(z, Double(n - 1))
+                    c0 = c[0] + zn1 * c[n - 1]
+                    for i in 1..<(n - 1) { c0 += (zi + zn1 * zn1 / zi) * c[i]; zi *= z }
+                    c0 /= 1 - zn1 * zn1
+                }
+            case .reflect:
+                if truncated {
+                    var zi = z
+                    var s = c[0]
+                    for i in 1..<maxIter { s += zi * c[i]; zi *= z }
+                    c0 = c[0] + z * s
+                } else {
+                    var zi = z
+                    let zn = pow(z, Double(n))
+                    var s = c[0] + zn * c[n - 1]
+                    for i in 1..<n { s += zi * (c[i] + zn * c[n - 1 - i]); zi *= z }
+                    s /= 1 - zn * zn
+                    c0 = c[0] + z * s
+                }
+            case .wrap:
+                var zi = z
+                let zn = pow(z, Double(n))
+                c0 = c[0]
+                for i in 1..<n { c0 += zi * c[n - i]; zi *= z }
+                c0 /= 1 - zn
+            }
+            c[0] = c0
+            for i in 1..<n { c[i] += z * c[i - 1] }
+            switch kind {
+            case .mirror: c[n - 1] = (z / (z * z - 1)) * (z * c[n - 2] + c[n - 1])
+            case .reflect: c[n - 1] = c[n - 1] * z / (z - 1)
+            case .wrap:
+                var zi = z
+                let zn = pow(z, Double(n))
+                var s = c[n - 1]
+                for i in 0..<(n - 1) { s += zi * c[i]; zi *= z }
+                c[n - 1] = z * s / (zn - 1)
+            }
+            var i = n - 2
+            while i >= 0 { c[i] = z * (c[i + 1] - c[i]); i -= 1 }
         }
     }
 }
