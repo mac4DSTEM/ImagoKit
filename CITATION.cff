@@ -6,7 +6,9 @@ abstract: >-
   Image analysis for electron micrographs in Swift: the calibrated FFT, radial profile, lattice spacings and angles from
   FFT spots, Bragg filtering, HRTEM filters, and drift and stack alignment, checked against NumPy, SciPy and scikit-image.
 authors:
-  - name: "mac4DSTEM contributors"
+  - family-names: Lobpreis
+    given-names: Paul
+    # TODO(Paul): add orcid: "https://orcid.org/…" and affiliation: "…" here
 license: GPL-3.0
 repository-code: "https://github.com/mac4DSTEM/ImagoKit"
 keywords:
@@ -14,3 +16,10 @@ keywords:
   - image analysis
   - FFT
   - Swift
+references:
+  - type: software
+    title: "scikit-image"
+    authors:
+      - name: "The scikit-image developers"
+    repository-code: "https://github.com/scikit-image/scikit-image"
+    notes: "The reference implementation ImagoKit's filters and alignment are checked against, with NumPy and SciPy."
