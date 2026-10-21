@@ -197,6 +197,8 @@ bits in steady state.
 
 ## 0.0.1 (2026-10-15)
 
+Consumer notes for 0.0.1 to 0.0.2 are archived.
+
 ### Added
 - `ImagoCore`: `Micrograph`, `AxisCalibration`, `PixelCrop`, `LengthUnit`, `Precision`, `FFT2D` (the exact N-point 2D DFT
   for every size on vDSP, Float32) and `FFT2DDouble` (the same algorithm in Double), `FFT2DTransform`.

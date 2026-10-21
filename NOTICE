@@ -5,7 +5,7 @@ Licensed under the GNU General Public License v3.0 (LICENSE).
 
 No number computed by this library is validated on a microscope: agreement with
 NumPy and SciPy, recovery of planted lattices and stated closed forms are what is
-claimed (see docs/registration-slice-1.md, section 9, for the design and validation notes).
+claimed (design and validation notes: design note, archived in the suite's private folder).
 
 
 ================================================================================
@@ -54,7 +54,7 @@ The average background subtraction and Wiener filters follow R. Kilaas,
 J. Microsc. 190 (1998) 45-51, as D. R. G. Mitchell's DigitalMicrograph script
 HRTEM_Filter.s v4.0 (2019-11-01) describes them. That script states no licence:
 nothing of it is copied. The kit implements the method's steps as
-docs/registration-slice-1.md states them (formulas, constants and parameters are method). Its
+the slice 1 design note (archived in the suite's private folder) states them (formulas, constants and parameters are method). Its
 output has never been compared with DigitalMicrograph.
 
 Tao Ma's hrtem_filter (github.com/matao1984/hrtem_filter, MIT) is an

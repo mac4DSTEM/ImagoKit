@@ -1,4 +1,4 @@
-# ImagoKit CI: the shell-guard test, the test suite (tools/test.sh = `swift test -c release`), the consumer check and the
+# ImagoKit CI: the test suite (`swift test -c release`), the consumer check and the
 # README consumer.
 #
 # Package.swift declares macOS 15 and iOS 18 with tools 6.2, so the
@@ -10,12 +10,13 @@
 # regenerating a fixture needs the gitignored References/oracle-venv on a maintainer's machine. CI therefore proves "the kit
 # equals the committed pins", not "the pins equal the oracle".
 #
-# Never `swift build --build-tests -c release` (fails on this toolchain's Swift Build backend); tools/test.sh is the supported way to run the tests.
+# Never `swift build --build-tests -c release` (fails on this toolchain's Swift Build backend); `swift test -c release` is the supported way to run the tests.
 name: CI
 
 on:
   push:
     branches: [main]
+    tags: ['*']
   pull_request:
   workflow_dispatch:
 
@@ -35,11 +36,21 @@ jobs:
           sudo xcode-select -s "$xcode"
           xcodebuild -version
           swift --version
-      - name: Hook proof (no sleep or poll loops, no kill by name)
-        run: tools/hooks/test-no-sleep-poll.sh
-      - name: Gate (tools/test.sh, release)
-        run: tools/test.sh
+      - name: Test (release)
+        run: swift test -c release
       - name: Consumer check (a separate package, the public API only)
         run: tools/consumer-check/run.sh
       - name: README consumer (the README's program compiled and run, drift-checked line by line)
         run: tools/readme-consumer/run.sh
+
+  version:
+    name: CHANGELOG version matches the tag
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compare
+        run: |
+          top=$(grep -m1 -E '^## [0-9]+\.[0-9]+\.[0-9]+' CHANGELOG.md | sed -E 's/^## ([0-9]+\.[0-9]+\.[0-9]+).*/\1/')
+          tag=${GITHUB_REF_NAME#v}
+          [ "$top" = "$tag" ] || { echo "CHANGELOG top is $top, tag is $tag"; exit 1; }

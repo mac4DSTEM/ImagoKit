@@ -4,6 +4,7 @@ The checklist that makes "complete" a measured claim : each row is a function of
 documented API that a micrograph user reaches for, with its state here. Updated at every tag.
 States: **done** (ported, pinned, tested), **partial** (a subset of the parameters, named), **registered** (in a
 registration, no code yet), **absent**.
+Numerics are held to the tolerance the Python package's own tests use; readers, I/O, indices and metadata are exact.
 
 Totals at 0.2.0 (32 rows): 17 done, 8 partial, 7 absent, 0 registered. Unreleased (0.3.0) adds the rows marked below.
 
