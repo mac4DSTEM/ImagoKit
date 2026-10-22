@@ -375,6 +375,31 @@ public nonisolated enum Thresholding {
         }
     }
 
+    // MARK: Mask
+
+    /// Which side of the threshold an object lies on.
+    public enum Polarity: Sendable, Equatable {
+        /// Pixels above the threshold.
+        case bright
+        /// Pixels below the threshold.
+        case dark
+    }
+
+    /// The segmentation mask `image > threshold` (bright) or `image < threshold` (dark): strict, in the image's type, and false for a
+    /// pixel that is NaN or infinite.
+    public static func mask<S: BinaryFloatingPoint & Sendable>(_ pixels: [S], threshold: S, polarity: Polarity = .bright) -> [Bool] {
+        pixels.map { $0.isFinite && (polarity == .bright ? $0 > threshold : $0 < threshold) }
+    }
+
+    /// The level at `fraction` of the finite range of `pixels` (0 is the minimum, 1 the maximum; clamped), computed in the image's
+    /// type as `low + fraction · (high − low)`. Nil when no pixel is finite.
+    public static func level<S: BinaryFloatingPoint & Sendable>(_ pixels: [S], atFraction fraction: Double) -> S? {
+        var lo = S.infinity, hi = -S.infinity
+        for v in pixels where v.isFinite { lo = min(lo, v); hi = max(hi, v) }
+        guard lo <= hi else { return nil }
+        return lo + S(min(max(fraction, 0), 1)) * (hi - lo)
+    }
+
     // MARK: Hysteresis
 
     /// `apply_hysteresis_threshold(image, low, high)` on an image of any dtype: `low` and `high` are cast to the image's type before the

@@ -8,7 +8,7 @@ a micrograph user reaches for, walked from the sources on disk (`References/pyth
 scikit-image 0.26.0 wheel ships no test files, so there its functions are held to `assert_allclose` dtype defaults.
 Numerics are never held stricter than that; readers, I/O, indices and metadata are exact.
 
-**Totals: 77 rows of the Python counterparts: 17 present, 13 partial, 47 missing.** By priority: 25 study, 33 useful, 19 not planned. (At 0.5.0 the same table had 32 rows: 17 present, 8 partial, 7 missing.) The kit-only rows at the end are not counted.
+**Totals: 87 rows of the Python counterparts: 27 present, 11 partial, 49 missing.** By priority: 35 study, 32 useful, 20 not planned. (At 0.6.0: 77 rows, 17 present, 13 partial, 47 missing; at 0.5.0: 32 rows, 17 present, 8 partial, 7 missing.) The kit-only rows at the end are not counted.
 
 
 ## NumPy 2.5.4, `numpy.fft`
@@ -166,6 +166,10 @@ Numerics are never held stricter than that; readers, I/O, indices and metadata a
 | radial-chart samples (drawable bins, nearest bin, decade marks) and the spot-mask defaults | done (unreleased) | `RadialChartScale.samples`, `nearest`, `powerAxisMarks`, `FFTMask`: bit for bit against a NumPy reading |
 | CSV text: `%.17g` numbers, header values, cells, the radial-profile, spots and tidy results files | done (unreleased) | `CSVText`, `RadialProfileCSV`, `SpotsCSV`, `TidyResultsCSV`: byte for byte against an application's own writers on 46 seeded cases |
 | Line-profile CSV text (`# key: value` header, `%.17g` rows) | done (0.5.0) | `ProfileCSV`: the lines and order of macTEM's former writer, byte for byte |
+| areal number density with the Miles–Lantuéjoul edge weight, length and width summaries, `N_V = N_A / t` with σ propagated (`validation: "none"`) | done (0.7.0) | `ObjectStatistics.arealDensity`, `edgeWeight`, `numberDensity`: the closed forms of mac4DSTEM's former `PrecipitateStatistics.density` (same arithmetic order), and planted truth: the edge-corrected count of a box averages to exactly 1 over every placement; no calibration, no density |
+| particle size summary (total, counted, edge, small, median and mean length, mean width) | done (0.7.0) | `ObjectStatistics.sizeSummary`: macTEM's former `ParticleCompute.summary` rules |
+| window applied to an image; the strict threshold mask and the fraction level | done (0.7.0) | `WindowFunction.apply`, `Thresholding.mask/level`: the apps' former interims, held to their own definitions |
+| `peak_local_max` on a centrosymmetric spectrum: centre exclusion and one of each mirror pair | done (0.7.0) | `PeakLocalMax.find(symmetry:)` with `SpectrumSymmetry`: a kit extension (not a scikit-image option), equal to macTEM's former `FFTSpotFinder` pruning on 25 random spectra |
 | axis as offset, scale, unit (RosettaSciIO convention) | done (0.2.0) | `value(at: 0) == offset`; round trip with `origin` |
 | Å per pixel, Å⁻¹ per pixel (Å⁻¹, nm⁻¹, mrad), canonical unit spellings | done (0.2.0) | closed forms (1 nm = 10 Å, mrad = 1/(1000 λ) Å⁻¹); every spelling pinned to the transcribed consumer table |
 | radial profile against physical \|q\| | done | a planted ring at known \|q\| |

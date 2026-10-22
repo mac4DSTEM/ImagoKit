@@ -119,3 +119,40 @@ public nonisolated enum ObjectStatistics {
         for l in labels.labels where l < 0 || Int(l) > labels.count { throw Segmentation.SegmentationError.labelOutOfRange(l) }
     }
 }
+
+extension ObjectStatistics {
+    /// How many objects there are of each kind, and the size summary of the counted ones (a particle report's numbers).
+    public struct SizeSummary: Sendable, Equatable {
+        public let total: Int
+        /// Not on the image edge and not below the minimum area.
+        public let counted: Int
+        /// Touching the image edge, whatever their size.
+        public let edge: Int
+        /// Below the minimum area and not on the edge.
+        public let small: Int
+        /// Over the counted objects, in pixels (`lengthPx`, `widthPx` of the moments); nil with none counted.
+        public let medianLength: Double?
+        public let meanLength: Double?
+        public let meanWidth: Double?
+    }
+
+    /// The counts and the length and width summaries of `objects` (from `Segmentation.objectMoments`): an object of fewer than
+    /// `minimumArea` pixels is small, one touching the image edge is an edge object, and only the rest are counted. The median is the
+    /// middle length (the mean of the two middle ones for an even count), the means are sums over the counted objects in label order
+    /// (lengths summed in ascending order, as `arealDensity` does).
+    public static func sizeSummary(_ objects: [Segmentation.ObjectMoments], minimumArea: Int = 1) -> SizeSummary {
+        let edge = objects.filter(\.touchesEdge)
+        let small = objects.filter { $0.area < minimumArea && !$0.touchesEdge }
+        let counted = objects.filter { $0.area >= minimumArea && !$0.touchesEdge }
+        guard !counted.isEmpty else {
+            return SizeSummary(total: objects.count, counted: 0, edge: edge.count, small: small.count,
+                               medianLength: nil, meanLength: nil, meanWidth: nil)
+        }
+        let lengths = counted.map(\.lengthPx).sorted()
+        let mid = lengths.count / 2
+        let median = lengths.count % 2 == 1 ? lengths[mid] : (lengths[mid - 1] + lengths[mid]) / 2
+        return SizeSummary(total: objects.count, counted: counted.count, edge: edge.count, small: small.count, medianLength: median,
+                           meanLength: lengths.reduce(0, +) / Double(lengths.count),
+                           meanWidth: counted.map(\.widthPx).reduce(0, +) / Double(counted.count))
+    }
+}

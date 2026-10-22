@@ -92,6 +92,24 @@ public nonisolated enum WindowFunction {
         return out.map { min(max($0, lo), hi) }
     }
 
+    /// The window applied to an image: `pixels · window2D(type, rows, columns)` elementwise, as `filters.window` is used (the image
+    /// is multiplied by it before the FFT). Each factor is rounded to the image's type first (a Float32 image multiplies by Float(w)).
+    public static func apply<S: BinaryFloatingPoint & Sendable>(_ type: WindowType, to pixels: [S], rows: Int, columns: Int) throws -> [S] {
+        guard rows > 0, columns > 0, rows <= Int.max / columns, pixels.count == rows * columns else { throw FilterError.shape }
+        let w = try window2D(type, rows: rows, columns: columns)
+        var out = pixels
+        for i in out.indices { out[i] *= S(w[i]) }
+        return out
+    }
+
+    /// The product of an existing 2D window (`window2D`) and an image of the same shape, elementwise.
+    public static func apply<S: BinaryFloatingPoint & Sendable>(window: [Double], to pixels: [S]) throws -> [S] {
+        guard window.count == pixels.count, !pixels.isEmpty else { throw FilterError.shape }
+        var out = pixels
+        for i in out.indices { out[i] *= S(window[i]) }
+        return out
+    }
+
     /// Modified Bessel function of the first kind, order 0 (power series; `numpy.i0`).
     static func besselI0(_ x: Double) -> Double {
         var term = 1.0, sum = 1.0

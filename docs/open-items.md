@@ -21,6 +21,14 @@ each with its cause as far as it is known (diagnose before changing a number, `.
 
 ## Work items from the audit
 
+- 0.7.0 (precipitation) gaps, none blocking: the thresholds, binary morphology, `ObjectStatistics`, `regionProperties` and `arealDensity` are CPU
+  (Double or Float32 as the reference is) and not yet benchmarked against the Python (add rows to `docs/benchmarks.md` with the next audit);
+  `BinaryMorphology` refuses even structures and an all-false structure (SciPy shifts the origin and answers) and runs a per-pixel loop
+  (fine at the 512² of a micrograph, slow for a 4096² mask: a bit-packed or separable path is the fix if an app asks); `Thresholding.yen`
+  can differ from scikit-image on an image of more than 2^24 pixels whose last histogram bin is nearly empty (Float32 `P1` reaches 1 and
+  NumPy's `argmax` returns the first NaN); `regionProperties` computes every property per object (use `objectMoments` alone for just the moments);
+  `watershed`, `rolling_ball` and the Euclidean distance transform are suite task 36.
+
 - Metal Float32 paths (D16): FFT, then the separable filters; measure the break-even at 2048² to 8192² in the nightly review.
 - Study rows still missing (`docs/parity.md`): `ndimage.zoom` and `rotate`, `restoration.denoise_*`, `profile_line`
   multichannel, `peak_local_max` with `footprint`/`labels`.

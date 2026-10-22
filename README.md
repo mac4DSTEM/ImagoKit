@@ -24,6 +24,8 @@ package is built and tested on macOS only. Linux is not supported yet.
 | `ImagoFilters` | the HRTEM average background subtraction filter (ABSF) and Wiener filter (Kilaas 1998, as D. R. G. Mitchell's DigitalMicrograph script describes them) | a float64 NumPy/SciPy reading of the same steps (`scipy.ndimage.median_filter`, `map_coordinates`) | 0.0.2 |
 | `ImagoAlignment` | phase cross-correlation with sub-pixel refinement, sub-pixel shifts, drift series and aligned stack sums | `skimage.registration.phase_cross_correlation`, `scipy.ndimage.shift`, `fourier_shift` | 0.1.0 |
 
+Since 0.7.0: `ImagoFilters.Thresholding` (Otsu, Li, Yen, triangle, mean, ISODATA, local, hysteresis), `ImagoCore.BinaryMorphology`, `ObjectStatistics` (labelled sums, extrema, centre of mass, areal density and `N_V`), `Segmentation.regionProperties` (perimeter, Feret, solidity, Euler number, intensity), `WindowFunction.apply`, `PeakLocalMax` spectrum symmetry.
+
 Since 0.6.0: `ImagoCore.FFTSurface` (`fft2`/`ifft2` with `axes` and `norm`, `rfft2`/`irfft2`, `fftshift`/`ifftshift`),
 `ImagoFilters` `SeparableFilters` (`gaussian_filter`, `uniform_filter`), `BandpassFilters` (`butterworth`,
 `difference_of_gaussians`), `WindowFunction`, `PeakLocalMax`, spline-order `ImageShift` and masked `PhaseCorrelation`.
@@ -72,7 +74,7 @@ NumPy 2.5.4 pins cover lengths 1, 2, 4, 8, 64, 256 and 1024. The tests state the
 ```text
 // Package.swift
 dependencies: [
-    .package(url: "https://github.com/mac4DSTEM/ImagoKit.git", exact: "0.6.0"),
+    .package(url: "https://github.com/mac4DSTEM/ImagoKit.git", exact: "0.7.0"),
 ],
 targets: [
     .target(name: "MyApp", dependencies: [

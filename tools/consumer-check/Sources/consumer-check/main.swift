@@ -332,5 +332,14 @@ check((try? BinaryMorphology.fillHoles(blockMask.enumerated().map { $0.offset ==
     .filter { $0 }.count == 9, "public fill holes")
 check((try? StructuringElement.generateStructure(rank: 2, connectivity: 1))?.filter { $0 }.count == 5, "public generate_binary_structure")
 
+let singleBox = Segmentation.LabelImage(width: 10, height: 10, labels: (0..<100).map { $0 == 55 ? 1 : 0 }, count: 1)
+check((try? ObjectStatistics.arealDensity(labels: singleBox, pixelSize: 1))?.arealDensity == 100.0 / 64 / 100, "public areal density")
+check((try? ObjectStatistics.arealDensity(labels: singleBox, pixelSize: nil))?.arealDensity == nil, "no scale, no density")
+check((try? ObjectStatistics.numberDensity(arealDensity: 0.01, thickness: 50))?.value == 0.01 / 50, "public number density")
+check((try? Segmentation.regionProperties(singleBox))?.first?.areaConvex == 1, "public regionProperties")
+check((try? WindowFunction.apply(.hann, to: [Float](repeating: 1, count: 9), rows: 3, columns: 3))?.count == 9, "public window apply")
+check(Thresholding.mask([Float(1), 3], threshold: 2) == [false, true], "public threshold mask")
+check(SpectrumSymmetry(centreRow: 1, centreColumn: 1).oneOfEachMirrorPair, "public spectrum symmetry")
+
 print("consumer-check summary: \(checks) checks, \(failures) failures")
 if failures > 0 { exit(1) }

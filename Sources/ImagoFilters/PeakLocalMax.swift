@@ -24,6 +24,23 @@ public nonisolated struct PeakCoordinate: Sendable, Equatable, Hashable {
     public init(row: Int, column: Int) { self.row = row; self.column = column }
 }
 
+/// A centrosymmetric image (a power spectrum): peaks come in mirror pairs through the centre and the centre itself is the transform's
+/// bright core. A kit extension to `peak_local_max`, not a scikit-image option.
+public nonisolated struct SpectrumSymmetry: Sendable, Equatable {
+    /// The centre pixel (a spectrum of n bins is centred at n / 2).
+    public let centreRow: Int
+    public let centreColumn: Int
+    /// Peaks within this many pixels of the centre (Euclidean, inclusive) are dropped; 0 drops only the centre itself.
+    public let excludedRadius: Int
+    /// Keep one of each mirror pair: the peak in the half-plane `row > centreRow`, or on `row == centreRow` with `column > centreColumn`.
+    public let oneOfEachMirrorPair: Bool
+
+    public init(centreRow: Int, centreColumn: Int, excludedRadius: Int = 0, oneOfEachMirrorPair: Bool = true) {
+        self.centreRow = centreRow; self.centreColumn = centreColumn
+        self.excludedRadius = excludedRadius; self.oneOfEachMirrorPair = oneOfEachMirrorPair
+    }
+}
+
 public nonisolated enum PeakLocalMax {
     /// `peak_local_max(image, min_distance, threshold_abs, threshold_rel, exclude_border, num_peaks, p_norm=)`.
     /// The threshold is `thresholdAbs ?? min(image)`, raised to `thresholdRel · max(image)` when that is larger, compared in the
@@ -32,7 +49,8 @@ public nonisolated enum PeakLocalMax {
     @_specialize(where S == Double)
     public static func find<S: BinaryFloatingPoint & Sendable>(
         _ a: [S], rows: Int, columns: Int, minDistance: Int = 1, thresholdAbs: Double? = nil, thresholdRel: Double? = nil,
-        excludeBorder: PeakBorder = .minDistance, numPeaks: Int? = nil, pNorm: Double = .infinity
+        excludeBorder: PeakBorder = .minDistance, numPeaks: Int? = nil, pNorm: Double = .infinity,
+        symmetry: SpectrumSymmetry? = nil
     ) throws -> [PeakCoordinate] {
         guard rows > 0, columns > 0 else { throw FilterError.shape }
         guard rows <= Int.max / columns, a.count == rows * columns else { throw FilterError.shape }
@@ -40,6 +58,7 @@ public nonisolated enum PeakLocalMax {
         guard minDistance >= 0 else { throw FilterError.parameter("minDistance") }
         guard pNorm >= 1 else { throw FilterError.parameter("pNorm") }
         if let numPeaks, numPeaks < 0 { throw FilterError.parameter("numPeaks") }
+        if let symmetry, symmetry.excludedRadius < 0 { throw FilterError.parameter("excludedRadius") }
         let (bRow, bCol): (Int, Int)
         switch excludeBorder {
         case .minDistance: (bRow, bCol) = (minDistance, minDistance)
@@ -69,7 +88,15 @@ public nonisolated enum PeakLocalMax {
         var index = (0..<out.count).filter { out[$0] }
         index.sort { a[$0] > a[$1] || (a[$0] == a[$1] && $0 < $1) }
         var coords = index.map { PeakCoordinate(row: $0 / columns, column: $0 % columns) }
-        if minDistance > 1 { coords = ensureSpacing(coords, spacing: Double(minDistance), pNorm: pNorm, maxOut: numPeaks) }
+        // With a symmetry the cut to `numPeaks` waits until the centre and the mirror half are dropped.
+        if minDistance > 1 { coords = ensureSpacing(coords, spacing: Double(minDistance), pNorm: pNorm, maxOut: symmetry == nil ? numPeaks : nil) }
+        if let symmetry {
+            coords = coords.filter { p in
+                let dy = p.row - symmetry.centreRow, dx = p.column - symmetry.centreColumn
+                if dx * dx + dy * dy <= symmetry.excludedRadius * symmetry.excludedRadius { return false }
+                return !symmetry.oneOfEachMirrorPair || dy > 0 || (dy == 0 && dx > 0)
+            }
+        }
         if let numPeaks, coords.count > numPeaks { coords = Array(coords.prefix(numPeaks)) }
         return coords
     }
