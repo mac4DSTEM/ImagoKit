@@ -9,6 +9,7 @@ Every number is held by regression tests against NumPy 2.5.4, SciPy 1.18.1 and s
 The segmentation, restoration and strain release (suite tasks 36, 20 and 21). Sections are added as each lands.
 
 ### Added
+- **Zoom and rotate** (suite task 20; `tools/resampling/pins.py`): `ImageResampling.zoom` and `rotate` (SciPy `ndimage.zoom` and `ndimage.rotate`, 2D, orders 0 to 5, the modes of `ImageShift` and SciPy's default `constant`, `grid_mode`, `reshape`), on the spline machinery of the spline shifts; 476 cases pinned at decimal 6 (float32 1.5e-6). `ImageShift.axisSample` and `combine` are now package-visible helpers; `AlignmentError.invalidResampling` is new.
 - **Distance transform, watershed, rolling ball** (suite task 36; `tools/segmentation-k1/pins.py`): `DistanceTransform.euclidean` (SciPy
   `distance_transform_edt`, 2D, `sampling`), `Segmentation.watershed` and `Segmentation.markers` (scikit-image `segmentation.watershed`
   from a marker image or peak coordinates, `mask`, connectivity 4 and 8; labels exact on 23 pinned cases, 12 of them tie-heavy), and

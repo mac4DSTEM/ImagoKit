@@ -258,27 +258,29 @@ public nonisolated enum ImageShift {
     package static func axisSamples(_ n: Int, _ shift: Double, _ order: ShiftOrder, _ mode: ShiftMode) -> [AxisSample] {
         var out = [AxisSample]()
         out.reserveCapacity(n)
-        for k in 0..<n {
-            let cc = mapped(Double(k) - shift, n, mode)
-            guard cc > -1 || mode == .gridConstant else {
-                out.append(AxisSample(constant: true, i0: 0, i1: 0, w0: 0, w1: 0))
-                continue
-            }
-            switch order {
-            case .nearest:
-                let start = Int((cc + 0.5).rounded(.down))
-                out.append(AxisSample(constant: false, i0: neighbour(start, n, mode), i1: 0, w0: 1, w1: 0))
-            case .quadratic, .cubic, .quartic, .quintic:
-                preconditionFailure("spline orders go through splineShifted")
-            case .linear:
-                let floor = cc.rounded(.down)
-                let start = Int(floor)
-                let f = cc - floor
-                out.append(AxisSample(constant: false, i0: neighbour(start, n, mode), i1: neighbour(start + 1, n, mode),
-                                      w0: 1 - f, w1: f))
-            }
-        }
+        for k in 0..<n { out.append(axisSample(Double(k) - shift, n, order, mode)) }
         return out
+    }
+
+    /// What the continuous source coordinate `x` of one axis of length `n` reads (orders 0 and 1): the mode's mapping, then the
+    /// nearest or the two neighbouring indices.
+    package static func axisSample(_ x: Double, _ n: Int, _ order: ShiftOrder, _ mode: ShiftMode) -> AxisSample {
+        let cc = mapped(x, n, mode)
+        guard cc > -1 || mode == .gridConstant else {
+            return AxisSample(constant: true, i0: 0, i1: 0, w0: 0, w1: 0)
+        }
+        switch order {
+        case .nearest:
+            let start = Int((cc + 0.5).rounded(.down))
+            return AxisSample(constant: false, i0: neighbour(start, n, mode), i1: 0, w0: 1, w1: 0)
+        case .quadratic, .cubic, .quartic, .quintic:
+            preconditionFailure("spline orders go through splineShifted")
+        case .linear:
+            let floor = cc.rounded(.down)
+            let start = Int(floor)
+            let f = cc - floor
+            return AxisSample(constant: false, i0: neighbour(start, n, mode), i1: neighbour(start + 1, n, mode), w0: 1 - f, w1: f)
+        }
     }
 
     package static func shifted<S: BinaryFloatingPoint>(_ pixels: [S], _ w: Int, _ h: Int, _ shift: PixelShift,
@@ -300,7 +302,7 @@ public nonisolated enum ImageShift {
 
     /// The value at one output pixel from its row and column samples.
     @inline(__always)
-    private static func combine<S: BinaryFloatingPoint>(_ pixels: [S], _ w: Int, _ a: AxisSample, _ b: AxisSample,
+    package static func combine<S: BinaryFloatingPoint>(_ pixels: [S], _ w: Int, _ a: AxisSample, _ b: AxisSample,
                                                         _ order: ShiftOrder, _ cval: S) -> S {
         func value(_ i: Int, _ j: Int) -> S { i < 0 || j < 0 ? cval : pixels[i * w + j] }
         if order == .nearest { return value(a.i0, b.i0) }

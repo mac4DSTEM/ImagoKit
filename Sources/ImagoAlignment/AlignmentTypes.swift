@@ -131,6 +131,8 @@ public nonisolated enum AlignmentError: Error, Equatable, Sendable, LocalizedErr
     case fftSetup(width: Int, height: Int)
     /// A spline order (2 to 5) was asked with the `constant` or `wrap` mode, whose spline coordinate rule is not ported.
     case splineMode(ShiftMode)
+    /// A zoom factor or angle that is not finite, or an output size outside what a call produces.
+    case invalidResampling(String)
     /// A mask holds `actual` values for an image of `expected` pixels.
     case maskCount(expected: Int, actual: Int)
     /// A mask is true nowhere: there is nothing to correlate.
@@ -156,6 +158,8 @@ public nonisolated enum AlignmentError: Error, Equatable, Sendable, LocalizedErr
             "The Fourier transform of a \(w) × \(h) image could not be set up."
         case .splineMode(let mode):
             "The \(mode.rawValue) mode is not available at spline orders 2 to 5; use grid-constant, nearest, reflect, mirror or grid-wrap."
+        case .invalidResampling(let why):
+            "The resampling cannot be done: \(why)."
         case .emptyMask:
             "A mask has no valid pixel."
         case .overlapRatio(let r):
