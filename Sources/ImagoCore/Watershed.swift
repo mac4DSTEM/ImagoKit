@@ -23,7 +23,7 @@ extension Segmentation {
     /// `watershed(image, markers, mask:, connectivity:)` with `connectivity` 4 (scikit-image 1) or 8 (scikit-image 2).
     /// Returns the label map: every pixel reached takes the label of the marker that flooded it; pixels outside `mask` and pixels no
     /// marker reaches are 0. Marker labels are kept as given (they need not be consecutive).
-    public static func watershed(image: [Double], markers: [Int32], width: Int, height: Int, mask: [Bool]? = nil,
+    public static func watershed(image: [Double], markers: [Int32], rows height: Int, columns width: Int, mask: [Bool]? = nil,
                                  connectivity: Connectivity = .four) throws -> [Int32] {
         let (n, overflow) = width.multipliedReportingOverflow(by: height)
         guard width > 0, height > 0, !overflow, image.count == n, markers.count == n, mask.map({ $0.count == n }) ?? true else {
@@ -65,10 +65,10 @@ extension Segmentation {
 
     /// Marker image from peak coordinates, as the usual `markers[tuple(coords.T)] = arange(1, n + 1)`: the k-th coordinate (1-based)
     /// carries label k. Coordinates outside the image are refused; a repeated coordinate keeps the later label.
-    public static func markers(rows: [Int], columns: [Int], width: Int, height: Int) throws -> [Int32] {
-        guard width > 0, height > 0, rows.count == columns.count else { throw MorphologyError.shape }
+    public static func markers(peakRows: [Int], peakColumns: [Int], rows height: Int, columns width: Int) throws -> [Int32] {
+        guard width > 0, height > 0, peakRows.count == peakColumns.count else { throw MorphologyError.shape }
         var out = [Int32](repeating: 0, count: width * height)
-        for (k, rc) in zip(rows, columns).enumerated() {
+        for (k, rc) in zip(peakRows, peakColumns).enumerated() {
             guard rc.0 >= 0, rc.0 < height, rc.1 >= 0, rc.1 < width else { throw MorphologyError.parameter("peak outside the image") }
             out[rc.0 * width + rc.1] = Int32(k + 1)
         }

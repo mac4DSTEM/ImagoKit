@@ -30,30 +30,30 @@ import Testing
     @Test func aRidgeBetweenTwoSeedsSplitsTheLine() throws {
         // Values 0 1 2 3 2 1 0 on one row; seeds at the two minima: the ridge pixel (value 3) goes to the first flooded side.
         let image: [Double] = [0, 1, 2, 3, 2, 1, 0]
-        let labels = try Segmentation.watershed(image: image, markers: [1, 0, 0, 0, 0, 0, 2], width: 7, height: 1)
+        let labels = try Segmentation.watershed(image: image, markers: [1, 0, 0, 0, 0, 0, 2], rows: 1, columns: 7)
         #expect(Array(labels[0..<3]) == [1, 1, 1] && Array(labels[4...]) == [2, 2, 2])
         #expect(labels[3] == 1 || labels[3] == 2)
     }
 
     @Test func aMaskKeepsTheFloodInside() throws {
-        let labels = try Segmentation.watershed(image: [0, 0, 0, 0], markers: [1, 0, 0, 0], width: 4, height: 1,
+        let labels = try Segmentation.watershed(image: [0, 0, 0, 0], markers: [1, 0, 0, 0], rows: 1, columns: 4,
                                                 mask: [true, true, false, true])
         #expect(labels == [1, 1, 0, 0], "the pixel behind the masked one is unreachable")
     }
 
     @Test func theDistanceOfALineOfBackgroundIsTheColumnOffset() throws {
         let mask = (0..<5).flatMap { _ in [false, true, true, true, true] }
-        let d = try DistanceTransform.euclidean(foreground: mask, width: 5, height: 5)
+        let d = try DistanceTransform.euclidean(foreground: mask, rows: 5, columns: 5)
         #expect(Array(d[0..<5]) == [0, 1, 2, 3, 4])
-        let scaled = try DistanceTransform.euclidean(foreground: mask, width: 5, height: 5, sampling: (rows: 1, columns: 0.5))
+        let scaled = try DistanceTransform.euclidean(foreground: mask, rows: 5, columns: 5, sampling: (rows: 1, columns: 0.5))
         #expect(Array(scaled[0..<5]) == [0, 0.5, 1, 1.5, 2])
     }
 }
 
 @Suite("0.8.0 review fixes") struct ReviewFixTests {
     @Test func extremeParametersAreRefusedNotTrapped() throws {
-        #expect(throws: MorphologyError.self) { try DistanceTransform.euclidean(foreground: [true, false], width: 2, height: 1, sampling: (1e-170, 1)) }
-        #expect(throws: MorphologyError.self) { try DistanceTransform.euclidean(foreground: [true, false], width: 2, height: 1, sampling: (1, 1e155)) }
+        #expect(throws: MorphologyError.self) { try DistanceTransform.euclidean(foreground: [true, false], rows: 1, columns: 2, sampling: (1e-170, 1)) }
+        #expect(throws: MorphologyError.self) { try DistanceTransform.euclidean(foreground: [true, false], rows: 1, columns: 2, sampling: (1, 1e155)) }
         #expect(throws: RestorationError.self) { try RollingBall.ballKernel(radius: 1e19) }
         #expect(throws: RestorationError.self) { try RollingBall.ellipsoidKernel(rows: 1 << 40, columns: 3, intensity: 1) }
     }
@@ -62,7 +62,7 @@ import Testing
         // radius beyond the kernel cap: every cell inside the image has dr, dc small relative to the radius, so the ball is
         // flat there to within r - sqrt(r^2 - d^2) ~ d^2 / 2r, which is below 1e-3 for a 4 x 4 image at radius 1e5.
         let image: [Double] = (0..<16).map { Double($0 % 4) }
-        let bg = try RollingBall.background(image: image, width: 4, height: 4, radius: 1e5)
+        let bg = try RollingBall.background(image: image, rows: 4, columns: 4, radius: 1e5)
         #expect(bg.count == 16 && bg.allSatisfy { $0.isFinite && $0 <= 3.0 + 1e-3 })
         #expect(bg.min()! >= -1e-3)
     }

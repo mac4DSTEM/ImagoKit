@@ -77,9 +77,9 @@ public nonisolated enum RollingBall {
 
     /// `rolling_ball(image, radius=)`. The ball's cells beyond the image can never land inside it, so only the cells within
     /// the image's size of the centre are visited; the centre height is the ball's own (`radius`), whatever the image size.
-    public static func background<S: BinaryFloatingPoint & Sendable>(image: [S], width: Int, height: Int, radius: Double) throws -> [S] {
+    public static func background<S: BinaryFloatingPoint & Sendable>(image: [S], rows height: Int, columns width: Int, radius: Double) throws -> [S] {
         guard radius.isFinite, radius >= 0 else { throw RestorationError.parameter("radius must be finite and not negative") }
-        if radius <= maximumRadius { return try background(image: image, width: width, height: height, kernel: ballKernel(radius: radius)) }
+        if radius <= maximumRadius { return try background(image: image, rows: height, columns: width, kernel: ballKernel(radius: radius)) }
         let (n, overflow) = width.multipliedReportingOverflow(by: height)
         guard width > 0, height > 0, !overflow, image.count == n else { throw RestorationError.shape }
         guard !image.contains(where: \.isNaN) else { throw RestorationError.nonFinite }
@@ -96,7 +96,7 @@ public nonisolated enum RollingBall {
     }
 
     /// `rolling_ball(image, kernel=)`.
-    public static func background<S: BinaryFloatingPoint & Sendable>(image: [S], width: Int, height: Int, kernel: Kernel) throws -> [S] {
+    public static func background<S: BinaryFloatingPoint & Sendable>(image: [S], rows height: Int, columns width: Int, kernel: Kernel) throws -> [S] {
         let (n, overflow) = width.multipliedReportingOverflow(by: height)
         guard width > 0, height > 0, !overflow, image.count == n else { throw RestorationError.shape }
         guard !image.contains(where: \.isNaN) else { throw RestorationError.nonFinite }

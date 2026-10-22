@@ -16,7 +16,7 @@ import Foundation
 public nonisolated enum DistanceTransform {
     /// `distance_transform_edt(mask, sampling=)`: `mask[row * width + column]` true is foreground. `sampling` is (rows, columns);
     /// both must be finite and positive.
-    public static func euclidean(foreground mask: [Bool], width: Int, height: Int,
+    public static func euclidean(foreground mask: [Bool], rows height: Int, columns width: Int,
                                  sampling: (rows: Double, columns: Double) = (1, 1)) throws -> [Double] {
         let (n, overflow) = width.multipliedReportingOverflow(by: height)
         guard width > 0, height > 0, !overflow, mask.count == n else { throw MorphologyError.shape }

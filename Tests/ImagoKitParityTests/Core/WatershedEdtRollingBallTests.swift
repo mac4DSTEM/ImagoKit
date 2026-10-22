@@ -20,38 +20,38 @@ import Testing
         let mask = maskFrom(c.mask)
         let sampling = c.sampling.map { (rows: $0[0], columns: $0[1]) } ?? (1, 1)
         guard c.hasBackground else {
-            #expect(throws: MorphologyError.noBackground) { try DistanceTransform.euclidean(foreground: mask, width: c.width, height: c.height, sampling: sampling) }
+            #expect(throws: MorphologyError.noBackground) { try DistanceTransform.euclidean(foreground: mask, rows: c.height, columns: c.width, sampling: sampling) }
             return
         }
-        let got = try DistanceTransform.euclidean(foreground: mask, width: c.width, height: c.height, sampling: sampling)
+        let got = try DistanceTransform.euclidean(foreground: mask, rows: c.height, columns: c.width, sampling: sampling)
         #expect(got.count == c.distance.count)
         for (i, (g, e)) in zip(got, c.distance).enumerated() { #expect(abs(g - e) <= 1e-12 * max(1, e), "\(c.name) pixel \(i): \(g) vs \(e)") }
     }
 
     @Test func distanceTransformRefusals() {
-        #expect(throws: MorphologyError.shape) { try DistanceTransform.euclidean(foreground: [true], width: 2, height: 1) }
-        #expect(throws: MorphologyError.self) { try DistanceTransform.euclidean(foreground: [true, false], width: 2, height: 1, sampling: (0, 1)) }
-        #expect(throws: MorphologyError.self) { try DistanceTransform.euclidean(foreground: [true, false], width: 2, height: 1, sampling: (1, .nan)) }
+        #expect(throws: MorphologyError.shape) { try DistanceTransform.euclidean(foreground: [true], rows: 1, columns: 2) }
+        #expect(throws: MorphologyError.self) { try DistanceTransform.euclidean(foreground: [true, false], rows: 1, columns: 2, sampling: (0, 1)) }
+        #expect(throws: MorphologyError.self) { try DistanceTransform.euclidean(foreground: [true, false], rows: 1, columns: 2, sampling: (1, .nan)) }
     }
 
     // MARK: watershed
 
     @Test(arguments: pins.watershed) func watershed(_ c: WatershedEdtRollingBallPins.Watershed) throws {
         let got = try Segmentation.watershed(
-            image: c.image, markers: c.markers.map { Int32($0) }, width: c.width, height: c.height, mask: c.mask.map(maskFrom),
+            image: c.image, markers: c.markers.map { Int32($0) }, rows: c.height, columns: c.width, mask: c.mask.map(maskFrom),
             connectivity: c.connectivity == 1 ? .four : .eight)
         let expected = c.labels.map { Int32($0) }
         #expect(got == expected, "\(c.name): \(zip(got, expected).filter { $0 != $1 }.count) of \(got.count) labels differ")
     }
 
     @Test func watershedRefusals() {
-        #expect(throws: MorphologyError.shape) { try Segmentation.watershed(image: [1, 2], markers: [1], width: 2, height: 1) }
-        #expect(throws: MorphologyError.self) { try Segmentation.watershed(image: [1, .nan], markers: [1, 0], width: 2, height: 1) }
-        #expect(throws: MorphologyError.self) { try Segmentation.markers(rows: [5], columns: [0], width: 2, height: 2) }
+        #expect(throws: MorphologyError.shape) { try Segmentation.watershed(image: [1, 2], markers: [1], rows: 1, columns: 2) }
+        #expect(throws: MorphologyError.self) { try Segmentation.watershed(image: [1, .nan], markers: [1, 0], rows: 1, columns: 2) }
+        #expect(throws: MorphologyError.self) { try Segmentation.markers(peakRows: [5], peakColumns: [0], rows: 2, columns: 2) }
     }
 
     @Test func markersFromPeaksNumberTheCoordinatesInOrder() throws {
-        #expect(try Segmentation.markers(rows: [0, 1], columns: [1, 0], width: 2, height: 2) == [0, 1, 2, 0])
+        #expect(try Segmentation.markers(peakRows: [0, 1], peakColumns: [1, 0], rows: 2, columns: 2) == [0, 1, 2, 0])
     }
 
     // MARK: rolling_ball
@@ -60,12 +60,12 @@ import Testing
         let kernel = try c.kernel.map { k in try RollingBall.Kernel(rows: k.height, columns: k.width, values: k.values.map { $0 ?? .infinity }) }
         if c.dtype == "float32" {
             let image = c.image.map { Float($0) }
-            let got = kernel == nil ? try RollingBall.background(image: image, width: c.width, height: c.height, radius: c.radius ?? 0)
-                : try RollingBall.background(image: image, width: c.width, height: c.height, kernel: kernel!)
+            let got = kernel == nil ? try RollingBall.background(image: image, rows: c.height, columns: c.width, radius: c.radius ?? 0)
+                : try RollingBall.background(image: image, rows: c.height, columns: c.width, kernel: kernel!)
             for (i, (g, e)) in zip(got, c.background).enumerated() { #expect(abs(Double(g) - e) <= 1e-5 * abs(e) + 1e-6, "\(c.name) pixel \(i): \(g) vs \(e)") }
         } else {
-            let got = kernel == nil ? try RollingBall.background(image: c.image, width: c.width, height: c.height, radius: c.radius ?? 0)
-                : try RollingBall.background(image: c.image, width: c.width, height: c.height, kernel: kernel!)
+            let got = kernel == nil ? try RollingBall.background(image: c.image, rows: c.height, columns: c.width, radius: c.radius ?? 0)
+                : try RollingBall.background(image: c.image, rows: c.height, columns: c.width, kernel: kernel!)
             for (i, (g, e)) in zip(got, c.background).enumerated() { #expect(abs(g - e) <= 1e-7 * abs(e) + 1e-12, "\(c.name) pixel \(i): \(g) vs \(e)") }
         }
     }
@@ -81,8 +81,8 @@ import Testing
     }
 
     @Test func rollingBallRefusals() throws {
-        #expect(throws: RestorationError.nonFinite) { try RollingBall.background(image: [1.0, .nan], width: 2, height: 1, radius: 1) }
-        #expect(throws: RestorationError.shape) { try RollingBall.background(image: [1.0], width: 2, height: 1, radius: 1) }
+        #expect(throws: RestorationError.nonFinite) { try RollingBall.background(image: [1.0, .nan], rows: 1, columns: 2, radius: 1) }
+        #expect(throws: RestorationError.shape) { try RollingBall.background(image: [1.0], rows: 1, columns: 2, radius: 1) }
         #expect(throws: RestorationError.self) { try RollingBall.ballKernel(radius: -1) }
     }
 }
