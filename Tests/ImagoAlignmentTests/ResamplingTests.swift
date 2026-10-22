@@ -55,6 +55,8 @@ import Testing
         #expect(throws: AlignmentError.self) { try ImageResampling.zoom(image, zoom: (0, 1)) }
         #expect(throws: AlignmentError.self) { try ImageResampling.zoom(image, zoom: (.nan, 1)) }
         #expect(throws: AlignmentError.self) { try ImageResampling.zoom(image, zoom: (1e9, 1)) }
+        #expect(throws: AlignmentError.self) { try ImageResampling.zoom(image, zoom: (1e30, 1)) }
+        #expect(throws: AlignmentError.self) { try ImageResampling.zoom(image, zoom: (20000, 20000)) }
         #expect(throws: AlignmentError.self) { try ImageResampling.rotate(image, degrees: .infinity) }
         #expect(throws: AlignmentError.splineMode(.wrap)) { try ImageResampling.rotate(image, degrees: 30, order: .cubic, mode: .wrap) }
     }

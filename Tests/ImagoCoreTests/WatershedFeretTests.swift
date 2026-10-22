@@ -49,3 +49,21 @@ import Testing
         #expect(Array(scaled[0..<5]) == [0, 0.5, 1, 1.5, 2])
     }
 }
+
+@Suite("0.8.0 review fixes") struct ReviewFixTests {
+    @Test func extremeParametersAreRefusedNotTrapped() throws {
+        #expect(throws: MorphologyError.self) { try DistanceTransform.euclidean(foreground: [true, false], width: 2, height: 1, sampling: (1e-170, 1)) }
+        #expect(throws: MorphologyError.self) { try DistanceTransform.euclidean(foreground: [true, false], width: 2, height: 1, sampling: (1, 1e155)) }
+        #expect(throws: RestorationError.self) { try RollingBall.ballKernel(radius: 1e19) }
+        #expect(throws: RestorationError.self) { try RollingBall.ellipsoidKernel(rows: 1 << 40, columns: 3, intensity: 1) }
+    }
+
+    @Test func aHugeRadiusOnASmallImageIsTheFlatCaseWithoutAllocatingTheKernel() throws {
+        // radius beyond the kernel cap: every cell inside the image has dr, dc small relative to the radius, so the ball is
+        // flat there to within r - sqrt(r^2 - d^2) ~ d^2 / 2r, which is below 1e-3 for a 4 x 4 image at radius 1e5.
+        let image: [Double] = (0..<16).map { Double($0 % 4) }
+        let bg = try RollingBall.background(image: image, width: 4, height: 4, radius: 1e5)
+        #expect(bg.count == 16 && bg.allSatisfy { $0.isFinite && $0 <= 3.0 + 1e-3 })
+        #expect(bg.min()! >= -1e-3)
+    }
+}

@@ -72,6 +72,13 @@ import Testing
         #expect(abs(rot.rotation[mid] - 0.01) < 2e-3 && abs(rot.strainRC[mid]) < 2e-3)
     }
 
+    @Test func anOverflowingSizeIsRefusedNotTrapped() throws {
+        #expect(throws: GeometricPhaseAnalysisError.invalidSize) {
+            try GPA.analyze([1, 2], rows: Int.max, columns: 3, g1: (0, 0.25), g2: (0.25, 0))
+        }
+        #expect(throws: GeometricPhaseAnalysisError.invalidSize) { try GPA.findReflections([1, 2], rows: Int.max, columns: 3) }
+    }
+
     @Test func referenceRegionZeroesStrainOverIt() throws {
         let p = PlantedLattice("bump")
         let w = GPA.ReferenceWindow(rows: 40..<60, columns: 25..<45)

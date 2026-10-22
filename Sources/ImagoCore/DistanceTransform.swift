@@ -20,8 +20,12 @@ public nonisolated enum DistanceTransform {
                                  sampling: (rows: Double, columns: Double) = (1, 1)) throws -> [Double] {
         let (n, overflow) = width.multipliedReportingOverflow(by: height)
         guard width > 0, height > 0, !overflow, mask.count == n else { throw MorphologyError.shape }
-        guard sampling.rows.isFinite, sampling.rows > 0, sampling.columns.isFinite, sampling.columns > 0 else {
-            throw MorphologyError.parameter("sampling must be finite and positive")
+        guard sampling.rows.isFinite, sampling.rows > 0, sampling.columns.isFinite, sampling.columns > 0,
+              (sampling.rows * sampling.rows).isNormal, (sampling.columns * sampling.columns).isNormal,
+              (sampling.rows * Double(height)).isFinite, (sampling.columns * Double(width)).isFinite,
+              (sampling.rows * Double(height) * sampling.rows * Double(height)).isFinite,
+              (sampling.columns * Double(width) * sampling.columns * Double(width)).isFinite else {
+            throw MorphologyError.parameter("sampling must be finite and positive, with squares that neither underflow nor overflow")
         }
         guard mask.contains(false) else { throw MorphologyError.noBackground }
         // Pass 1, down each column: squared distance (in sampled units) to the nearest background pixel of that column.

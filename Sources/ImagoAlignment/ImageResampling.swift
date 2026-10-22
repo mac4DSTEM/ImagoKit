@@ -32,10 +32,12 @@ public nonisolated enum ImageResampling {
             throw AlignmentError.invalidResampling("zoom factors must be finite and positive")
         }
         let h = image.height, w = image.width
-        let outH = Int((Double(h) * zoom.rows).rounded(.toNearestOrEven)), outW = Int((Double(w) * zoom.columns).rounded(.toNearestOrEven))
-        guard outH >= 1, outW >= 1, outH <= maximumSide, outW <= maximumSide else {
-            throw AlignmentError.invalidResampling("the zoomed image would be \(outH) x \(outW) pixels")
+        let fh = (Double(h) * zoom.rows).rounded(.toNearestOrEven), fw = (Double(w) * zoom.columns).rounded(.toNearestOrEven)
+        guard fh >= 1, fw >= 1, fh <= Double(maximumSide), fw <= Double(maximumSide),
+              fh * fw <= Double(maximumPixels) else {
+            throw AlignmentError.invalidResampling("the zoomed image would be \(fh) x \(fw) pixels")
         }
+        let outH = Int(fh), outW = Int(fw)
         if zoom.rows == 1, zoom.columns == 1 { return image }
         let rowCoordinates = coordinates(inCount: h, outCount: outH, gridMode: gridMode)
         let columnCoordinates = coordinates(inCount: w, outCount: outW, gridMode: gridMode)
@@ -85,7 +87,7 @@ public nonisolated enum ImageResampling {
             outH = Int((rows.max()! - rows.min()! + 0.5).rounded(.towardZero))
             outW = Int((columns.max()! - columns.min()! + 0.5).rounded(.towardZero))
         }
-        guard outH >= 1, outW >= 1, outH <= maximumSide, outW <= maximumSide else {
+        guard outH >= 1, outW >= 1, outH <= maximumSide, outW <= maximumSide, outH * outW <= maximumPixels else {
             throw AlignmentError.invalidResampling("the rotated image would be \(outH) x \(outW) pixels")
         }
         let outCentreRow = c * (Double(outH - 1) / 2) + s * (Double(outW - 1) / 2)
@@ -116,6 +118,8 @@ public nonisolated enum ImageResampling {
 
     /// The largest output side either call produces.
     public static let maximumSide = 1 << 15
+    /// The largest output area either call produces (64 mega-pixels, 256 MB of Float32).
+    public static let maximumPixels = 1 << 26
 
     // MARK: pieces
 

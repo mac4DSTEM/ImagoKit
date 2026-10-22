@@ -138,8 +138,9 @@ public nonisolated final class FFT1DDouble: @unchecked Sendable {
     }
 
     /// `numpy.fft.irfft(X, n, norm)` with a plan built for `n` (default `2 · (bins − 1)`); nil when `n` is not a positive power
-    /// of two.
+    /// of two or the two parts differ in length.
     public static func irfft(re: [Double], im: [Double], n: Int? = nil, norm: FFTNorm = .backward) -> [Double]? {
+        guard re.count == im.count else { return nil }
         guard let plan = FFT1DDouble(n: n ?? 2 * (re.count - 1)) else { return nil }
         return plan.irfft(re: re, im: im, norm: norm)
     }

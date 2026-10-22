@@ -35,9 +35,14 @@ public nonisolated enum RollingBall {
         }
     }
 
+    /// The largest radius `ballKernel` builds (a (2r + 1) square grid of Doubles); `background(image:radius:)` has no such limit.
+    public static let maximumRadius: Double = 8192
+
     /// `ball_kernel(radius, 2)`: the top half of a ball of `radius`, on a (2 ceil(radius) + 1) square grid.
     public static func ballKernel(radius: Double) throws -> Kernel {
-        guard radius.isFinite, radius >= 0 else { throw RestorationError.parameter("radius must be finite and not negative") }
+        guard radius.isFinite, radius >= 0, radius <= maximumRadius else {
+            throw RestorationError.parameter("radius must be between 0 and \(Int(maximumRadius)) pixels")
+        }
         let half = Int(radius.rounded(.up)), side = 2 * half + 1
         var values = [Double](repeating: 0, count: side * side)
         for r in -half...half {
@@ -53,7 +58,9 @@ public nonisolated enum RollingBall {
 
     /// `ellipsoid_kernel(shape, intensity)`: the top half of an ellipsoid with principal axes `shape` (rows, columns) and height `intensity`.
     public static func ellipsoidKernel(rows: Int, columns: Int, intensity: Double) throws -> Kernel {
-        guard rows > 0, columns > 0, intensity.isFinite else { throw RestorationError.parameter("shape and intensity") }
+        guard rows > 0, columns > 0, rows <= 2 * Int(maximumRadius), columns <= 2 * Int(maximumRadius), intensity.isFinite else {
+            throw RestorationError.parameter("shape and intensity")
+        }
         let semiR = max(rows / 2, 1), semiC = max(columns / 2, 1)
         let h = 2 * semiR + 1, w = 2 * semiC + 1
         var values = [Double](repeating: 0, count: h * w)
@@ -68,9 +75,24 @@ public nonisolated enum RollingBall {
         return try Kernel(rows: h, columns: w, values: values)
     }
 
-    /// `rolling_ball(image, radius=)`.
+    /// `rolling_ball(image, radius=)`. The ball's cells beyond the image can never land inside it, so only the cells within
+    /// the image's size of the centre are visited; the centre height is the ball's own (`radius`), whatever the image size.
     public static func background<S: BinaryFloatingPoint & Sendable>(image: [S], width: Int, height: Int, radius: Double) throws -> [S] {
-        try background(image: image, width: width, height: height, kernel: ballKernel(radius: radius))
+        guard radius.isFinite, radius >= 0 else { throw RestorationError.parameter("radius must be finite and not negative") }
+        if radius <= maximumRadius { return try background(image: image, width: width, height: height, kernel: ballKernel(radius: radius)) }
+        let (n, overflow) = width.multipliedReportingOverflow(by: height)
+        guard width > 0, height > 0, !overflow, image.count == n else { throw RestorationError.shape }
+        guard !image.contains(where: \.isNaN) else { throw RestorationError.nonFinite }
+        let centre = S(radius)
+        var cells: [(dr: Int, dc: Int, d: S)] = []
+        for dr in -(height - 1)...(height - 1) {
+            for dc in -(width - 1)...(width - 1) {
+                let sumOfSquares = Double(dr) * Double(dr) + Double(dc) * Double(dc)
+                if sumOfSquares.squareRoot() > radius { continue }
+                cells.append((dr, dc, centre - S(max(radius * radius - sumOfSquares, 0).squareRoot())))
+            }
+        }
+        return scan(image, width, height, cells)
     }
 
     /// `rolling_ball(image, kernel=)`.
@@ -89,7 +111,11 @@ public nonisolated enum RollingBall {
                 cells.append((r - centreR, c - centreC, centre - S(k)))
             }
         }
-        var out = [S](repeating: 0, count: n)
+        return scan(image, width, height, cells)
+    }
+
+    private static func scan<S: BinaryFloatingPoint>(_ image: [S], _ width: Int, _ height: Int, _ cells: [(dr: Int, dc: Int, d: S)]) -> [S] {
+        var out = [S](repeating: 0, count: width * height)
         for r in 0..<height {
             for c in 0..<width {
                 var best = S.infinity

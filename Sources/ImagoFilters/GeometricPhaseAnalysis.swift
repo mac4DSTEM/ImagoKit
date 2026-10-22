@@ -91,7 +91,7 @@ public nonisolated enum GeometricPhaseAnalysis {
                                sigmaInLatticeUnits: Double = defaultSigmaInLatticeUnits,
                                reference: ReferenceWindow? = nil) throws -> Result {
         typealias E = GeometricPhaseAnalysisError
-        guard rows >= 8, columns >= 8, image.count == rows * columns else { throw E.invalidSize }
+        guard rows >= 8, columns >= 8, !rows.multipliedReportingOverflow(by: columns).overflow, image.count == rows * columns else { throw E.invalidSize }
         guard image.allSatisfy({ $0.isFinite }) else { throw E.nonFinitePixel }
         for g in [g1, g2] {
             guard g.row.isFinite, g.column.isFinite, abs(g.row) < 0.5, abs(g.column) < 0.5, g.row != 0 || g.column != 0
@@ -170,12 +170,14 @@ public nonisolated enum GeometricPhaseAnalysis {
         }
         var off = (dRR: 0.0, dRC: 0.0, dCR: 0.0, dCC: 0.0)
         if let w = reference {
-            func mean(_ a: [Double]) -> Double {
-                var s = 0.0
-                for i in w.rows { for j in w.columns { s += a[i * columns + j] } }
-                return s / Double(w.rows.count * w.columns.count)
+            // The mean over the window's pixels that have a phase (a vacuum corner holds NaN); none finite is a refusal.
+            func mean(_ a: [Double]) -> Double? {
+                var s = 0.0, k = 0
+                for i in w.rows { for j in w.columns where a[i * columns + j].isFinite { s += a[i * columns + j]; k += 1 } }
+                return k > 0 ? s / Double(k) : nil
             }
-            off = (mean(dRR), mean(dRC), mean(dCR), mean(dCC))
+            guard let mrr = mean(dRR), let mrc = mean(dRC), let mcr = mean(dCR), let mcc = mean(dCC) else { throw E.invalidReferenceWindow }
+            off = (mrr, mrc, mcr, mcc)
             for p in 0..<count { dRR[p] -= off.dRR; dRC[p] -= off.dRC; dCR[p] -= off.dCR; dCC[p] -= off.dCC }
         }
         return Result(rows: rows, columns: columns, g1: g1, g2: g2, sigma: sigma, dRR: dRR, dRC: dRC, dCR: dCR, dCC: dCC,
@@ -210,7 +212,7 @@ public nonisolated enum GeometricPhaseAnalysis {
     public static func findReflections(_ image: [Double], rows: Int, columns: Int, minRadius: Double = 0.02) throws
         -> (g1: (row: Double, column: Double), g2: (row: Double, column: Double)) {
         typealias E = GeometricPhaseAnalysisError
-        guard rows >= 8, columns >= 8, image.count == rows * columns else { throw E.invalidSize }
+        guard rows >= 8, columns >= 8, !rows.multipliedReportingOverflow(by: columns).overflow, image.count == rows * columns else { throw E.invalidSize }
         guard image.allSatisfy({ $0.isFinite }) else { throw E.nonFinitePixel }
         let mean = image.reduce(0, +) / Double(image.count)
         var buf = image

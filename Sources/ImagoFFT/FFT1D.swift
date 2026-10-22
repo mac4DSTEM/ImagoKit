@@ -122,8 +122,9 @@ public nonisolated final class FFT1D: @unchecked Sendable {
     }
 
     /// `numpy.fft.irfft(X, n, norm)` with a plan built for `n` (default `2 · (bins − 1)`); nil when `n` is not a positive power
-    /// of two.
+    /// of two or the two parts differ in length.
     public static func irfft(re: [Float], im: [Float], n: Int? = nil, norm: FFTNorm = .backward) -> [Float]? {
+        guard re.count == im.count else { return nil }
         guard let plan = FFT1D(n: n ?? 2 * (re.count - 1)) else { return nil }
         return plan.irfft(re: re, im: im, norm: norm)
     }

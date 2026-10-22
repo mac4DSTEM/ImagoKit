@@ -8,22 +8,23 @@ a micrograph user reaches for, walked from the sources on disk (`References/pyth
 scikit-image 0.26.0 wheel ships no test files, so there its functions are held to `assert_allclose` dtype defaults.
 Numerics are never held stricter than that; readers, I/O, indices and metadata are exact.
 
-**Totals: 87 rows of the Python counterparts: 27 present, 11 partial, 49 missing.** By priority: 35 study, 32 useful, 20 not planned. (At 0.6.0: 77 rows, 17 present, 13 partial, 47 missing; at 0.5.0: 32 rows, 17 present, 8 partial, 7 missing.) The kit-only rows at the end are not counted.
+**Totals: 93 rows of the Python counterparts: 36 present, 12 partial, 45 missing.** By priority: 39 study, 34 useful, 20 not planned. (At 0.7.0: 87 rows, 27 present, 11 partial, 49 missing; at 0.6.0: 77 rows, 17 present, 13 partial, 47 missing; at 0.5.0: 32 rows, 17 present, 8 partial, 7 missing.) The kit-only rows at the end are not counted.
 
 
 ## NumPy 2.5.4, `numpy.fft`
 
 | Function or option group | State | Kit symbol | Counterpart tolerance (source) | Priority | Notes |
 |---|---|---|---|---|---|
-| `fft2`, `ifft2` on a real or complex 2D array, any shape | present | `FFTSurface.fft2/ifft2`, `FFT2D`, `FFT2DDouble` | numpy/fft/tests/test_pocketfft.py: atol 1e-6 (rtol 1e-7) | study | exact N-point DFT for every length, Float32 and Float64; 81 pinned shape/axes/norm cases |
+| `fft2`, `ifft2` on a real or complex 2D array, any shape | present | `FFTSurface.fft2/ifft2`, `FFT2D`, `FFT2DDouble` | numpy/fft/tests/test_pocketfft.py: atol 1e-6 (rtol 1e-7) | study | exact N-point DFT for every length, Float32 and Float64; 81 pinned shape/axes/norm cases; Float64 lengths of prime factors 2, 3, 5, 7 not served by vDSP run on a mixed-radix plan (43 pinned lengths and 5 shapes, worst scaled difference 4e-14), Bluestein for the rest |
 | `axes=` and `norm=` (backward, forward, ortho) on `fft2`/`ifft2` | present (0.6.0) | `FFTAxes`, `FFTNorm` | numpy/fft/tests/test_pocketfft.py: atol 1e-6 (rtol 1e-7) | study | axes are axis 0, axis 1 or both |
 | `s=` (resize before transforming) on `fft2`/`ifft2` | missing |  | numpy/fft/tests/test_pocketfft.py: atol 1e-6 (rtol 1e-7) | useful | zero-pad or crop by the caller today |
-| `rfft2`, `irfft2` (with `s`, `norm`) | present (0.6.0) | `FFTSurface.rfft2/irfft2` | numpy/fft/tests/test_pocketfft.py: atol 1e-6 (rtol 1e-7) | study | computed through the complex transform and truncated, so about 2x the work of a real-input transform (benchmarks) |
+| `rfft2`, `irfft2` (with `s`, `norm`) | present (0.8.0 real-input path) | `FFTSurface.rfft2/irfft2` | numpy/fft/tests/test_pocketfft.py: atol 1e-6 (rtol 1e-7) | study | real-input path (two real rows per complex transform; 0.72 ms Float64 at 512x512, NumPy 0.65); 24 + 16 pinned shape/norm cases incl. `s` truncation and padding; worst scaled difference 9e-14 (Float64), 1.4e-5 (Float32; the test holds it to 1e-5 of the array maximum) |
 | `fftshift`, `ifftshift` (2D, `axes`) | present (0.6.0) | `FFTSurface.fftshift/ifftshift` | numpy/fft/tests/test_helper.py: assert_array_almost_equal (decimal 6) | study | any element type; exact |
 | `fftfreq` | present | `FFT2D.fftfreq`, `PowerSpectrum.frequencies` | exact (NumPy: test_helper.py decimal 6) | study |  |
 | `rfftfreq` | missing |  | numpy/fft/tests/test_helper.py: assert_array_almost_equal (decimal 6) | useful | one line |
 | `fft`, `ifft` on a complex 1D array | partial | `FFT1D`, `FFT1DDouble` | numpy/fft/tests/test_pocketfft.py: atol 1e-6 (rtol 1e-7) | useful | radix-2 positive lengths only, no `axis=`, `n=`, `norm=`; the Double 1D runs on `vDSP_DFT_zop` |
-| `rfft`, `irfft`, `hfft`, `ihfft` (1D real) | missing |  | numpy/fft/tests/test_pocketfft.py: atol 1e-6 (rtol 1e-7) | useful | ACOM (DiffractoKit) needs a 1D FFT of any length |
+| `rfft`, `irfft` (1D real; `n=`, `norm=`) | present (0.8.0) | `FFT1D.rfft/irfft`, `FFT1DDouble.rfft/irfft` (plan and static forms) | numpy/fft/tests/test_pocketfft.py: atol 1e-6 (rtol 1e-7) | useful | power-of-two lengths only (the 1D plans'); `n=` is the plan length (static forms take `n:`); 94 pinned cases, worst scaled difference 1.9e-14 (Float64), 6.8e-6 (Float32) |
+| `hfft`, `ihfft` (1D Hermitian) | missing |  | numpy/fft/tests/test_pocketfft.py: atol 1e-6 (rtol 1e-7) | useful | ACOM (DiffractoKit) needs a 1D FFT of any length |
 | `fftn`, `ifftn`, `rfftn`, `irfftn` (n-dimensional) | missing |  | numpy/fft/tests/test_pocketfft.py: atol 1e-6 (rtol 1e-7) | not planned | images are 2D; 3D/4D transforms belong to the consumers that need them |
 
 ## NumPy 2.5.4, other
@@ -78,7 +79,7 @@ Numerics are never held stricter than that; readers, I/O, indices and metadata a
 
 | Function or option group | State | Kit symbol | Counterpart tolerance (source) | Priority | Notes |
 |---|---|---|---|---|---|
-| `butterworth` (`cutoff_frequency_ratio`, `high_pass`, `order`, `squared_butterworth`, `npad`) | present (0.6.0) | `BandpassFilters.butterworth` | scikit-image 0.26.0 ships no tests in its wheel: assert_allclose dtype defaults (rtol 1e-7 f64, 1e-5 f32) | study | 0.26.0's `npad` default is 0, not 64; `cutoffFrequencyRatio` 0 is refused (scikit-image answers NaN); `channel_axis` absent; 120 pinned cases |
+| `butterworth` (`cutoff_frequency_ratio`, `high_pass`, `order`, `squared_butterworth`, `npad`) | present (0.6.0) | `BandpassFilters.butterworth` | scikit-image 0.26.0 ships no tests in its wheel: assert_allclose dtype defaults (rtol 1e-7 f64, 1e-5 f32) | study | 0.26.0's `npad` default is 0, not 64; `cutoffFrequencyRatio` 0 is refused (scikit-image answers NaN); `channel_axis` absent; 120 pinned cases; on the real-input transform (`irfftn(mask * rfftn(x))` as scikit-image), the mask built on the half spectrum |
 | `difference_of_gaussians` (`low_sigma`, `high_sigma`, `mode`, `cval`, `truncate`) | present (0.6.0) | `BandpassFilters.differenceOfGaussians` | scikit-image 0.26.0 ships no tests in its wheel: assert_allclose dtype defaults (rtol 1e-7 f64, 1e-5 f32) | study | `channel_axis` absent; high < low refused |
 | `window` (2D shape) | partial (0.6.0) | `Window.window2D`, `Window.window1D` | scikit-image 0.26.0 ships no tests in its wheel: assert_allclose dtype defaults (rtol 1e-7 f64, 1e-5 f32) | study | boxcar, hann, hamming, blackman, blackmanharris, nuttall, flattop, bartlett, tukey, gaussian, kaiser (11 of `get_window`'s 25 names); other `warp_kwargs`, n-D shapes absent |
 | `gaussian` (`sigma`, `mode='nearest'`, `truncate`) | present (0.6.0) | `SeparableFilters.gaussianFilter(mode: .nearest)` | scikit-image 0.26.0 ships no tests in its wheel: assert_allclose dtype defaults (rtol 1e-7 f64, 1e-5 f32) | study | same code as `ndimage.gaussian_filter`; `preserve_range`, `channel_axis` absent |
@@ -180,7 +181,7 @@ Numerics are never held stricter than that; readers, I/O, indices and metadata a
 | spot spacing d = 1/\|q\| and the angle between two spots | done | planted lattices, closed forms |
 | masked inverse FFT (Bragg filter) | done | NumPy's `ifft2(ifftshift(fftshift(fft2(x)) · M))` and a planted two-lattice image |
 | HRTEM ABSF and Wiener filters (Kilaas 1998, Mitchell's script) | done | a float64 NumPy/SciPy reading of the same steps; never compared with DigitalMicrograph |
-| GPA strain (Hÿtch, Snoeck and Kilaas 1998) | absent | planned; planted strain fields |
+| GPA strain (Hÿtch, Snoeck and Kilaas 1998) | done (0.8.0), validation none | `GeometricPhaseAnalysis`; planted strain fields (see the GPA row above) |
 | atom columns (Atomap, GPL-3.0) | absent | planned, its own GPL module |
 
 
