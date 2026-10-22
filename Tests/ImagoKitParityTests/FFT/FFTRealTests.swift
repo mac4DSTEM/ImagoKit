@@ -100,3 +100,48 @@ func complexPlanesOfSmallPrimeShapesMatchNumPy(_ c: RealPins.Plane) throws {
     rClose64(f.re, c.fft2[0], "fft2 re \(c)"); rClose64(f.im, c.fft2[1], "fft2 im \(c)")
     rClose64(i.re, c.ifft2[0], "ifft2 re \(c)"); rClose64(i.im, c.ifft2[1], "ifft2 im \(c)")
 }
+
+@Test(arguments: RealPins.all.rfft1)
+func rfftMatchesNumPy(_ c: RealPins.RFFT1) throws {
+    let nrm = norm(c.norm)
+    let plan = try #require(FFT1DDouble(n: c.n))
+    let r = plan.rfft(c.x, norm: nrm)
+    #expect(r.re.count == c.n / 2 + 1 && r.im.count == r.re.count)
+    rClose64(r.re, c.X[0], "rfft re \(c)"); rClose64(r.im, c.X[1], "rfft im \(c)")
+    let s = try #require(FFT1DDouble.rfft(c.x, n: c.n, norm: nrm))
+    #expect(s.re == r.re && s.im == r.im)
+    let plan32 = try #require(FFT1D(n: c.n))
+    let r32 = plan32.rfft(c.x.map(Float.init), norm: nrm)
+    rClose32(r32.re, c.X[0], "rfftf re \(c)"); rClose32(r32.im, c.X[1], "rfftf im \(c)")
+    let s32 = try #require(FFT1D.rfft(c.x.map(Float.init), n: c.n, norm: nrm))
+    #expect(s32.re == r32.re && s32.im == r32.im)
+    if c.length == c.n {
+        // n defaults to the length of x; the round trip returns x.
+        let d = try #require(FFT1DDouble.rfft(c.x, norm: nrm))
+        #expect(d.re == r.re)
+        rClose64(plan.irfft(re: r.re, im: r.im, norm: nrm), c.x, "irfft(rfft) \(c)")
+        rClose32(plan32.irfft(re: r32.re, im: r32.im, norm: nrm), c.x, "irfftf(rfftf) \(c)")
+    }
+}
+
+@Test(arguments: RealPins.all.irfft1)
+func irfftMatchesNumPy(_ c: RealPins.IRFFT1) throws {
+    let nrm = norm(c.norm)
+    let plan = try #require(FFT1DDouble(n: c.n))
+    rClose64(plan.irfft(re: c.z[0], im: c.z[1], norm: nrm), c.out, "irfft \(c)")
+    let s = try #require(FFT1DDouble.irfft(re: c.z[0], im: c.z[1], n: c.explicit ? c.n : nil, norm: nrm))
+    rClose64(s, c.out, "irfft static \(c)")
+    let plan32 = try #require(FFT1D(n: c.n))
+    rClose32(plan32.irfft(re: c.z[0].map(Float.init), im: c.z[1].map(Float.init), norm: nrm), c.out, "irfftf \(c)")
+    let s32 = try #require(FFT1D.irfft(re: c.z[0].map(Float.init), im: c.z[1].map(Float.init), n: c.explicit ? c.n : nil, norm: nrm))
+    rClose32(s32, c.out, "irfftf static \(c)")
+}
+
+@Test func rfftRefusesLengthsThatAreNotPowersOfTwo() {
+    #expect(FFT1DDouble.rfft([1, 2, 3], norm: .backward) == nil)
+    #expect(FFT1DDouble.rfft([1, 2, 3], n: 4) != nil)
+    #expect(FFT1D.rfft([1, 2, 3, 4, 5, 6], n: 6) == nil)
+    #expect(FFT1DDouble.irfft(re: [1, 2, 3, 4], im: [0, 0, 0, 0]) == nil)       // default n = 6
+    #expect(FFT1DDouble.irfft(re: [], im: []) == nil)
+    #expect(FFT1DDouble.irfft(re: [], im: [], n: 4)?.map { $0 } == [0, 0, 0, 0])
+}
