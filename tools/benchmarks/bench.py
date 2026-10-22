@@ -40,9 +40,15 @@ for n in sizes:
         x = img(n, dt)
         record("fft2", label, n, lambda: np.fft.fft2(x))
         record("rfft2", label, n, lambda: np.fft.rfft2(x))
+        spec = np.fft.rfft2(x)
+        record("irfft2", label, n, lambda: np.fft.irfft2(spec, s=(n, n)))
         if n == 512:
             y = img(500, dt)
             record("fft2", label, 500, lambda: np.fft.fft2(y))
+            if dt is np.float64:
+                for m in (360, 480, 504):
+                    ym = img(m, dt)
+                    record("fft2", label, m, lambda: np.fft.fft2(ym))
         record("gaussian_filter sigma=3", label, n, lambda: ndi.gaussian_filter(x, 3, mode="reflect"))
         record("uniform_filter size=5", label, n, lambda: ndi.uniform_filter(x, 5))
         record("butterworth", label, n, lambda: filters.butterworth(x, 0.1))

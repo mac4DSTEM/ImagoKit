@@ -4,8 +4,10 @@
 //  (`cross_correlate_masked`, mode "full") and the shift read from its maximum. Pixels outside a mask are set to zero and
 //  do not count; translations whose overlap holds fewer than `overlapRatio` of the largest overlap are ignored.
 //
-//  THE STEPS, as scikit-image: arr1 = moving, arr2 = the flipped reference, both zero-padded to (M + R − 1) per axis (SciPy uses
-//  the next fast length; with no wrap-around the correlation is the same up to rounding, so the kit uses the exact length);
+//  THE STEPS, as scikit-image: arr1 = moving, arr2 = the flipped reference, both zero-padded to (M + R − 1) per axis and
+//  transformed at the next fast length (scikit-image: `scipy.fft.next_fast_len`; the kit: the next length of prime factors 2, 3, 5,
+//  7, which its mixed-radix plan serves, where SciPy also allows 11), sliced back to (M + R − 1) before the products are
+//  used; with no wrap-around that is the same correlation up to rounding;
 //  numerator = ifft(F2 · F1) − ifft(F2m · F1) · ifft(F1m · F2) / n_overlap; denominators likewise from the squared images; the
 //  correlation is numerator/denominator where denominator > 1000 · eps · max(denominator), clipped to [−1, 1], and 0 where the
 //  overlap count (rounded, at least eps) is below the threshold. The shift is `−(mean(index of every maximum) − R + 1) + (M − R)/2`.
@@ -77,18 +79,20 @@ extension PhaseCorrelation {
         // arr1 = moving ("fixed" in scikit-image), arr2 = reference (flipped).
         let mh = moving.height, mw = moving.width, rh = reference.height, rw = reference.width
         let H = mh + rh - 1, W = mw + rw - 1
+        // The transforms run at the next fast length (a 2n − 1 like 511 = 7 · 73 would otherwise take Bluestein, 3 times slower).
+        let FH = fastLength(H), FW = fastLength(W)
         func plane(_ values: (Int, Int) -> S, _ rows: Int, _ columns: Int, flipped: Bool = false) -> [S] {
-            var re = [S](repeating: 0, count: H * W)
+            var re = [S](repeating: 0, count: FH * FW)
             for r in 0..<rows { for c in 0..<columns {
-                re[r * W + c] = flipped ? values(rows - 1 - r, columns - 1 - c) : values(r, c)
+                re[r * FW + c] = flipped ? values(rows - 1 - r, columns - 1 - c) : values(r, c)
             } }
             return re
         }
         // The planes are real: the six forward transforms keep the half spectrum (`H × (W/2 + 1)`) and the products are taken
         // there, since a product of Hermitian spectra is Hermitian; `irfft2` gives the real correlation.
-        let half = W / 2 + 1
+        let half = FW / 2 + 1
         func spectrum(_ plane: [S]) throws -> ComplexImage<S> {
-            try S.rfft2(real: plane, rows: H, columns: W, norm: .backward)
+            try S.rfft2(real: plane, rows: FH, columns: FW, norm: .backward)
         }
         func image(_ m: Micrograph, _ mask: [Bool]) -> (Int, Int) -> S {
             { r, c in mask[r * m.width + c] ? S(m.pixels[r * m.width + c]) : 0 }
@@ -109,13 +113,18 @@ extension PhaseCorrelation {
         let rotSqFFT = try spectrum(plane({ let v = rotValues($0, $1); return v * v }, rh, rw, flipped: true))
 
         func product(_ a: ComplexImage<S>, _ b: ComplexImage<S>) throws -> [S] {
-            var re = [S](repeating: 0, count: H * half), im = re
-            for i in 0..<(H * half) {
+            var re = [S](repeating: 0, count: FH * half), im = re
+            for i in 0..<(FH * half) {
                 re[i] = a.re[i] * b.re[i] - a.im[i] * b.im[i]
                 im[i] = a.re[i] * b.im[i] + a.im[i] * b.re[i]
             }
-            return try S.irfft2(ComplexImage(rows: H, columns: half, re: re, im: im), columns: W, norm: .backward)
+            let full = try S.irfft2(ComplexImage(rows: FH, columns: half, re: re, im: im), columns: FW, norm: .backward)
+            guard FH != H || FW != W else { return full }
+            var cropped = [S](repeating: 0, count: H * W)                // scikit-image's `final_slice`
+            for r in 0..<H { for c in 0..<W { cropped[r * W + c] = full[r * FW + c] } }
+            return cropped
         }
+
         var overlap = try product(rotMaskFFT, fixedMaskFFT).map { max($0.rounded(.toNearestOrEven), eps) }
         let correlatedFixed = try product(rotMaskFFT, fixedFFT)
         let correlatedRot = try product(fixedMaskFFT, rotFFT)
@@ -138,5 +147,17 @@ extension PhaseCorrelation {
         for i in 0..<(H * W) where overlap[i] < threshold { out[i] = 0 }
         overlap.removeAll()
         return (out, H, W)
+    }
+
+    /// The smallest length at or above `n` whose prime factors are 2, 3, 5 and 7 (the lengths the Float64 mixed-radix plan and
+    /// vDSP serve without Bluestein).
+    package static func fastLength(_ n: Int) -> Int {
+        var m = max(n, 1)
+        while true {
+            var r = m
+            for p in [2, 3, 5, 7] { while r % p == 0 { r /= p } }
+            if r == 1 { return m }
+            m += 1
+        }
     }
 }
