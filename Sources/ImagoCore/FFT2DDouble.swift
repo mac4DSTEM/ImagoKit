@@ -260,6 +260,10 @@ public nonisolated final class FFT2DDouble: FFT2DTransform, @unchecked Sendable 
     /// setup) — e.g. 250, 254, 300.
     private let bluesteinX: BluesteinPlanD?
     private let bluesteinY: BluesteinPlanD?
+    /// Lengths of prime factors 2, 3, 5, 7 that no vDSP plan serves (e.g. 500, 504, 360 = 2³·3²·5): the mixed-radix Stockham
+    /// plan, ahead of Bluestein. nil on an axis another engine serves.
+    private let mixedX: MixedRadixPlanD?
+    private let mixedY: MixedRadixPlanD?
 
     /// Fails only when a required Accelerate FFT setup cannot be allocated.
     public init?(nx: Int, ny: Int) {
@@ -294,6 +298,7 @@ public nonisolated final class FFT2DDouble: FFT2DTransform, @unchecked Sendable 
             axisYSetup = nil; axisYLog = 0; axisYPlan = nil
             forwardX = nil; inverseX = nil; forwardY = nil; inverseY = nil
             bluesteinX = nil; bluesteinY = nil
+            mixedX = nil; mixedY = nil
         } else {
             radix2Setup = nil
             dft2DX = nil; dft2DY = nil
@@ -339,8 +344,11 @@ public nonisolated final class FFT2DDouble: FFT2DTransform, @unchecked Sendable 
             let iy = yRadix2Log == nil && yPlan == nil
                 ? vDSP_DFT_zop_CreateSetupD(nil, vDSP_Length(ny), .INVERSE) : nil
             forwardX = fx; inverseX = ix; forwardY = fy; inverseY = iy
-            let needsBluesteinX = xRadix2Log == nil && xPlan == nil && fx == nil
-            let needsBluesteinY = yRadix2Log == nil && yPlan == nil && fy == nil
+            let mx = xRadix2Log == nil && xPlan == nil && fx == nil ? MixedRadixPlanD(length: nx) : nil
+            let my = yRadix2Log == nil && yPlan == nil && fy == nil ? MixedRadixPlanD(length: ny) : nil
+            mixedX = mx; mixedY = my
+            let needsBluesteinX = xRadix2Log == nil && xPlan == nil && fx == nil && mx == nil
+            let needsBluesteinY = yRadix2Log == nil && yPlan == nil && fy == nil && my == nil
             let bx = needsBluesteinX ? BluesteinPlanD(length: nx) : nil
             let by = needsBluesteinY ? BluesteinPlanD(length: ny) : nil
             if (needsBluesteinX && bx == nil) || (needsBluesteinY && by == nil) {
@@ -403,7 +411,11 @@ public nonisolated final class FFT2DDouble: FFT2DTransform, @unchecked Sendable 
                 im.withUnsafeBufferPointer { inputIm in
                     horizontalRe.withUnsafeMutableBufferPointer { outputRe in
                         horizontalIm.withUnsafeMutableBufferPointer { outputIm in
-                            for y in 0..<ny {
+                            if let mixedX {
+                                mixedX.transformLines(count: ny, forward: forward, inputStride: nx,
+                                                      inputRe.baseAddress!, inputIm.baseAddress!,
+                                                      outputRe.baseAddress!, outputIm.baseAddress!)
+                            } else { for y in 0..<ny {
                                 executeAxis(
                                     pair: axisPairX, fftSetup: axisXSetup, fftLog: axisXLog,
                                     exactPlan: axisXPlan,
@@ -415,41 +427,42 @@ public nonisolated final class FFT2DDouble: FFT2DTransform, @unchecked Sendable 
                                     outputIm.baseAddress! + y * nx,
                                     scratch: scratch
                                 )
-                            }
+                            } }
                         }
                     }
                 }
             }
-            var columnInRe = [Double](repeating: 0, count: ny)
-            var columnInIm = [Double](repeating: 0, count: ny)
-            var columnOutRe = [Double](repeating: 0, count: ny)
-            var columnOutIm = [Double](repeating: 0, count: ny)
-            for x in 0..<nx {
-                for y in 0..<ny {
-                    columnInRe[y] = horizontalRe[y * nx + x]
-                    columnInIm[y] = horizontalIm[y * nx + x]
-                }
-                columnInRe.withUnsafeBufferPointer { inputRe in
-                    columnInIm.withUnsafeBufferPointer { inputIm in
-                        columnOutRe.withUnsafeMutableBufferPointer { outputRe in
-                            columnOutIm.withUnsafeMutableBufferPointer { outputIm in
-                                executeAxis(
-                                    pair: axisPairY, fftSetup: axisYSetup, fftLog: axisYLog,
-                                    exactPlan: axisYPlan,
-                                    dftSetup: ySetup, bluestein: bluesteinY,
-                                    length: ny, forward: forward,
-                                    inputRe.baseAddress!, inputIm.baseAddress!,
-                                    outputRe.baseAddress!, outputIm.baseAddress!,
-                                    scratch: scratch
-                                )
-                            }
-                        }
+            if let mixedY {
+                // Two neighbouring columns per pass, read and written in place (stride nx).
+                horizontalRe.withUnsafeMutableBufferPointer { hr in horizontalIm.withUnsafeMutableBufferPointer { hi in
+                    mixedY.transformColumns(count: nx, forward: forward, stride: nx, hr.baseAddress!, hi.baseAddress!)
+                } }
+                swap(&re, &horizontalRe)
+                swap(&im, &horizontalIm)
+            } else {
+            // Columns: transpose so each is a contiguous line, transform the lines, transpose back (strided column
+            // gathers were most of the time of the vDSP and Bluestein lengths).
+            var tRe = [Double](repeating: 0, count: nx * ny), tIm = tRe
+            var uRe = tRe, uIm = tRe
+            vDSP_mtransD(horizontalRe, 1, &tRe, 1, vDSP_Length(nx), vDSP_Length(ny))
+            vDSP_mtransD(horizontalIm, 1, &tIm, 1, vDSP_Length(nx), vDSP_Length(ny))
+            tRe.withUnsafeBufferPointer { inputRe in tIm.withUnsafeBufferPointer { inputIm in
+                uRe.withUnsafeMutableBufferPointer { outputRe in uIm.withUnsafeMutableBufferPointer { outputIm in
+                    for x in 0..<nx {
+                        executeAxis(
+                            pair: axisPairY, fftSetup: axisYSetup, fftLog: axisYLog,
+                            exactPlan: axisYPlan,
+                            dftSetup: ySetup, bluestein: bluesteinY,
+                            length: ny, forward: forward,
+                            inputRe.baseAddress! + x * ny, inputIm.baseAddress! + x * ny,
+                            outputRe.baseAddress! + x * ny, outputIm.baseAddress! + x * ny,
+                            scratch: scratch
+                        )
                     }
-                }
-                for y in 0..<ny {
-                    re[y * nx + x] = columnOutRe[y]
-                    im[y * nx + x] = columnOutIm[y]
-                }
+                } }
+            } }
+            vDSP_mtransD(uRe, 1, &re, 1, vDSP_Length(ny), vDSP_Length(nx))
+            vDSP_mtransD(uIm, 1, &im, 1, vDSP_Length(ny), vDSP_Length(nx))
             }
             }
             }
@@ -459,6 +472,56 @@ public nonisolated final class FFT2DDouble: FFT2DTransform, @unchecked Sendable 
             vDSP_vsmulD(re, 1, &s, &re, 1, vDSP_Length(re.count))
             vDSP_vsmulD(im, 1, &s, &im, 1, vDSP_Length(im.count))
         }
+    }
+
+    /// `count` independent lines of the x axis (contiguous, length `nx`) or of the y axis (length `ny`), each transformed out of
+    /// place with this plan's one-axis engine (the unnormalised inverse). The building block of the real-input 2D transforms
+    /// (`RealFFT2D.swift`); `input` and `output` must not overlap.
+    package func transformLines(alongX: Bool, count: Int, forward: Bool, inputStride: Int? = nil,
+                                _ inputRe: UnsafePointer<Double>, _ inputIm: UnsafePointer<Double>,
+                                _ outputRe: UnsafeMutablePointer<Double>, _ outputIm: UnsafeMutablePointer<Double>) {
+        let length = alongX ? nx : ny
+        let inStride = inputStride ?? length
+        if length == 1 {
+            for i in 0..<count { outputRe[i] = inputRe[i * inStride]; outputIm[i] = inputIm[i * inStride] }
+            return
+        }
+        if dft2DX != nil || radix2Setup != nil {
+            if let pair = alongX ? dft2DX : dft2DY {
+                for i in 0..<count {
+                    pair.execute(forward: forward, inputRe + i * inStride, inputIm + i * inStride,
+                                 outputRe + i * length, outputIm + i * length)
+                }
+            } else if let radix2Setup {
+                let log2n = alongX ? log2x : log2y
+                for i in 0..<count {
+                    (outputRe + i * length).update(from: inputRe + i * inStride, count: length)
+                    (outputIm + i * length).update(from: inputIm + i * inStride, count: length)
+                    var split = DSPDoubleSplitComplex(realp: outputRe + i * length, imagp: outputIm + i * length)
+                    vDSP_fft_zipD(radix2Setup, &split, 1, log2n,
+                                  FFTDirection(forward ? kFFTDirection_Forward : kFFTDirection_Inverse))
+                }
+            }
+            return
+        }
+        if let mixed = alongX ? mixedX : mixedY {
+            mixed.transformLines(count: count, forward: forward, inputStride: inStride, inputRe, inputIm, outputRe, outputIm)
+            return
+        }
+        let bluestein = alongX ? bluesteinX : bluesteinY
+        var scratchRe = [Double](repeating: 0, count: 2 * (bluestein?.paddedLength ?? 0))
+        var scratchIm = scratchRe
+        scratchRe.withUnsafeMutableBufferPointer { sr in scratchIm.withUnsafeMutableBufferPointer { si in
+            let scratch = (sr.baseAddress, si.baseAddress)
+            for i in 0..<count {
+                executeAxis(pair: alongX ? axisPairX : axisPairY, fftSetup: alongX ? axisXSetup : axisYSetup,
+                            fftLog: alongX ? axisXLog : axisYLog, exactPlan: alongX ? axisXPlan : axisYPlan,
+                            dftSetup: alongX ? (forward ? forwardX : inverseX) : (forward ? forwardY : inverseY),
+                            bluestein: bluestein, length: length, forward: forward,
+                            inputRe + i * inStride, inputIm + i * inStride, outputRe + i * length, outputIm + i * length,
+                            scratch: scratch)
+            }
+        } }
     }
 
     /// Rows, transpose, columns, transpose, each row a `vDSP_DFT_zop` call (the unnormalised inverse is scaled by the caller).

@@ -6,7 +6,7 @@
 //  given (both subtractions in the image's precision, as NumPy does for float32). butterworth: the Fourier-domain mask
 //  `1/(1 + q^order)` (high pass `q^order/(1 + q^order)`, optional square root), q² = Σ (f_axis / cutoff)², f the ifftshifted
 //  centred frequency index over (n · cutoff); the image is edge-padded by `npad` (0 by default in 0.26.0), filtered through
-//  `ifft2(mask · fft2(image))` and cropped. The mask is even, so a complex transform gives `irfftn`'s result.
+//  `irfft2(mask · rfft2(image))` and cropped, on the real-input transforms as scikit-image does (`irfftn`).
 //
 
 import Foundation
@@ -34,14 +34,7 @@ public nonisolated enum BandpassFilters {
                                    highPass: Bool = true, order: Double = 2, squaredButterworth: Bool = true,
                                    npad: Int = 0) throws -> [Double] {
         try butterworthCore(a, rows: rows, columns: columns, cutoff: cutoffFrequencyRatio, highPass: highPass, order: order,
-                            squared: squaredButterworth, npad: npad) { img, h, w in
-            let f = try FFTSurface.fft2(ComplexImage<Double>(rows: h, columns: w, real: img))
-            return (f.re, f.im)
-        } inverse: { re, im, h, w, mask in
-            let m = zip(mask, zip(re, im)).map { ($0 * $1.0, $0 * $1.1) }
-            return try FFTSurface.ifft2(ComplexImage<Double>(rows: h, columns: w, re: m.map(\.0), im: m.map(\.1)),
-                                        norm: .backward).re
-        } cast: { $0 }
+                            squared: squaredButterworth, npad: npad)
     }
 
     /// The Float32 path (scikit-image on a float32 image: mask and transforms in single precision).
@@ -49,14 +42,7 @@ public nonisolated enum BandpassFilters {
                                    highPass: Bool = true, order: Double = 2, squaredButterworth: Bool = true,
                                    npad: Int = 0) throws -> [Float] {
         try butterworthCore(a, rows: rows, columns: columns, cutoff: cutoffFrequencyRatio, highPass: highPass, order: order,
-                            squared: squaredButterworth, npad: npad) { img, h, w in
-            let f = try FFTSurface.fft2(ComplexImage<Float>(rows: h, columns: w, real: img))
-            return (f.re, f.im)
-        } inverse: { re, im, h, w, mask in
-            let m = zip(mask, zip(re, im)).map { ($0 * $1.0, $0 * $1.1) }
-            return try FFTSurface.ifft2(ComplexImage<Float>(rows: h, columns: w, re: m.map(\.0), im: m.map(\.1)),
-                                        norm: .backward).re
-        } cast: { Float($0) }
+                            squared: squaredButterworth, npad: npad)
     }
 
     /// The mask, `rows × columns`, in Double: `1/(1+q²^order)` (× q²^order for a high pass), square-rooted when not squared.
@@ -74,25 +60,24 @@ public nonisolated enum BandpassFilters {
     }
 
     /// q² at every ifftshifted bin: (Σ_axis (index / (n · factor))²) with scikit-image's index range −(n−1)//2 … (n−1)//2 (floored).
+    private static func axisTerms(_ n: Int, _ factor: Double) -> [Double] {
+        let start = -(n / 2)                       // Python's −(n − 1) // 2
+        var v = (0..<n).map { i -> Double in let x = Double(start + i) / (Double(n) * factor); return x * x }
+        // ifftshift: roll by −(n / 2)
+        let s = n / 2
+        v = (0..<n).map { v[($0 + s) % n] }
+        return v
+    }
+
     private static func q2Grid(_ h: Int, _ w: Int, _ factor: Double) -> [Double] {
-        func axis(_ n: Int) -> [Double] {
-            let start = -(n / 2)                       // Python's −(n − 1) // 2
-            var v = (0..<n).map { i -> Double in let x = Double(start + i) / (Double(n) * factor); return x * x }
-            // ifftshift: roll by −(n / 2)
-            let s = n / 2
-            v = (0..<n).map { v[($0 + s) % n] }
-            return v
-        }
-        let ar = axis(h), ac = axis(w)
+        let ar = axisTerms(h, factor), ac = axisTerms(w, factor)
         var out = [Double](repeating: 0, count: h * w)
         for r in 0..<h { for c in 0..<w { out[r * w + c] = ar[r] + ac[c] } }
         return out
     }
 
-    private static func butterworthCore<S: BinaryFloatingPoint & Sendable>(
-        _ a: [S], rows: Int, columns: Int, cutoff: Double, highPass: Bool, order: Double, squared: Bool, npad: Int,
-        forward: ([S], Int, Int) throws -> ([S], [S]), inverse: ([S], [S], Int, Int, [S]) throws -> [S],
-        cast: (Double) -> S
+    private static func butterworthCore<S: FFTSurfaceScalar>(
+        _ a: [S], rows: Int, columns: Int, cutoff: Double, highPass: Bool, order: Double, squared: Bool, npad: Int
     ) throws -> [S] {
         guard rows > 0, columns > 0, rows <= Int.max / columns, a.count == rows * columns else { throw FilterError.shape }
         guard npad >= 0, npad < (1 << 20), cutoff.isFinite, cutoff > 0, cutoff <= 0.5 else { throw FilterError.cutoff }
@@ -105,21 +90,38 @@ public nonisolated enum BandpassFilters {
                 for c in 0..<w { image[r * w + c] = a[sr * columns + min(max(c - npad, 0), columns - 1)] }
             }
         }
-        // The mask in the image's precision as scikit-image builds it: q² cast, powered and combined in that precision.
-        let q2 = q2Grid(h, w, cutoff)
-        let mask: [S] = q2.map { q in
-            if S.self == Float.self {
-                let p = Float(pow(Float(q), Float(order)))
-                var v = 1 / (1 + p)
-                if highPass { v *= p }
-                return cast(Double(squared ? v : v.squareRoot()))
-            }
-            return cast(maskValue(q, order, highPass, squared))
-        }
         let filtered: [S]
         do {
-            let (re, im) = try forward(image, h, w)
-            filtered = try inverse(re, im, h, w, mask)
+            // scikit-image filters with `irfftn(mask * rfftn(image))`: the mask is even in both axes, so the half spectrum
+            // (`h × (w/2 + 1)`) carries everything and only its mask values are computed.
+            var spectrum = try S.rfft2(real: image, rows: h, columns: w, norm: .backward)
+            let m = spectrum.columns
+            let rowTerms = axisTerms(h, cutoff), columnTerms = axisTerms(w, cutoff)
+            spectrum.re.withUnsafeMutableBufferPointer { re in spectrum.im.withUnsafeMutableBufferPointer { im in
+                for r in 0..<h {
+                    for c in 0..<m {
+                        // The mask in the image's precision as scikit-image builds it: q² cast, powered and combined in
+                        // that precision. Order 2, the default, is a product (NumPy squares a power of exactly 2).
+                        let q2 = rowTerms[r] + columnTerms[c]
+                        let k: S
+                        if S.self == Float.self {
+                            let f = Float(q2)
+                            let p = order == 2 ? f * f : pow(f, Float(order))
+                            var v = 1 / (1 + p)
+                            if highPass { v *= p }
+                            k = S(squared ? v : v.squareRoot())
+                        } else {
+                            let p = order == 2 ? q2 * q2 : pow(q2, order)
+                            var v = 1 / (1 + p)
+                            if highPass { v *= p }
+                            k = S(squared ? v : v.squareRoot())
+                        }
+                        re[r * m + c] *= k
+                        im[r * m + c] *= k
+                    }
+                }
+            } }
+            filtered = try S.irfft2(spectrum, columns: w, norm: .backward)
         } catch is FFTSurfaceError { throw FilterError.setup }
         guard npad > 0 else { return filtered }
         var out = [S](repeating: 0, count: rows * columns)

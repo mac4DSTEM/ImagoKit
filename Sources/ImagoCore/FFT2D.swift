@@ -393,37 +393,29 @@ public nonisolated final class FFT2D: FFT2DTransform, @unchecked Sendable {
                     }
                 }
             }
-            var columnInRe = [Float](repeating: 0, count: ny)
-            var columnInIm = [Float](repeating: 0, count: ny)
-            var columnOutRe = [Float](repeating: 0, count: ny)
-            var columnOutIm = [Float](repeating: 0, count: ny)
-            for x in 0..<nx {
-                for y in 0..<ny {
-                    columnInRe[y] = horizontalRe[y * nx + x]
-                    columnInIm[y] = horizontalIm[y * nx + x]
-                }
-                columnInRe.withUnsafeBufferPointer { inputRe in
-                    columnInIm.withUnsafeBufferPointer { inputIm in
-                        columnOutRe.withUnsafeMutableBufferPointer { outputRe in
-                            columnOutIm.withUnsafeMutableBufferPointer { outputIm in
-                                executeAxis(
-                                    fftSetup: axisYSetup, fftLog: axisYLog,
-                                    exactPlan: axisYPlan,
-                                    dftSetup: ySetup, bluestein: bluesteinY,
-                                    length: ny, forward: forward,
-                                    inputRe.baseAddress!, inputIm.baseAddress!,
-                                    outputRe.baseAddress!, outputIm.baseAddress!,
-                                    scratch: scratch
-                                )
-                            }
-                        }
+            // Columns: transpose so each is a contiguous line, transform the lines, transpose back (strided column
+            // gathers were most of the time of the vDSP, radix and Bluestein lengths).
+            var tRe = [Float](repeating: 0, count: nx * ny), tIm = tRe
+            var uRe = tRe, uIm = tRe
+            vDSP_mtrans(horizontalRe, 1, &tRe, 1, vDSP_Length(nx), vDSP_Length(ny))
+            vDSP_mtrans(horizontalIm, 1, &tIm, 1, vDSP_Length(nx), vDSP_Length(ny))
+            tRe.withUnsafeBufferPointer { inputRe in tIm.withUnsafeBufferPointer { inputIm in
+                uRe.withUnsafeMutableBufferPointer { outputRe in uIm.withUnsafeMutableBufferPointer { outputIm in
+                    for x in 0..<nx {
+                        executeAxis(
+                            fftSetup: axisYSetup, fftLog: axisYLog,
+                            exactPlan: axisYPlan,
+                            dftSetup: ySetup, bluestein: bluesteinY,
+                            length: ny, forward: forward,
+                            inputRe.baseAddress! + x * ny, inputIm.baseAddress! + x * ny,
+                            outputRe.baseAddress! + x * ny, outputIm.baseAddress! + x * ny,
+                            scratch: scratch
+                        )
                     }
-                }
-                for y in 0..<ny {
-                    re[y * nx + x] = columnOutRe[y]
-                    im[y * nx + x] = columnOutIm[y]
-                }
-            }
+                } }
+            } }
+            vDSP_mtrans(uRe, 1, &re, 1, vDSP_Length(ny), vDSP_Length(nx))
+            vDSP_mtrans(uIm, 1, &im, 1, vDSP_Length(ny), vDSP_Length(nx))
             }
             }
         }
@@ -432,6 +424,45 @@ public nonisolated final class FFT2D: FFT2DTransform, @unchecked Sendable {
             vDSP_vsmul(re, 1, &s, &re, 1, vDSP_Length(re.count))
             vDSP_vsmul(im, 1, &s, &im, 1, vDSP_Length(im.count))
         }
+    }
+
+    /// `count` independent lines of the x axis (contiguous, length `nx`) or of the y axis (length `ny`), each transformed out of
+    /// place with this plan's one-axis engine (the unnormalised inverse). The building block of the real-input 2D transforms
+    /// (`RealFFT2D.swift`); `input` and `output` must not overlap.
+    package func transformLines(alongX: Bool, count: Int, forward: Bool, inputStride: Int? = nil,
+                                _ inputRe: UnsafePointer<Float>, _ inputIm: UnsafePointer<Float>,
+                                _ outputRe: UnsafeMutablePointer<Float>, _ outputIm: UnsafeMutablePointer<Float>) {
+        let length = alongX ? nx : ny
+        let inStride = inputStride ?? length
+        if length == 1 {
+            for i in 0..<count { outputRe[i] = inputRe[i * inStride]; outputIm[i] = inputIm[i * inStride] }
+            return
+        }
+        if let radix2Setup {
+            let log2n = alongX ? log2x : log2y
+            for i in 0..<count {
+                (outputRe + i * length).update(from: inputRe + i * inStride, count: length)
+                (outputIm + i * length).update(from: inputIm + i * inStride, count: length)
+                var split = DSPSplitComplex(realp: outputRe + i * length, imagp: outputIm + i * length)
+                vDSP_fft_zip(radix2Setup, &split, 1, log2n,
+                             FFTDirection(forward ? kFFTDirection_Forward : kFFTDirection_Inverse))
+            }
+            return
+        }
+        let bluestein = alongX ? bluesteinX : bluesteinY
+        var scratchRe = [Float](repeating: 0, count: bluestein?.paddedLength ?? 0)
+        var scratchIm = scratchRe
+        scratchRe.withUnsafeMutableBufferPointer { sr in scratchIm.withUnsafeMutableBufferPointer { si in
+            let scratch = (sr.baseAddress, si.baseAddress)
+            for i in 0..<count {
+                executeAxis(fftSetup: alongX ? axisXSetup : axisYSetup, fftLog: alongX ? axisXLog : axisYLog,
+                            exactPlan: alongX ? axisXPlan : axisYPlan,
+                            dftSetup: alongX ? (forward ? forwardX : inverseX) : (forward ? forwardY : inverseY),
+                            bluestein: bluestein, length: length, forward: forward,
+                            inputRe + i * inStride, inputIm + i * inStride, outputRe + i * length, outputIm + i * length,
+                            scratch: scratch)
+            }
+        } }
     }
 
     private func executeAxis(

@@ -46,6 +46,35 @@ public nonisolated struct ComplexImage<Scalar: BinaryFloatingPoint & Sendable>: 
     }
 }
 
+/// The last few plans `FFTSurface` built, so a loop of same-size calls (a stack of frames, the six transforms of a masked
+/// registration) pays for the setup once, as NumPy's cached plans do. A plan is immutable and documented shareable across
+/// threads; the cache holds at most `capacity` of them and drops the oldest.
+nonisolated private final class PlanCache: @unchecked Sendable {
+    static let shared = PlanCache()
+    private let lock = NSLock()
+    private let capacity = 6
+    private var double: [(nx: Int, ny: Int, plan: FFT2DDouble)] = []
+    private var single: [(nx: Int, ny: Int, plan: FFT2D)] = []
+
+    func plan(nx: Int, ny: Int) -> FFT2DDouble? {
+        lock.lock(); defer { lock.unlock() }
+        if let hit = double.first(where: { $0.nx == nx && $0.ny == ny }) { return hit.plan }
+        guard let plan = FFT2DDouble(nx: nx, ny: ny) else { return nil }
+        double.append((nx, ny, plan))
+        if double.count > capacity { double.removeFirst() }
+        return plan
+    }
+
+    func plan(nx: Int, ny: Int) -> FFT2D? {
+        lock.lock(); defer { lock.unlock() }
+        if let hit = single.first(where: { $0.nx == nx && $0.ny == ny }) { return hit.plan }
+        guard let plan = FFT2D(nx: nx, ny: ny) else { return nil }
+        single.append((nx, ny, plan))
+        if single.count > capacity { single.removeFirst() }
+        return plan
+    }
+}
+
 public nonisolated enum FFTSurface {
     // MARK: fftshift
 
@@ -78,79 +107,82 @@ public nonisolated enum FFTSurface {
 
     /// `numpy.fft.fft2(x, axes=, norm=)` in Float64.
     public static func fft2(_ x: ComplexImage<Double>, axes: FFTAxes = .both, norm: FFTNorm = .backward) throws -> ComplexImage<Double> {
-        try run(x, forward: true, axes: axes, norm: norm) { FFT2DDouble(nx: $0, ny: $1) }
+        try run(x, forward: true, axes: axes, norm: norm) { PlanCache.shared.plan(nx: $0, ny: $1) as FFT2DDouble? }
     }
 
     /// `numpy.fft.ifft2(x, axes=, norm=)` in Float64.
     public static func ifft2(_ x: ComplexImage<Double>, axes: FFTAxes = .both, norm: FFTNorm = .backward) throws -> ComplexImage<Double> {
-        try run(x, forward: false, axes: axes, norm: norm) { FFT2DDouble(nx: $0, ny: $1) }
+        try run(x, forward: false, axes: axes, norm: norm) { PlanCache.shared.plan(nx: $0, ny: $1) as FFT2DDouble? }
     }
 
     /// `numpy.fft.fft2(x, axes=, norm=)` in Float32.
     public static func fft2(_ x: ComplexImage<Float>, axes: FFTAxes = .both, norm: FFTNorm = .backward) throws -> ComplexImage<Float> {
-        try run(x, forward: true, axes: axes, norm: norm) { FFT2D(nx: $0, ny: $1) }
+        try run(x, forward: true, axes: axes, norm: norm) { PlanCache.shared.plan(nx: $0, ny: $1) as FFT2D? }
     }
 
     /// `numpy.fft.ifft2(x, axes=, norm=)` in Float32.
     public static func ifft2(_ x: ComplexImage<Float>, axes: FFTAxes = .both, norm: FFTNorm = .backward) throws -> ComplexImage<Float> {
-        try run(x, forward: false, axes: axes, norm: norm) { FFT2D(nx: $0, ny: $1) }
+        try run(x, forward: false, axes: axes, norm: norm) { PlanCache.shared.plan(nx: $0, ny: $1) as FFT2D? }
     }
 
     // MARK: rfft2, irfft2
 
-    /// `numpy.fft.rfft2(x, norm=)` of a real `rows × columns` image: `rows × (columns / 2 + 1)`, Float64.
+    /// `numpy.fft.rfft2(x, norm=)` of a real `rows × columns` image: `rows × (columns / 2 + 1)`, Float64. Two real rows share
+    /// one complex transform (`RealFFT2D.swift`), so it costs about half of `fft2`.
     public static func rfft2(real: [Double], rows: Int, columns: Int, norm: FFTNorm = .backward) throws -> ComplexImage<Double> {
         guard rows > 0, columns > 0, real.count == rows * columns else { throw FFTSurfaceError.shape }
-        return halfColumns(try fft2(ComplexImage(rows: rows, columns: columns, real: real), norm: norm))
+        guard let plan = PlanCache.shared.plan(nx: columns, ny: rows) as FFT2DDouble? else { throw FFTSurfaceError.setup }
+        var (re, im) = plan.realForward(real)
+        scale(&re, &im, by: scaleFactor(norm, forward: true, count: rows * columns))
+        return ComplexImage(rows: rows, columns: columns / 2 + 1, re: re, im: im)
     }
 
     /// `numpy.fft.rfft2(x, norm=)`, Float32.
     public static func rfft2(real: [Float], rows: Int, columns: Int, norm: FFTNorm = .backward) throws -> ComplexImage<Float> {
         guard rows > 0, columns > 0, real.count == rows * columns else { throw FFTSurfaceError.shape }
-        return halfColumns(try fft2(ComplexImage(rows: rows, columns: columns, real: real), norm: norm))
+        guard let plan = PlanCache.shared.plan(nx: columns, ny: rows) as FFT2D? else { throw FFTSurfaceError.setup }
+        var (re, im) = plan.realForward(real)
+        scale(&re, &im, by: scaleFactor(norm, forward: true, count: rows * columns))
+        return ComplexImage(rows: rows, columns: columns / 2 + 1, re: re, im: im)
     }
 
     /// `numpy.fft.irfft2(X, s=(rows, columns), norm=)`: the real image of a half spectrum; `columns` defaults to
     /// `2 · (X.columns − 1)`. Like NumPy the imaginary parts of the zero-frequency and Nyquist columns do not count.
     public static func irfft2(_ x: ComplexImage<Double>, columns: Int? = nil, norm: FFTNorm = .backward) throws -> [Double] {
-        try inverseReal(x, columns: columns, norm: norm, ifft: { try ifft2($0, axes: $1, norm: norm) })
+        let n = columns ?? 2 * (x.columns - 1)
+        guard x.rows > 0, x.columns > 0, n > 0, x.re.count == x.rows * x.columns, x.im.count == x.re.count else { throw FFTSurfaceError.shape }
+        guard let plan = PlanCache.shared.plan(nx: n, ny: x.rows) as FFT2DDouble? else { throw FFTSurfaceError.setup }
+        var out = plan.realInverse(re: x.re, im: x.im, inputColumns: x.columns)
+        var none: [Double] = []
+        scale(&out, &none, by: scaleFactor(norm, forward: false, count: x.rows * n))
+        return out
     }
 
     /// `numpy.fft.irfft2`, Float32.
     public static func irfft2(_ x: ComplexImage<Float>, columns: Int? = nil, norm: FFTNorm = .backward) throws -> [Float] {
-        try inverseReal(x, columns: columns, norm: norm, ifft: { try ifft2($0, axes: $1, norm: norm) })
+        let n = columns ?? 2 * (x.columns - 1)
+        guard x.rows > 0, x.columns > 0, n > 0, x.re.count == x.rows * x.columns, x.im.count == x.re.count else { throw FFTSurfaceError.shape }
+        guard let plan = PlanCache.shared.plan(nx: n, ny: x.rows) as FFT2D? else { throw FFTSurfaceError.setup }
+        var out = plan.realInverse(re: x.re, im: x.im, inputColumns: x.columns)
+        var none: [Float] = []
+        scale(&out, &none, by: scaleFactor(norm, forward: false, count: x.rows * n))
+        return out
     }
 
-    private static func halfColumns<S>(_ x: ComplexImage<S>) -> ComplexImage<S> {
-        let m = x.columns / 2 + 1
-        var re = [S](), im = [S]()
-        re.reserveCapacity(x.rows * m); im.reserveCapacity(x.rows * m)
-        for r in 0..<x.rows {
-            re.append(contentsOf: x.re[r * x.columns ..< r * x.columns + m])
-            im.append(contentsOf: x.im[r * x.columns ..< r * x.columns + m])
+    /// The factor `norm` puts on a transform of `count` points in the given direction (nil: none).
+    private static func scaleFactor(_ norm: FFTNorm, forward: Bool, count: Int) -> Double? {
+        switch (norm, forward) {
+        case (.backward, true), (.forward, false): return nil
+        case (.backward, false), (.forward, true): return 1 / Double(count)
+        case (.ortho, _): return 1 / Double(count).squareRoot()
         }
-        return ComplexImage(rows: x.rows, columns: m, re: re, im: im)
     }
 
-    private static func inverseReal<S>(_ x: ComplexImage<S>, columns: Int?, norm: FFTNorm,
-                                       ifft: (ComplexImage<S>, FFTAxes) throws -> ComplexImage<S>) throws -> [S] {
-        let m = x.columns, h = x.rows
-        let n = columns ?? 2 * (m - 1)
-        guard h > 0, m > 0, n > 0, x.re.count == h * m, x.im.count == h * m else { throw FFTSurfaceError.shape }
-        // The complex inverse down the rows first (axis 0), then the Hermitian completion and the inverse along each row.
-        let down = try ifft(x, .axis0)
-        var re = [S](repeating: 0, count: h * n), im = [S](repeating: 0, count: h * n)
-        let usable = min(m, n / 2 + 1)
-        for r in 0..<h {
-            for c in 0..<usable {
-                let vr = down.re[r * m + c]
-                let vi = (c == 0 || (n % 2 == 0 && c == n / 2)) ? S(0) : down.im[r * m + c]
-                re[r * n + c] = vr; im[r * n + c] = vi
-                if c > 0, n - c != c { re[r * n + n - c] = vr; im[r * n + n - c] = -vi }
-            }
-        }
-        let rowsDone = try ifft(ComplexImage(rows: h, columns: n, re: re, im: im), .axis1)
-        return rowsDone.re
+    private static func scale<S: BinaryFloatingPoint>(_ re: inout [S], _ im: inout [S], by factor: Double?) {
+        guard let factor else { return }
+        let s = S(factor)
+        for i in 0..<re.count { re[i] *= s }
+        for i in 0..<im.count { im[i] *= s }
     }
 
     // MARK: engine
@@ -202,9 +234,17 @@ public nonisolated enum FFTSurface {
 package protocol FFTSurfaceScalar: BinaryFloatingPoint, Sendable {
     static func fft2(_ x: ComplexImage<Self>, axes: FFTAxes, norm: FFTNorm) throws -> ComplexImage<Self>
     static func ifft2(_ x: ComplexImage<Self>, axes: FFTAxes, norm: FFTNorm) throws -> ComplexImage<Self>
+    static func rfft2(real: [Self], rows: Int, columns: Int, norm: FFTNorm) throws -> ComplexImage<Self>
+    static func irfft2(_ x: ComplexImage<Self>, columns: Int?, norm: FFTNorm) throws -> [Self]
 }
 
 extension Float: FFTSurfaceScalar {
+    package static func rfft2(real: [Float], rows: Int, columns: Int, norm: FFTNorm) throws -> ComplexImage<Float> {
+        try FFTSurface.rfft2(real: real, rows: rows, columns: columns, norm: norm)
+    }
+    package static func irfft2(_ x: ComplexImage<Float>, columns: Int?, norm: FFTNorm) throws -> [Float] {
+        try FFTSurface.irfft2(x, columns: columns, norm: norm)
+    }
     package static func fft2(_ x: ComplexImage<Float>, axes: FFTAxes, norm: FFTNorm) throws -> ComplexImage<Float> {
         try FFTSurface.fft2(x, axes: axes, norm: norm)
     }
@@ -214,6 +254,12 @@ extension Float: FFTSurfaceScalar {
 }
 
 extension Double: FFTSurfaceScalar {
+    package static func rfft2(real: [Double], rows: Int, columns: Int, norm: FFTNorm) throws -> ComplexImage<Double> {
+        try FFTSurface.rfft2(real: real, rows: rows, columns: columns, norm: norm)
+    }
+    package static func irfft2(_ x: ComplexImage<Double>, columns: Int?, norm: FFTNorm) throws -> [Double] {
+        try FFTSurface.irfft2(x, columns: columns, norm: norm)
+    }
     package static func fft2(_ x: ComplexImage<Double>, axes: FFTAxes, norm: FFTNorm) throws -> ComplexImage<Double> {
         try FFTSurface.fft2(x, axes: axes, norm: norm)
     }

@@ -39,7 +39,7 @@ public nonisolated enum DriftSeries {
         }
     }
 
-    private static func estimate<T: FFT2DTransform>(_ fft: T, _ frames: [[T.Scalar]], _ w: Int, _ h: Int,
+    private static func estimate<T: LineTransformPlan>(_ fft: T, _ frames: [[T.Scalar]], _ w: Int, _ h: Int,
                                                      _ reference: DriftReference, _ u: Int, _ normalization: Normalization,
                                                      _ precision: Precision) -> [ImageRegistration] {
         let spectra = frames.map { Spectrum.of($0, fft) }

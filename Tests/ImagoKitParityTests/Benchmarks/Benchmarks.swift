@@ -40,7 +40,10 @@ func benchmarks() throws {
     var sizes = [128, 512]
     if env["IMAGO_BENCH_LARGE"] == "1" { sizes += [2048, 4096, 8192] }
     var results: [Result] = []
+    // IMAGO_BENCH_ONLY=rfft2,fft2 runs only the cases whose name starts with one of the comma-separated prefixes.
+    let only = env["IMAGO_BENCH_ONLY"]?.split(separator: ",").map(String.init)
     func record(_ name: String, _ dtype: String, _ n: Int, _ body: () throws -> Void) rethrows {
+        if let only, !only.contains(where: { name.hasPrefix($0) }) { return }
         let t = try time(body)
         results.append(Result(name: name, dtype: dtype, size: n, ms: t))
         print(String(format: "BENCH %@ %@ %d  best %.3f ms", name, dtype, n, t.min()!))
@@ -57,8 +60,20 @@ func benchmarks() throws {
         }
         try record("rfft2", "float32", n) { _ = try FFTSurface.rfft2(real: f, rows: n, columns: n) }
         try record("rfft2", "float64", n) { _ = try FFTSurface.rfft2(real: d, rows: n, columns: n) }
+        do {
+            let spec = try FFTSurface.rfft2(real: d, rows: n, columns: n), spec32 = try FFTSurface.rfft2(real: f, rows: n, columns: n)
+            try record("irfft2", "float32", n) { _ = try FFTSurface.irfft2(spec32, columns: n) }
+            try record("irfft2", "float64", n) { _ = try FFTSurface.irfft2(spec, columns: n) }
+        }
         // A non-power-of-two size beside it (the exact-length path).
         if n == 512 {
+            // Lengths of small prime factors (mixed radix) beside 500.
+            for m in [360, 480, 504] {
+                let dm = gen.array(m * m)
+                if let p = FFT2DDouble(nx: m, ny: m) {
+                    record("fft2", "float64", m) { var re = dm, im = [Double](repeating: 0, count: m * m); p.transform(re: &re, im: &im, forward: true, scaleInverse: false) }
+                }
+            }
             let m = 500, dm = gen.array(m * m), fm = dm.map(Float.init)
             if let p = FFT2D(nx: m, ny: m) {
                 record("fft2", "float32", m) { var re = fm, im = [Float](repeating: 0, count: m * m); p.transform(re: &re, im: &im, forward: true, scaleInverse: false) }

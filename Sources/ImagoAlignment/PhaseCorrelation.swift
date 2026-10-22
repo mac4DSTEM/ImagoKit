@@ -60,7 +60,7 @@ public nonisolated enum PhaseCorrelation {
         guard moving.pixels.allSatisfy(\.isFinite) else { throw AlignmentError.nonFinitePixel(index: 1) }
     }
 
-    private static func register<T: FFT2DTransform>(_ fft: T, _ reference: [T.Scalar], _ moving: [T.Scalar], _ width: Int,
+    private static func register<T: LineTransformPlan>(_ fft: T, _ reference: [T.Scalar], _ moving: [T.Scalar], _ width: Int,
                                                       _ height: Int, _ u: Int, _ normalization: Normalization,
                                                       _ precision: Precision) -> ImageRegistration {
         let a = Spectrum.of(reference, fft)
@@ -68,32 +68,38 @@ public nonisolated enum PhaseCorrelation {
         return correlate(fft, a, b, width, height, u, normalization, precision)
     }
 
-    /// The registration of spectrum `b` (moving) onto spectrum `a` (reference), both of the engine `fft`.
-    package static func correlate<T: FFT2DTransform>(_ fft: T, _ a: Spectrum<T.Scalar>, _ b: Spectrum<T.Scalar>,
+    /// The registration of spectrum `b` (moving) onto spectrum `a` (reference), both of the engine `fft`. The spectra are the
+    /// half spectra of real images (`height × (width/2 + 1)`), so P is Hermitian and CC = ifft2(P) is real: one
+    /// complex-to-real inverse replaces the complex one (the imaginary part of scikit-image's CC is rounding noise, at 1e-16
+    /// of the peak; the phase difference of a registered pair, atan2(noise, positive), is 0 there and here).
+    package static func correlate<T: LineTransformPlan>(_ fft: T, _ a: Spectrum<T.Scalar>, _ b: Spectrum<T.Scalar>,
                                                       _ width: Int, _ height: Int, _ u: Int,
                                                       _ normalization: Normalization,
                                                       _ precision: Precision) -> ImageRegistration {
         typealias S = T.Scalar
         let count = width * height
-        var pr = [S](repeating: 0, count: count)
-        var pi = [S](repeating: 0, count: count)
-        for i in 0..<count {                                    // P = F_R · conj(F_M)
+        let half = width / 2 + 1
+        let halfCount = height * half
+        var pr = [S](repeating: 0, count: halfCount)
+        var pi = [S](repeating: 0, count: halfCount)
+        for i in 0..<halfCount {                                // P = F_R · conj(F_M)
             let ar = a.re[i], ai = a.im[i], br = b.re[i], bi = b.im[i]
             pr[i] = ar * br + ai * bi
             pi[i] = ai * br - ar * bi
         }
         if normalization == .phase {
             let floor = Double(S.ulpOfOne) * 100
-            for i in 0..<count {
+            for i in 0..<halfCount {
                 let magnitude = hypot(Double(pr[i]), Double(pi[i]))
                 let divisor = S(max(magnitude, floor))
                 pr[i] /= divisor
                 pi[i] /= divisor
             }
         }
-        var cr = pr, ci = pi
-        fft.transform(re: &cr, im: &ci, forward: false, scaleInverse: true)
-        let peak = firstMaximum(cr, ci)
+        var cr = fft.realInverse(re: pr, im: pi, inputColumns: half)
+        let inverseScale = 1 / S(count)
+        for i in 0..<count { cr[i] *= inverseScale }
+        let peak = firstMaximum(cr)
         let peakRow = peak / width, peakColumn = peak % width
         var rowShift: S = wrapped(peakRow, height)
         var columnShift: S = wrapped(peakColumn, width)
@@ -103,7 +109,7 @@ public nonisolated enum PhaseCorrelation {
             let size = Double(count)
             amplitudeA = a.power / size
             amplitudeB = b.power / size
-            ccMax = (cr[peak], ci[peak])
+            ccMax = (cr[peak], 0)
         } else {
             let factor = S(u)
             rowShift = (rowShift * factor).rounded(.toNearestOrEven) / factor
@@ -112,7 +118,9 @@ public nonisolated enum PhaseCorrelation {
             let dftShift = S(refinementCentre(for: u))
             let rowOffset = dftShift - rowShift * factor
             let columnOffset = dftShift - columnShift * factor
-            let (rr, ri) = upsampledDFT(pr, pi, width, height, region, u, Double(rowOffset), Double(columnOffset))
+            // The matrix-multiply DFT sums over every column of P: complete the half spectrum by P[r, c] = conj P[−r, −c].
+            let (fullRe, fullIm) = completed(pr, pi, width, height)
+            let (rr, ri) = upsampledDFT(fullRe, fullIm, width, height, region, u, Double(rowOffset), Double(columnOffset))
             let refined = firstMaximum(rr, ri)
             let maxRow = S(refined / region) - dftShift, maxColumn = S(refined % region) - dftShift
             rowShift += maxRow / factor
@@ -129,6 +137,38 @@ public nonisolated enum PhaseCorrelation {
         return ImageRegistration(shift: PixelShift(row: Double(rowShift), column: Double(columnShift)),
                                  error: abs(1 - ratio).squareRoot(), phaseDifference: atan2(im, re),
                                  upsampleFactor: u, normalization: normalization, precision: precision)
+    }
+
+    /// The first index of the largest magnitude of real data (NumPy's `argmax(abs(z))` for a real `z`).
+    private static func firstMaximum<S: BinaryFloatingPoint>(_ re: [S]) -> Int {
+        var best = 0
+        var bestValue = -1.0
+        for i in 0..<re.count {
+            let r = Double(re[i])
+            let m = r * r
+            if m > bestValue {
+                bestValue = m
+                best = i
+            }
+        }
+        return best
+    }
+
+    /// The full `height × width` spectrum of a real image from its half (`height × (width/2 + 1)`):
+    /// F[r, c] = conj F[(−r) mod h, w − c] for the columns the half does not hold.
+    package static func completed<S: BinaryFloatingPoint>(_ re: [S], _ im: [S], _ width: Int, _ height: Int) -> ([S], [S]) {
+        let m = width / 2 + 1
+        var fullRe = [S](repeating: 0, count: height * width), fullIm = fullRe
+        for r in 0..<height {
+            let rowFrom = r * m, rowTo = r * width
+            for c in 0..<m { fullRe[rowTo + c] = re[rowFrom + c]; fullIm[rowTo + c] = im[rowFrom + c] }
+            let mirror = ((height - r) % height) * m
+            if m < width { for c in m..<width {
+                fullRe[rowTo + c] = re[mirror + width - c]
+                fullIm[rowTo + c] = -im[mirror + width - c]
+            } }
+        }
+        return (fullRe, fullIm)
     }
 
     /// NumPy's `argmax(abs(z))` over row-major data: the first index of the largest magnitude.
@@ -221,21 +261,26 @@ public nonisolated enum PhaseCorrelation {
     }
 }
 
-/// The forward transform of a real image: split-complex, and `Σ|F|²`.
+/// The forward transform of a real image: its half spectrum (`height × (width/2 + 1)`, split complex) and `Σ|F|²` of the
+/// full spectrum.
 package nonisolated struct Spectrum<S: BinaryFloatingPoint & Sendable>: Sendable {
     package let re: [S]
     package let im: [S]
     package let power: Double
 
-    package static func of<T: FFT2DTransform>(_ pixels: [S], _ fft: T) -> Spectrum<S> where T.Scalar == S {
-        var re = pixels
-        var im = [S](repeating: 0, count: pixels.count)
-        fft.transform(re: &re, im: &im, forward: true, scaleInverse: false)
+    /// One real-input transform. The power counts the columns the half omits through their mirrors: columns 1 … w − m
+    /// of the half appear twice in the full spectrum (columns 0 and, for even w, w/2 once).
+    package static func of<T: LineTransformPlan>(_ pixels: [S], _ fft: T) -> Spectrum<S> where T.Scalar == S {
+        let h = fft.ny, w = fft.nx, m = w / 2 + 1
+        let half = fft.realForward(pixels)
         var power = 0.0
-        for i in 0..<re.count {
-            let r = Double(re[i]), q = Double(im[i])
-            power += r * r + q * q
+        for r in 0..<h {
+            for c in 0..<m {
+                let rr = Double(half.re[r * m + c]), qq = Double(half.im[r * m + c])
+                let weight = (c >= 1 && c <= w - m) ? 2.0 : 1.0
+                power += weight * (rr * rr + qq * qq)
+            }
         }
-        return Spectrum(re: re, im: im, power: power)
+        return Spectrum(re: half.re, im: half.im, power: power)
     }
 }
