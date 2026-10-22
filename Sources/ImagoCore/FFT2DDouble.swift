@@ -260,6 +260,10 @@ public nonisolated final class FFT2DDouble: FFT2DTransform, @unchecked Sendable 
     /// setup) — e.g. 250, 254, 300.
     private let bluesteinX: BluesteinPlanD?
     private let bluesteinY: BluesteinPlanD?
+    /// Lengths of prime factors 2, 3, 5, 7 that no vDSP plan serves (e.g. 500, 504, 360 = 2³·3²·5): the mixed-radix Stockham
+    /// plan, ahead of Bluestein. nil on an axis another engine serves.
+    private let mixedX: MixedRadixPlanD?
+    private let mixedY: MixedRadixPlanD?
 
     /// Fails only when a required Accelerate FFT setup cannot be allocated.
     public init?(nx: Int, ny: Int) {
@@ -294,6 +298,7 @@ public nonisolated final class FFT2DDouble: FFT2DTransform, @unchecked Sendable 
             axisYSetup = nil; axisYLog = 0; axisYPlan = nil
             forwardX = nil; inverseX = nil; forwardY = nil; inverseY = nil
             bluesteinX = nil; bluesteinY = nil
+            mixedX = nil; mixedY = nil
         } else {
             radix2Setup = nil
             dft2DX = nil; dft2DY = nil
@@ -339,8 +344,11 @@ public nonisolated final class FFT2DDouble: FFT2DTransform, @unchecked Sendable 
             let iy = yRadix2Log == nil && yPlan == nil
                 ? vDSP_DFT_zop_CreateSetupD(nil, vDSP_Length(ny), .INVERSE) : nil
             forwardX = fx; inverseX = ix; forwardY = fy; inverseY = iy
-            let needsBluesteinX = xRadix2Log == nil && xPlan == nil && fx == nil
-            let needsBluesteinY = yRadix2Log == nil && yPlan == nil && fy == nil
+            let mx = xRadix2Log == nil && xPlan == nil && fx == nil ? MixedRadixPlanD(length: nx) : nil
+            let my = yRadix2Log == nil && yPlan == nil && fy == nil ? MixedRadixPlanD(length: ny) : nil
+            mixedX = mx; mixedY = my
+            let needsBluesteinX = xRadix2Log == nil && xPlan == nil && fx == nil && mx == nil
+            let needsBluesteinY = yRadix2Log == nil && yPlan == nil && fy == nil && my == nil
             let bx = needsBluesteinX ? BluesteinPlanD(length: nx) : nil
             let by = needsBluesteinY ? BluesteinPlanD(length: ny) : nil
             if (needsBluesteinX && bx == nil) || (needsBluesteinY && by == nil) {
@@ -403,7 +411,11 @@ public nonisolated final class FFT2DDouble: FFT2DTransform, @unchecked Sendable 
                 im.withUnsafeBufferPointer { inputIm in
                     horizontalRe.withUnsafeMutableBufferPointer { outputRe in
                         horizontalIm.withUnsafeMutableBufferPointer { outputIm in
-                            for y in 0..<ny {
+                            if let mixedX {
+                                mixedX.transformLines(count: ny, forward: forward, inputStride: nx,
+                                                      inputRe.baseAddress!, inputIm.baseAddress!,
+                                                      outputRe.baseAddress!, outputIm.baseAddress!)
+                            } else { for y in 0..<ny {
                                 executeAxis(
                                     pair: axisPairX, fftSetup: axisXSetup, fftLog: axisXLog,
                                     exactPlan: axisXPlan,
@@ -415,11 +427,19 @@ public nonisolated final class FFT2DDouble: FFT2DTransform, @unchecked Sendable 
                                     outputIm.baseAddress! + y * nx,
                                     scratch: scratch
                                 )
-                            }
+                            } }
                         }
                     }
                 }
             }
+            if let mixedY {
+                // Two neighbouring columns per pass, read and written in place (stride nx).
+                horizontalRe.withUnsafeMutableBufferPointer { hr in horizontalIm.withUnsafeMutableBufferPointer { hi in
+                    mixedY.transformColumns(count: nx, forward: forward, stride: nx, hr.baseAddress!, hi.baseAddress!)
+                } }
+                swap(&re, &horizontalRe)
+                swap(&im, &horizontalIm)
+            } else {
             var columnInRe = [Double](repeating: 0, count: ny)
             var columnInIm = [Double](repeating: 0, count: ny)
             var columnOutRe = [Double](repeating: 0, count: ny)
@@ -450,6 +470,7 @@ public nonisolated final class FFT2DDouble: FFT2DTransform, @unchecked Sendable 
                     re[y * nx + x] = columnOutRe[y]
                     im[y * nx + x] = columnOutIm[y]
                 }
+            }
             }
             }
             }
@@ -489,6 +510,10 @@ public nonisolated final class FFT2DDouble: FFT2DTransform, @unchecked Sendable 
                                   FFTDirection(forward ? kFFTDirection_Forward : kFFTDirection_Inverse))
                 }
             }
+            return
+        }
+        if let mixed = alongX ? mixedX : mixedY {
+            mixed.transformLines(count: count, forward: forward, inputStride: inStride, inputRe, inputIm, outputRe, outputIm)
             return
         }
         let bluestein = alongX ? bluesteinX : bluesteinY
