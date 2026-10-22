@@ -6,7 +6,7 @@
 //  given (both subtractions in the image's precision, as NumPy does for float32). butterworth: the Fourier-domain mask
 //  `1/(1 + q^order)` (high pass `q^order/(1 + q^order)`, optional square root), q² = Σ (f_axis / cutoff)², f the ifftshifted
 //  centred frequency index over (n · cutoff); the image is edge-padded by `npad` (0 by default in 0.26.0), filtered through
-//  `ifft2(mask · fft2(image))` and cropped. The mask is even, so a complex transform gives `irfftn`'s result.
+//  `irfft2(mask · rfft2(image))` and cropped, on the real-input transforms as scikit-image does (`irfftn`).
 //
 
 import Foundation
@@ -35,12 +35,17 @@ public nonisolated enum BandpassFilters {
                                    npad: Int = 0) throws -> [Double] {
         try butterworthCore(a, rows: rows, columns: columns, cutoff: cutoffFrequencyRatio, highPass: highPass, order: order,
                             squared: squaredButterworth, npad: npad) { img, h, w in
-            let f = try FFTSurface.fft2(ComplexImage<Double>(rows: h, columns: w, real: img))
+            let f = try FFTSurface.rfft2(real: img, rows: h, columns: w)
             return (f.re, f.im)
         } inverse: { re, im, h, w, mask in
-            let m = zip(mask, zip(re, im)).map { ($0 * $1.0, $0 * $1.1) }
-            return try FFTSurface.ifft2(ComplexImage<Double>(rows: h, columns: w, re: m.map(\.0), im: m.map(\.1)),
-                                        norm: .backward).re
+            // The mask is even in both axes, so the product keeps the Hermitian symmetry and the half spectrum is enough.
+            let m = w / 2 + 1
+            var pr = re, pi = im
+            for r in 0..<h { for c in 0..<m {
+                let k = mask[r * w + c], i = r * m + c
+                pr[i] *= k; pi[i] *= k
+            } }
+            return try FFTSurface.irfft2(ComplexImage<Double>(rows: h, columns: m, re: pr, im: pi), columns: w)
         } cast: { $0 }
     }
 
@@ -50,12 +55,17 @@ public nonisolated enum BandpassFilters {
                                    npad: Int = 0) throws -> [Float] {
         try butterworthCore(a, rows: rows, columns: columns, cutoff: cutoffFrequencyRatio, highPass: highPass, order: order,
                             squared: squaredButterworth, npad: npad) { img, h, w in
-            let f = try FFTSurface.fft2(ComplexImage<Float>(rows: h, columns: w, real: img))
+            let f = try FFTSurface.rfft2(real: img, rows: h, columns: w)
             return (f.re, f.im)
         } inverse: { re, im, h, w, mask in
-            let m = zip(mask, zip(re, im)).map { ($0 * $1.0, $0 * $1.1) }
-            return try FFTSurface.ifft2(ComplexImage<Float>(rows: h, columns: w, re: m.map(\.0), im: m.map(\.1)),
-                                        norm: .backward).re
+            // The mask is even in both axes, so the product keeps the Hermitian symmetry and the half spectrum is enough.
+            let m = w / 2 + 1
+            var pr = re, pi = im
+            for r in 0..<h { for c in 0..<m {
+                let k = mask[r * w + c], i = r * m + c
+                pr[i] *= k; pi[i] *= k
+            } }
+            return try FFTSurface.irfft2(ComplexImage<Float>(rows: h, columns: m, re: pr, im: pi), columns: w)
         } cast: { Float($0) }
     }
 

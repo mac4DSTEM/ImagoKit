@@ -77,12 +77,18 @@ extension PhaseCorrelation {
         // arr1 = moving ("fixed" in scikit-image), arr2 = reference (flipped).
         let mh = moving.height, mw = moving.width, rh = reference.height, rw = reference.width
         let H = mh + rh - 1, W = mw + rw - 1
-        func plane(_ values: (Int, Int) -> S, _ rows: Int, _ columns: Int, flipped: Bool = false) -> ComplexImage<S> {
+        func plane(_ values: (Int, Int) -> S, _ rows: Int, _ columns: Int, flipped: Bool = false) -> [S] {
             var re = [S](repeating: 0, count: H * W)
             for r in 0..<rows { for c in 0..<columns {
                 re[r * W + c] = flipped ? values(rows - 1 - r, columns - 1 - c) : values(r, c)
             } }
-            return ComplexImage(rows: H, columns: W, real: re)
+            return re
+        }
+        // The planes are real: the six forward transforms keep the half spectrum (`H × (W/2 + 1)`) and the products are taken
+        // there, since a product of Hermitian spectra is Hermitian; `irfft2` gives the real correlation.
+        let half = W / 2 + 1
+        func spectrum(_ plane: [S]) throws -> ComplexImage<S> {
+            try S.rfft2(real: plane, rows: H, columns: W, norm: .backward)
         }
         func image(_ m: Micrograph, _ mask: [Bool]) -> (Int, Int) -> S {
             { r, c in mask[r * m.width + c] ? S(m.pixels[r * m.width + c]) : 0 }
@@ -95,20 +101,20 @@ extension PhaseCorrelation {
         for r in 0..<rh { for c in 0..<rw where referenceMask[r * rw + c] && !reference.pixels[r * rw + c].isFinite {
             throw AlignmentError.nonFinitePixel(index: 0)
         } }
-        let fixedFFT = try S.fft2(plane(fixedValues, mh, mw), axes: .both, norm: .backward)
-        let rotFFT = try S.fft2(plane(rotValues, rh, rw, flipped: true), axes: .both, norm: .backward)
-        let fixedMaskFFT = try S.fft2(plane({ movingMask[$0 * mw + $1] ? 1 : 0 }, mh, mw), axes: .both, norm: .backward)
-        let rotMaskFFT = try S.fft2(plane({ referenceMask[$0 * rw + $1] ? 1 : 0 }, rh, rw, flipped: true), axes: .both, norm: .backward)
-        let fixedSqFFT = try S.fft2(plane({ let v = fixedValues($0, $1); return v * v }, mh, mw), axes: .both, norm: .backward)
-        let rotSqFFT = try S.fft2(plane({ let v = rotValues($0, $1); return v * v }, rh, rw, flipped: true), axes: .both, norm: .backward)
+        let fixedFFT = try spectrum(plane(fixedValues, mh, mw))
+        let rotFFT = try spectrum(plane(rotValues, rh, rw, flipped: true))
+        let fixedMaskFFT = try spectrum(plane({ movingMask[$0 * mw + $1] ? 1 : 0 }, mh, mw))
+        let rotMaskFFT = try spectrum(plane({ referenceMask[$0 * rw + $1] ? 1 : 0 }, rh, rw, flipped: true))
+        let fixedSqFFT = try spectrum(plane({ let v = fixedValues($0, $1); return v * v }, mh, mw))
+        let rotSqFFT = try spectrum(plane({ let v = rotValues($0, $1); return v * v }, rh, rw, flipped: true))
 
         func product(_ a: ComplexImage<S>, _ b: ComplexImage<S>) throws -> [S] {
-            var re = [S](repeating: 0, count: H * W), im = re
-            for i in 0..<(H * W) {
+            var re = [S](repeating: 0, count: H * half), im = re
+            for i in 0..<(H * half) {
                 re[i] = a.re[i] * b.re[i] - a.im[i] * b.im[i]
                 im[i] = a.re[i] * b.im[i] + a.im[i] * b.re[i]
             }
-            return try S.ifft2(ComplexImage(rows: H, columns: W, re: re, im: im), axes: .both, norm: .backward).re
+            return try S.irfft2(ComplexImage(rows: H, columns: half, re: re, im: im), columns: W, norm: .backward)
         }
         var overlap = try product(rotMaskFFT, fixedMaskFFT).map { max($0.rounded(.toNearestOrEven), eps) }
         let correlatedFixed = try product(rotMaskFFT, fixedFFT)

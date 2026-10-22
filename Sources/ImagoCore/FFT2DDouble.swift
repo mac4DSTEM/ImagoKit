@@ -461,6 +461,52 @@ public nonisolated final class FFT2DDouble: FFT2DTransform, @unchecked Sendable 
         }
     }
 
+    /// `count` independent lines of the x axis (contiguous, length `nx`) or of the y axis (length `ny`), each transformed out of
+    /// place with this plan's one-axis engine (the unnormalised inverse). The building block of the real-input 2D transforms
+    /// (`RealFFT2D.swift`); `input` and `output` must not overlap.
+    package func transformLines(alongX: Bool, count: Int, forward: Bool, inputStride: Int? = nil,
+                                _ inputRe: UnsafePointer<Double>, _ inputIm: UnsafePointer<Double>,
+                                _ outputRe: UnsafeMutablePointer<Double>, _ outputIm: UnsafeMutablePointer<Double>) {
+        let length = alongX ? nx : ny
+        let inStride = inputStride ?? length
+        if length == 1 {
+            for i in 0..<count { outputRe[i] = inputRe[i * inStride]; outputIm[i] = inputIm[i * inStride] }
+            return
+        }
+        if dft2DX != nil || radix2Setup != nil {
+            if let pair = alongX ? dft2DX : dft2DY {
+                for i in 0..<count {
+                    pair.execute(forward: forward, inputRe + i * inStride, inputIm + i * inStride,
+                                 outputRe + i * length, outputIm + i * length)
+                }
+            } else if let radix2Setup {
+                let log2n = alongX ? log2x : log2y
+                for i in 0..<count {
+                    (outputRe + i * length).update(from: inputRe + i * inStride, count: length)
+                    (outputIm + i * length).update(from: inputIm + i * inStride, count: length)
+                    var split = DSPDoubleSplitComplex(realp: outputRe + i * length, imagp: outputIm + i * length)
+                    vDSP_fft_zipD(radix2Setup, &split, 1, log2n,
+                                  FFTDirection(forward ? kFFTDirection_Forward : kFFTDirection_Inverse))
+                }
+            }
+            return
+        }
+        let bluestein = alongX ? bluesteinX : bluesteinY
+        var scratchRe = [Double](repeating: 0, count: 2 * (bluestein?.paddedLength ?? 0))
+        var scratchIm = scratchRe
+        scratchRe.withUnsafeMutableBufferPointer { sr in scratchIm.withUnsafeMutableBufferPointer { si in
+            let scratch = (sr.baseAddress, si.baseAddress)
+            for i in 0..<count {
+                executeAxis(pair: alongX ? axisPairX : axisPairY, fftSetup: alongX ? axisXSetup : axisYSetup,
+                            fftLog: alongX ? axisXLog : axisYLog, exactPlan: alongX ? axisXPlan : axisYPlan,
+                            dftSetup: alongX ? (forward ? forwardX : inverseX) : (forward ? forwardY : inverseY),
+                            bluestein: bluestein, length: length, forward: forward,
+                            inputRe + i * inStride, inputIm + i * inStride, outputRe + i * length, outputIm + i * length,
+                            scratch: scratch)
+            }
+        } }
+    }
+
     /// Rows, transpose, columns, transpose, each row a `vDSP_DFT_zop` call (the unnormalised inverse is scaled by the caller).
     private func transformPowerOfTwo(re: inout [Double], im: inout [Double], forward: Bool,
                                      pairX: DFTPairD, pairY: DFTPairD) {
