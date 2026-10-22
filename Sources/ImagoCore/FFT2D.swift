@@ -393,37 +393,29 @@ public nonisolated final class FFT2D: FFT2DTransform, @unchecked Sendable {
                     }
                 }
             }
-            var columnInRe = [Float](repeating: 0, count: ny)
-            var columnInIm = [Float](repeating: 0, count: ny)
-            var columnOutRe = [Float](repeating: 0, count: ny)
-            var columnOutIm = [Float](repeating: 0, count: ny)
-            for x in 0..<nx {
-                for y in 0..<ny {
-                    columnInRe[y] = horizontalRe[y * nx + x]
-                    columnInIm[y] = horizontalIm[y * nx + x]
-                }
-                columnInRe.withUnsafeBufferPointer { inputRe in
-                    columnInIm.withUnsafeBufferPointer { inputIm in
-                        columnOutRe.withUnsafeMutableBufferPointer { outputRe in
-                            columnOutIm.withUnsafeMutableBufferPointer { outputIm in
-                                executeAxis(
-                                    fftSetup: axisYSetup, fftLog: axisYLog,
-                                    exactPlan: axisYPlan,
-                                    dftSetup: ySetup, bluestein: bluesteinY,
-                                    length: ny, forward: forward,
-                                    inputRe.baseAddress!, inputIm.baseAddress!,
-                                    outputRe.baseAddress!, outputIm.baseAddress!,
-                                    scratch: scratch
-                                )
-                            }
-                        }
+            // Columns: transpose so each is a contiguous line, transform the lines, transpose back (strided column
+            // gathers were most of the time of the vDSP, radix and Bluestein lengths).
+            var tRe = [Float](repeating: 0, count: nx * ny), tIm = tRe
+            var uRe = tRe, uIm = tRe
+            vDSP_mtrans(horizontalRe, 1, &tRe, 1, vDSP_Length(nx), vDSP_Length(ny))
+            vDSP_mtrans(horizontalIm, 1, &tIm, 1, vDSP_Length(nx), vDSP_Length(ny))
+            tRe.withUnsafeBufferPointer { inputRe in tIm.withUnsafeBufferPointer { inputIm in
+                uRe.withUnsafeMutableBufferPointer { outputRe in uIm.withUnsafeMutableBufferPointer { outputIm in
+                    for x in 0..<nx {
+                        executeAxis(
+                            fftSetup: axisYSetup, fftLog: axisYLog,
+                            exactPlan: axisYPlan,
+                            dftSetup: ySetup, bluestein: bluesteinY,
+                            length: ny, forward: forward,
+                            inputRe.baseAddress! + x * ny, inputIm.baseAddress! + x * ny,
+                            outputRe.baseAddress! + x * ny, outputIm.baseAddress! + x * ny,
+                            scratch: scratch
+                        )
                     }
-                }
-                for y in 0..<ny {
-                    re[y * nx + x] = columnOutRe[y]
-                    im[y * nx + x] = columnOutIm[y]
-                }
-            }
+                } }
+            } }
+            vDSP_mtrans(uRe, 1, &re, 1, vDSP_Length(ny), vDSP_Length(nx))
+            vDSP_mtrans(uIm, 1, &im, 1, vDSP_Length(ny), vDSP_Length(nx))
             }
             }
         }
