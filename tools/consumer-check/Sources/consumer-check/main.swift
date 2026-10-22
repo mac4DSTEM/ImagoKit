@@ -323,5 +323,14 @@ let maskAll = [Bool](repeating: true, count: 64)
 check((try? PhaseCorrelation.registerMasked(reference: squareImage, moving: squareImage, referenceMask: maskAll))
     == PixelShift(row: 0, column: 0), "public masked registration of an image with itself")
 
+let greyBlock: [Double] = (0..<64).map { $0 % 8 < 4 ? 0.2 : 0.8 }
+check((try? Thresholding.otsu(.float64(greyBlock))).map { $0 > 0.2 && $0 < 0.8 } == true, "public otsu splits two levels")
+check((try? Thresholding.otsu(.integers([10, 10, 200, 200]))) == 10, "public otsu of integers is an integer")
+let blockMask = (0..<25).map { ($0 / 5) >= 1 && ($0 / 5) <= 3 && ($0 % 5) >= 1 && ($0 % 5) <= 3 }
+check((try? BinaryMorphology.erosion(blockMask, width: 5, height: 5))?.filter { $0 }.count == 1, "public binary erosion of a 3x3 block")
+check((try? BinaryMorphology.fillHoles(blockMask.enumerated().map { $0.offset == 12 ? false : $0.element }, width: 5, height: 5))?
+    .filter { $0 }.count == 9, "public fill holes")
+check((try? StructuringElement.generateStructure(rank: 2, connectivity: 1))?.filter { $0 }.count == 5, "public generate_binary_structure")
+
 print("consumer-check summary: \(checks) checks, \(failures) failures")
 if failures > 0 { exit(1) }
