@@ -156,3 +156,36 @@ extension ObjectStatistics {
                            meanWidth: counted.map(\.widthPx).reduce(0, +) / Double(counted.count))
     }
 }
+
+extension ObjectStatistics {
+    /// The counts and the Feret-length summary of the objects of `regionProperties`.
+    public struct FeretSummary: Sendable, Equatable {
+        public let total: Int
+        /// Not on the image edge and not below the minimum area.
+        public let counted: Int
+        /// Touching the image edge, whatever their size.
+        public let edge: Int
+        /// Below the minimum area and not on the edge.
+        public let small: Int
+        /// The median and mean of the counted objects' `feretDiameterMax`, in pixels; nil with none counted.
+        public let medianFeret: Double?
+        public let meanFeret: Double?
+    }
+
+    /// `sizeSummary` on the Feret diameter (`regionprops`' `feret_diameter_max`) instead of the extent along the principal axis: the
+    /// needle length of a precipitate study. The same counting rule (edge, small, counted), the median the middle length (the mean of
+    /// the two middle ones for an even count) and the mean a sum over the counted lengths in ascending order.
+    public static func feretSummary(_ regions: [RegionProperties], minimumArea: Int = 1) -> FeretSummary {
+        let edge = regions.filter(\.moments.touchesEdge)
+        let small = regions.filter { $0.moments.area < minimumArea && !$0.moments.touchesEdge }
+        let counted = regions.filter { $0.moments.area >= minimumArea && !$0.moments.touchesEdge }
+        guard !counted.isEmpty else {
+            return FeretSummary(total: regions.count, counted: 0, edge: edge.count, small: small.count, medianFeret: nil, meanFeret: nil)
+        }
+        let lengths = counted.map(\.feretDiameterMax).sorted()
+        let mid = lengths.count / 2
+        let median = lengths.count % 2 == 1 ? lengths[mid] : (lengths[mid - 1] + lengths[mid]) / 2
+        return FeretSummary(total: regions.count, counted: counted.count, edge: edge.count, small: small.count, medianFeret: median,
+                            meanFeret: lengths.reduce(0, +) / Double(lengths.count))
+    }
+}

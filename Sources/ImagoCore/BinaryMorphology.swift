@@ -27,6 +27,9 @@ public nonisolated enum MorphologyError: Error, Equatable, Sendable {
     case parameter(String)
     /// `bufferSize` is not smaller than both image dimensions (`clear_border`).
     case buffer
+    /// A distance transform of an image with no background pixel: SciPy answers with distances to a point outside the image that
+    /// depends on its implementation, so this port refuses (0.8.0).
+    case noBackground
 }
 
 /// A 2D structuring element: `cells[row * columns + column]`, odd `rows` and `columns`, centred.
