@@ -180,3 +180,10 @@ Numerics are never held stricter than that; readers, I/O, indices and metadata a
 | HRTEM ABSF and Wiener filters (Kilaas 1998, Mitchell's script) | done | a float64 NumPy/SciPy reading of the same steps; never compared with DigitalMicrograph |
 | GPA strain (Hÿtch, Snoeck and Kilaas 1998) | absent | planned; planted strain fields |
 | atom columns (Atomap, GPL-3.0) | absent | planned, its own GPL module |
+
+
+## Geometric phase analysis (no upstream package)
+
+| Function or option group | State | Kit symbol | Counterpart tolerance (source) | Priority | Notes |
+|---|---|---|---|---|---|
+| GPA strain from two reflections of a lattice image (Hytch, Snoeck and Kilaas 1998) | present, validation none (0.8.0) | `GeometricPhaseAnalysis.analyze`, `findReflections` | the planted field of `tools/gpa/planted.py` (no upstream package): 2x the plain-numpy selfcheck error per case (uniform 9.8e-4, bump 3.12e-3, bump_oblique 2.97e-3, perfect 1e-6), floor 1e-6, interior only | study | Float64 CPU only; measured errors equal the numpy GPA's (4.89e-4, 1.56e-3, 1.48e-3, 2.5e-11 at size 128); badged `validation: "none"` until one dataset with truth passes |
