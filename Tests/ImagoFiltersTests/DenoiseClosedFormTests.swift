@@ -1,5 +1,4 @@
-// Closed-form and refusal checks for Denoise (no fixtures). They sit beside the parity tests because ImagoFiltersTests has no
-// test target yet; move this file to Tests/ImagoFiltersTests once it has one.
+// Closed-form and refusal checks for Denoise (no fixtures); the pinned comparisons with scikit-image are in ImagoKitParityTests.
 import Foundation
 import ImagoFilters
 import Testing
