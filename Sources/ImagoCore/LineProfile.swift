@@ -277,7 +277,6 @@ public nonisolated struct LineProfile: Sendable {
         return t
     }
 
-
     // MARK: splines (orders 2 to 5)
 
     /// SciPy's prefiltered B-spline coefficients of an image, padded as `_prepad_for_spline_filter` does.
