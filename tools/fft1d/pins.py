@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Generate FFT1D pins; run from the package root:
-../tools/memcap.sh -- ../References/python/skimage/bin/python -I -B tools/fft1d/pins.py
+../References/python/skimage/bin/python -I -B tools/fft1d/pins.py
 
 Inputs are exact binary fractions shared by Float32/Float64; expected outputs
 are NumPy complex128, so the oracle does not hide Float32 rounding error.

@@ -5,7 +5,7 @@
 # part of CI (it needs the skimage venv to regenerate the pins). The tests print "BAND <label> <value> limit <limit> <case>"
 # lines: the measured worst values, summarised at the end (limit -1: a near-tie case, held to its box instead).
 #
-#   ../tools/memcap.sh -- ../References/python/skimage/bin/python -I -B tools/slice-2/pins.py   # when .build/pins-full is missing
+#   ../References/python/skimage/bin/python -I -B tools/slice-2/pins.py   # when .build/pins-full is missing
 #   tools/slice-2/full-parity.sh
 set -euo pipefail
 cd "${0:A:h}/../.."

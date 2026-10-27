@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Generate the CSV-writer pins; run from the package root:
-../tools/memcap.sh -- ../References/python/skimage/bin/python -I -B tools/csvexport/pins.py CSVGEN_BINARY
+../References/python/skimage/bin/python -I -B tools/csvexport/pins.py CSVGEN_BINARY
 
 Writes Tests/ImagoFFTTests/Fixtures/csv-export-pins.json (radial profile and spots CSV) and
 Tests/ImagoCoreTests/Fixtures/csv-tidy-pins.json (the tidy results CSV).

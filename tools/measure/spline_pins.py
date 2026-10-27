@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Generate the spline-order (2 to 5) line-profile pins; run from the package root:
-../tools/memcap.sh -- ../References/python/skimage/bin/python -I -B tools/measure/spline_pins.py
+../References/python/skimage/bin/python -I -B tools/measure/spline_pins.py
 
 Writes Tests/ImagoCoreTests/Fixtures/spline-profile-pins.json.
   - profile: skimage.measure.profile_line at orders 2 to 5, the five modes, several widths and reductions, on float32

@@ -11,7 +11,7 @@
 //
 //  The plan is immutable after construction and shareable across threads; the work area is the caller's.
 //  Used by `FFT2DDouble` for the lengths vDSP_DFT_zop, the radix-2 plans and the pure radix-3/5 plans do not serve, ahead of
-//  Bluestein (CLAUDE.md: the vDSP path for 2^n × {1, 3, 5, 15} stays, and so does Bluestein for every other length).
+//  Bluestein (design rule: the vDSP path for 2^n × {1, 3, 5, 15} stays, and so does Bluestein for every other length).
 //
 
 import Foundation
