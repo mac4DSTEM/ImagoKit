@@ -1,3 +1,5 @@
+<p align="center"><img src="docs/banner.png" width="100%" alt="ImagoKit: image analysis for electron micrographs, in Swift"></p>
+
 # ImagoKit
 
 Image analysis for electron micrographs, in Swift, for macOS and iPadOS: the Fourier transform of an image with its
