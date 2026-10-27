@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Filter pins: scipy.ndimage.gaussian_filter / uniform_filter, skimage.filters.difference_of_gaussians / butterworth /
-window. Run from the package root:  ../refs/skimage/bin/python -I -B tools/filters/pins.py
+window. Run from the package root:  python -I -B tools/filters/pins.py
 Writes Tests/ImagoFiltersTests/Fixtures/filter-pins.json. Images are float32 normal draws; the float32 case is the
 library's own float32 output, the float64 case the same pixels widened.
 """

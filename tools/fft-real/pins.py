@@ -2,7 +2,7 @@
 """Real-input FFT pins and the mixed-radix lengths: numpy.fft.rfft2 / irfft2 at larger shapes, rfft / irfft (n=, norm=), and
 fft / ifft at lengths of small prime factors (2, 3, 5, 7) that the Float64 path serves by its mixed-radix plan.
 Run from the package root:
-  ../References/python/skimage/bin/python -I -B tools/fft-real/pins.py
+  python -I -B tools/fft-real/pins.py
 Writes Tests/ImagoFFTTests/Fixtures/fft-real-pins.json (read by Tests/ImagoKitParityTests/FFT/FFTRealTests.swift).
 Deterministic: PCG64 seed 20261023, floats written as Python reprs. Inputs are float64 normal draws rounded to float32, so the
 Float32 path sees the same values; the truth is NumPy's float64 result on those values.

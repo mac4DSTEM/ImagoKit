@@ -1,4 +1,4 @@
-// ObjectStatistics.arealDensity and numberDensity: the closed forms of mac4DSTEM's PrecipitateStatistics tests (suite task 34), the
+// ObjectStatistics.arealDensity and numberDensity: the closed forms of mac4DSTEM's PrecipitateStatistics tests, the
 // refusal rule, and planted truth: over every placement of a box in a frame the edge-corrected count averages to exactly one.
 import Foundation
 import ImagoCore

@@ -1,6 +1,6 @@
 //
 //  AlignedSum.swift (ImagoAlignment)
-//  A stack summed after each frame is shifted by its shift (registration-slice-2.md section 1): the Fourier shift (exact for
+//  A stack summed after each frame is shifted by its shift: the Fourier shift (exact for
 //  a periodic image; edges wrap) or the bilinear one (zero outside the footprint; the overlap counted).
 //
 

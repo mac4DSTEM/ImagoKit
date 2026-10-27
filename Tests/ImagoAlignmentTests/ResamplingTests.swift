@@ -1,4 +1,4 @@
-// Closed forms for zoom and rotate (suite task 20): a constant image stays constant, quarter turns permute the pixels exactly,
+// Closed forms for zoom and rotate: a constant image stays constant, quarter turns permute the pixels exactly,
 // the calibration follows the zoom, refusals. The pinned comparison with SciPy is in ImagoKitParityTests.
 import Foundation
 import ImagoAlignment

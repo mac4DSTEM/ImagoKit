@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Planted-truth lattice images for GPA strain (ImagoKit task 21).
+"""Planted-truth lattice images for GPA strain.
 
 numpy only. Writes, for each case, `<case>.npy` (float64 lattice image, shape (rows, cols)) and one `truth.json`.
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """FFT-surface pins: numpy.fft.fft2 / ifft2 (axes, norm), rfft2 / irfft2, fftshift / ifftshift.
 Run from the package root:
-  ../refs/skimage/bin/python -I -B tools/fftsurface/pins.py
+  python -I -B tools/fftsurface/pins.py
 Writes Tests/ImagoCoreTests/Fixtures/fft-surface-pins.json. Inputs are float64 normal draws, rounded to float32 so the
 Float32 path sees the same pixels; the truth is NumPy's float64 result on those pixels.
 """

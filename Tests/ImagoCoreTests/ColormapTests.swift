@@ -1,6 +1,6 @@
 // Colormap tables and DisplayMapping.sampleRGB against tools/colormap/pins.py: an independent NumPy reading of the
 // definition, itself asserted equal to the application's own table bytes when the pins were generated.
-// Tables and sampler are integer-valued outputs of a Double recipe: tested exact (D12: indices and bytes are exact).
+// Tables and sampler are integer-valued outputs of a Double recipe: tested exact (indices and bytes are exact).
 import Foundation
 import ImagoCore
 import Testing

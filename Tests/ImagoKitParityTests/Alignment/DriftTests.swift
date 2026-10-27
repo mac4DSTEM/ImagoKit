@@ -1,4 +1,4 @@
-// Drift series and aligned sums (registration-slice-2.md section 1, 3.4 and 4): a 12-frame stack of the planted image with a
+// Drift series and aligned sums: a 12-frame stack of the planted image with a
 // random-walk drift, against the planted drift, scikit-image's series, the cumulated pairwise shifts, and SciPy's sums.
 import Foundation
 import ImagoKitTestSupport

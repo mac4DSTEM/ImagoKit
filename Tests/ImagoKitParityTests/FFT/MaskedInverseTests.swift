@@ -1,4 +1,4 @@
-// The masked inverse FFT against NumPy 2.5.4 (registration-slice-1.md 1.2, section 3, 5.3).
+// The masked inverse FFT against NumPy 2.5.4.
 import Foundation
 import ImagoKitTestSupport
 import ImagoCore
@@ -52,8 +52,7 @@ func maskedInverseMatchesNumPy(_ c: FFTPin, _ precision: Precision) throws {
 
 /// The mask itself, read back through an impulse (FFT = 1 everywhere): on an odd height, with a spot overlapping its own
 /// Friedel partner and two spots overlapping each other, the rebuilt image's spectrum is the union (maximum) of the spots
-/// in NumPy's unshifted frame (row u holds frequency u for u < ⌈h/2⌉, else u − h). Added after the slice-1b mutants (the
-/// pinned spots never overlap and every pinned height is even).
+/// in NumPy's unshifted frame (row u holds frequency u for u < ⌈h/2⌉, else u − h). The pinned spots never overlap and every pinned height is even.
 @Test func maskIsTheMaximumOfTheSpotsOnAnOddHeight() throws {
     let w = 64, h = 63
     var pixels = [Float](repeating: 0, count: w * h)
@@ -79,7 +78,7 @@ func maskedInverseMatchesNumPy(_ c: FFTPin, _ precision: Precision) throws {
     #expect(worst < 1e-12, "the mask differs from the union by \(worst)")
 }
 
-/// Added after the slice-1b refuter: the mask does not wrap, so a spot reaching the Nyquist column of an even width leaves a
+/// The mask does not wrap, so a spot reaching the Nyquist column of an even width leaves a
 /// complex result, reported by `imaginaryMax`; the same spot away from it leaves rounding only. And `maskSpot` on odd sizes.
 @Test func aSpotAtNyquistLeavesAnImaginaryPart() throws {
     let w = 64, h = 48

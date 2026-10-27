@@ -2,7 +2,7 @@
 //  FFTSurface.swift (ImagoCore)
 //  NumPy's `numpy.fft` surface over the kit's exact-length 2D transforms: `fft2` / `ifft2` with `axes=` and `norm=`,
 //  `rfft2` / `irfft2`, `fftshift` / `ifftshift`. Arrays are row-major `[rows * columns]`, split complex. Every length is the
-//  exact DFT (no padding), Float32 on `FFT2D`, Float64 on `FFT2DDouble`, the Float64 path being the reference (D16).
+//  exact DFT (no padding), Float32 on `FFT2D`, Float64 on `FFT2DDouble`, the Float64 path being the reference.
 //
 
 import Foundation

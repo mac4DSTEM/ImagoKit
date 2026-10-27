@@ -1,4 +1,4 @@
-// regionprops completion and labelled statistics against the pins of tools/precipitation/pins.py (suite task 33).
+// regionprops completion and labelled statistics against the pins of tools/precipitation/pins.py.
 // Tolerance: scikit-image 0.26.0 ships no tests in its wheel, so its floats use assert_allclose dtype defaults (rtol 1e-7 Float64);
 // area, bbox, Euler number, filled and convex areas are exact. SciPy's ndimage measurement tests use decimal 6 (positions and
 // bounding slices exact).

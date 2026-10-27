@@ -1,4 +1,4 @@
-// apps-parity: macTEM 3d17311's Float32 originals (MacTEMRef) vs ImagoKit's Float32 path, bit for bit as the D12 quick check, on every planted
+// apps-parity: macTEM 3d17311's Float32 originals (MacTEMRef) vs ImagoKit's Float32 path, bit for bit, on every planted
 // case of the full set. READ-ONLY on the planted set. Usage: apps-parity [pins-full dir]
 import Foundation
 import ImagoCore

@@ -1,7 +1,7 @@
 //
 //  ImageShift.swift (ImagoAlignment)
 //  A shifted copy of an image: SciPy 1.18.1's `ndimage.shift` of order 0 and 1 in its seven boundary modes, and the exact
-//  shift of a periodic image, `ifft2(fourier_shift(fft2(x), s)).real` (registration-slice-2.md 3.2 and 3.3).
+//  shift of a periodic image, `ifft2(fourier_shift(fft2(x), s)).real`.
 //
 //  THE COORDINATE: output pixel (i, j) takes the input at (i − s_row, j − s_col), mapped into the image by the mode (a
 //  continuous coordinate, as SciPy maps it), then rounded half up (order 0) or interpolated between floor and floor + 1

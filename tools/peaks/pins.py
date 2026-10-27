@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""skimage.feature.peak_local_max pins. ../refs/skimage/bin/python -I -B tools/peaks/pins.py
+"""skimage.feature.peak_local_max pins. python -I -B tools/peaks/pins.py
 Writes Tests/ImagoFiltersTests/Fixtures/peak-pins.json: smooth noisy lattices (float32 and float64), tied integer images and a
 constant image, over min_distance, thresholds, exclude_border, num_peaks and p_norm."""
 import json

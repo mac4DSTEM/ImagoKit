@@ -6,7 +6,7 @@
 //  Tolerance: 2 x the selfcheck max_abs_error_interior of a plain numpy GPA at size 128 (python3 planted.py --size 128), floor 1e-6.
 //  numpy selfcheck: uniform 4.887e-4, bump 1.560e-3, bump_oblique 1.485e-3, perfect 2.5e-11.
 //  Tolerances used: uniform 9.8e-4, bump 3.12e-3, bump_oblique 2.97e-3, perfect 1e-6.
-//  Measured Swift errors are recorded in docs/notes-k5-gpa.md. validation stays "none".
+//  validation stays "none".
 //
 
 import Foundation

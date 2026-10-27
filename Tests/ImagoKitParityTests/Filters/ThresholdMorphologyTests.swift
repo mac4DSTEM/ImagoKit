@@ -1,5 +1,5 @@
 // scikit-image 0.26.0 thresholds, SciPy 1.18.1 / scikit-image binary morphology, remove_small_*, clear_border against the pins of
-// tools/precipitation/pins.py (suite task 32). Tolerance: the scikit-image 0.26.0 wheel ships no tests, so its numbers use
+// tools/precipitation/pins.py. Tolerance: the scikit-image 0.26.0 wheel ships no tests, so its numbers use
 // assert_allclose dtype defaults (rtol 1e-7 Float64, 1e-5 Float32; integer images return exact integer thresholds); every mask is exact.
 import Foundation
 import ImagoKitTestSupport
