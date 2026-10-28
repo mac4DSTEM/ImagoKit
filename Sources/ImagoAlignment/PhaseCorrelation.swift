@@ -1,7 +1,7 @@
 //
 //  PhaseCorrelation.swift (ImagoAlignment)
 //  The translation that registers one image onto another: scikit-image 0.26.0's `phase_cross_correlation` without masks and
-//  without `disambiguate` (registration-slice-2.md 3.1), on the Float32 FFT (`FFT2D`) or the Float64 reference path.
+//  without `disambiguate`, on the Float32 FFT (`FFT2D`) or the Float64 reference path.
 //
 //  THE STEPS, as scikit-image takes them: P = F_R · conj(F_M); with `.phase`, P /= max(|P|, 100·eps); CC = ifft2(P); the first
 //  maximum of |CC| in row-major order; a peak index above trunc(n/2) has n subtracted. With an upsample factor u > 1 the

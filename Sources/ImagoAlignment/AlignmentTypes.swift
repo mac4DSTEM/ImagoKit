@@ -1,7 +1,7 @@
 //
 //  AlignmentTypes.swift (ImagoAlignment)
 //  The vocabulary of drift and stack alignment: a shift in pixels, the registration of one image onto another, the
-//  options of the shift and the sum, and why a call is refused (registration-slice-2.md sections 1 and 3).
+//  options of the shift and the sum, and why a call is refused.
 //
 //  CONVENTION, scikit-image's: a shift is the translation to APPLY to the moving image so that it registers onto the
 //  reference (`ImageShift.shift(moving, by: shift)`). Equivalently the moving image is the reference displaced by the

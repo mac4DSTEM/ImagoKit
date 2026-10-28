@@ -1,5 +1,5 @@
 // The HRTEM filters against the float64 NumPy/SciPy reading of the same steps (macTEM's hrtem-filter-parity at 3d17311,
-// pinned by tools/slice-1/pins.py), with that harness's checks (registration-slice-1.md section 3, 5.5, amendment 7).
+// pinned by tools/slice-1/pins.py), with that harness's checks.
 import Foundation
 import ImagoKitTestSupport
 import ImagoCore
@@ -114,7 +114,7 @@ func filtersMatchTheFloat64Reading(_ c: HRTEMPin, _ precision: Precision) throws
         break
     }
     if precision == .float64 && !anyDiffer { #expect(result.passes == c.passes, "passes \(result.passes) vs \(c.passes)") }
-    // The result's other fields (added after the slice-1b refuter): pass 1's c, the median and, where present, M0 against
+    // The result's other fields: pass 1's c, the median and, where present, M0 against
     // the float64 reading; the flags against their own first pass; the counts and the final d against the flags.
     let disk = (0..<count).filter { radius($0) < Double(half) && refS[$0] > 0 }
     if precision == .float64 {
@@ -199,7 +199,7 @@ func filtersMatchTheFloat64Reading(_ c: HRTEMPin, _ precision: Precision) throws
     }
 }
 
-// Added after the slice-1b mutants: the cycle cap, the taper radius's rounding and the flag disk's edge, which the two
+// Covers the cycle cap, the taper radius's rounding and the flag disk's edge, which the two
 // committed cases cannot reach (they stop by delta at 36 passes, R = 3.2, and no flag reaches r = n/2).
 private func committedBin128() throws -> (pixels: [Float], n: Int) {
     let c = try #require(HRTEMPins.cases.first { $0.name == "bin-128" })

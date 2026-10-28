@@ -12,7 +12,7 @@
 //  `iterations` below 1 repeats until the mask stops changing (SciPy's rule). Opening and closing pass one `borderValue` to
 //  both their steps, as SciPy does.
 //
-//  DEVIATIONS. An even structure dimension is refused (SciPy shifts its origin; nothing in the suite needs it). 2D only, apart
+//  DEVIATIONS. An even structure dimension is refused (SciPy shifts its origin; nothing in this kit needs it). 2D only, apart
 //  from `generateStructure`, which makes any rank.
 //
 

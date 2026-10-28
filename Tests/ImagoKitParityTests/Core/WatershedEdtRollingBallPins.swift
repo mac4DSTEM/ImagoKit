@@ -1,4 +1,4 @@
-// The pins of tools/segmentation-k1/pins.py, task 36: SciPy 1.18.1 distance_transform_edt, scikit-image 0.26.0 watershed and rolling_ball.
+// The pins of tools/segmentation-k1/pins.py: SciPy 1.18.1 distance_transform_edt, scikit-image 0.26.0 watershed and rolling_ball.
 import Foundation
 import ImagoKitTestSupport
 

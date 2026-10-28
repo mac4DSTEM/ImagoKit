@@ -1,6 +1,6 @@
 //
 //  RadialProfile.swift (ImagoFFT)
-//  The power of a centred spectrum against the PHYSICAL spatial frequency |q| (registration-slice-1.md 1.2).
+//  The power of a centred spectrum against the PHYSICAL spatial frequency |q|.
 //
 //  DEFINITION: for the signed indices (i, j) of a bin from the spectrum's centre, |q| = √((i·Δq_x)² + (j·Δq_y)²) with each
 //  axis's own spacing, so a ring on a non-square or anisotropic grid lands in one bin along every direction. Bin

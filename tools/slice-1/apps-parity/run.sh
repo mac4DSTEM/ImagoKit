@@ -1,6 +1,6 @@
 #!/bin/zsh
 # apps-parity: extract macTEM 3d17311's seven originals by `git show` (never its working tree) into Sources/MacTEMRef
-# (gitignored), build in release and compare with the kit's Float32 path (bit for bit, the D12 quick check) on .build/pins-full (written by
+# (gitignored), build in release and compare with the kit's Float32 path (bit for bit) on .build/pins-full (written by
 # tools/slice-1/pins.py). Exit 0 only when every value and string is identical. Run at every frozen commit of slice 1.
 set -euo pipefail
 here=${0:A:h}

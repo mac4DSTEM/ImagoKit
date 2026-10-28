@@ -1,5 +1,5 @@
 // skimage.feature.peak_local_max against scikit-image 0.26.0 (tools/peaks/pins.py): coordinates exact, in order.
-// scikit-image's wheel ships no tests (checked in References/python/skimage); indices are integers, so the comparison is exact.
+// scikit-image's wheel ships no tests; indices are integers, so the comparison is exact.
 import Foundation
 import ImagoKitTestSupport
 import ImagoFilters

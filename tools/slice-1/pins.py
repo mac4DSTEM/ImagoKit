@@ -1,4 +1,4 @@
-"""Slice 1a pins (docs/registration-slice-1.md section 2): the spectrum, radial profile, spot and angle fixtures.
+"""Slice 1a pins: the spectrum, radial profile, spot and angle fixtures.
 
     ../References/python/skimage/bin/python -I -B tools/slice-1/pins.py
 
@@ -40,7 +40,7 @@ FILTER_FIX = os.path.join(ROOT, "Tests", "ImagoFiltersTests", "Fixtures")
 HRTEM_COMMITTED = ["bin-128", "pct5-128"]          # the defaults with the energy region; the low-frequency taper
 HRTEM_KEYS = ["absf", "wiener", "W", "M", "a", "w", "c1", "S", "firstpass", "nearmargins", "p2region"]
 SPOT_COMMIT_MAX_PIXELS = 256 * 128          # spot cases up to 256 x 128 are committed; 256 x 256 and 512 x 512 are full only,
-SPOT_COMMITTED_EXTRA = ["neighbour-3bins", "noisy256-k10-r0"]   # but for the one neighbour case and one noisy case (Gate B)
+SPOT_COMMITTED_EXTRA = ["neighbour-3bins", "noisy256-k10-r0"]   # but for the one neighbour case and one noisy case
 ANGLE_COMMITTED = ["a256-iso-t60-clean", "a256-aniso-t109.47-clean", "a256-iso-t145-noisy", "a256-aniso-t30-noisy"]
 BUDGET = 10 * 1024 * 1024                         # amendment 7 (was 8 MB before slice 1b)
 ANGLE_SEED = 20261016

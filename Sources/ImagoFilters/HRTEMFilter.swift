@@ -1,7 +1,7 @@
 //
 //  HRTEMFilter.swift (ImagoFilters)
 //  The HRTEM filters — the average background subtraction filter (ABSF) and the Wiener filter after R. Kilaas (1998), as
-//  D. R. G. Mitchell's DigitalMicrograph script `HRTEM_Filter.s` v4.0 describes them (registration-slice-1.md 1.3). A
+//  D. R. G. Mitchell's DigitalMicrograph script `HRTEM_Filter.s` v4.0 describes them. A
 //  functional re-implementation of the steps below: the script states no licence and nothing of it is copied (NOTICE).
 //  Never compared with DigitalMicrograph.
 //

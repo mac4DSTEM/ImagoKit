@@ -2,7 +2,7 @@
 //  ArealDensity.swift (ImagoCore)
 //  The areal number density of a set of counted objects in a frame, with the Miles–Lantuéjoul edge correction, the length and width
 //  summaries of the same objects, and the number density N_V = areal density / thickness with its σ propagated. Moved here from
-//  mac4DSTEM's `PrecipitateStatistics.density` (suite task 34), with the same arithmetic in the same order.
+//  mac4DSTEM's `PrecipitateStatistics.density`, with the same arithmetic in the same order.
 //
 //  THE RULE: no calibration, no density. `arealDensity` is nil whenever `pixelSize` is nil, not finite or not positive, and
 //  `numberDensity` refuses a thickness that is not finite and positive. Nothing is ever computed against an assumed scale.
