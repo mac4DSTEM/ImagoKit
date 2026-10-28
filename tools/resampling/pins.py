@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""Generate the zoom and rotate pins (suite task 20, K4a); run from the package root:
-../References/python/skimage/bin/python3 -I -B tools/resampling/pins.py     (a venv with only scikit-image==0.26.0: NumPy 2.5.4, SciPy 1.18.1)
+"""Generate the zoom and rotate pins; run from the package root:
+python3 -I -B tools/resampling/pins.py     (a venv with only scikit-image==0.26.0: NumPy 2.5.4, SciPy 1.18.1)
 
 Writes Tests/ImagoAlignmentTests/Fixtures/resampling-pins.json.
 Reference: SciPy 1.18.1 `ndimage.zoom` and `ndimage.rotate` (decimal 6 in scipy/ndimage/tests/test_interpolation.py), float32 input

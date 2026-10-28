@@ -1,4 +1,4 @@
-// Phase correlation (registration-slice-2.md 3.1, 3.4 and 4): the pinned cases against scikit-image on both precisions, the
+// Phase correlation: the pinned cases against scikit-image on both precisions, the
 // planted shifts against their truth, and the closed forms of the integer stage (the midpoint, the region, a length-1 axis).
 import Foundation
 import ImagoKitTestSupport
@@ -6,7 +6,7 @@ import ImagoAlignment
 import ImagoCore
 import Testing
 
-/// "BAND" lines are the measured values tools/slice-2/full-parity.sh summarises (it sets IMAGOKIT_BANDS); the gate stays quiet.
+/// "BAND" lines are the measured values tools/slice-2/full-parity.sh summarises (it sets IMAGOKIT_BANDS); otherwise it is silent.
 let printsBands = ProcessInfo.processInfo.environment["IMAGOKIT_BANDS"] != nil
 
 func band(_ label: String, _ value: Double, _ limit: Double, _ pin: String) {
@@ -49,7 +49,7 @@ func circular(_ a: Double, _ b: Double) -> Double {
 
 @Suite("Phase correlation against scikit-image 0.26.0")
 struct RegistrationAgainstOracle {
-    /// One path against its oracle: the shift equal, or (a near-tie, section 3.4) inside the box of shifts the measured noise
+    /// One path against its oracle: the shift equal, or (a near-tie) inside the box of shifts the measured noise
     /// of the correlation cannot tell apart; where the shifts are equal the error (as its square, which is what is computed)
     /// and the phase difference within the registered bands plus the measured noise of the last correlation stage.
     private func compare(_ r: ImageRegistration, _ o: OraclePin, _ pin: RegisterPin, tie: Bool, box: [Double]?,
@@ -110,7 +110,7 @@ struct PlantedShifts {
         let d = max(abs(r.shift.row - truth[0]), abs(r.shift.column - truth[1]))
         band("truth.\(precision.rawValue)", d, limit, pin.name)
         if precision == .float32, pin.tie32, let box = pin.box32 {
-            // The correlation of this case is within the Float32 FFT's noise of a tie (section 3.4): the shift is held in the
+            // The correlation of this case is within the Float32 FFT's noise of a tie: the shift is held in the
             // box of shifts that noise cannot tell apart (the comparison with the oracle), not to the planted band.
             #expect(inside(r.shift, box, slack: 1e-4), "\(r.shift) outside \(box)")
         } else {

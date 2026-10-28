@@ -24,4 +24,4 @@ package. **Runner-up: MicrografoKit**, clear on every check.
 
 The coordinator was told the choice and the runner-up on 2026-10-15; the owner confirms or renames before the first push
 (a direct USPTO/EUIPO search is the owner's, if wanted). Renaming before the first push is a mechanical `sed` over this
-repository and the org folder's `References/ImagoKit` link.
+repository.

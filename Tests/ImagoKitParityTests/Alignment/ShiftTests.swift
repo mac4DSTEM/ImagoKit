@@ -1,4 +1,4 @@
-// ndimage.shift (orders 0 and 1, seven modes) and fourier_shift (registration-slice-2.md 3.2, 3.3 and 3.4): the pinned
+// ndimage.shift (orders 0 and 1, seven modes) and fourier_shift: the pinned
 // cases on both paths, the closed forms of the modes and ties, and the Fourier shift's definition.
 import Foundation
 import ImagoKitTestSupport
@@ -78,7 +78,7 @@ struct ShiftAgainstOracle {
             worst32 = max(worst32, zip(f32.pixels, want).map { abs(Double($0) - $1) }.max()! / top)
             let plain = try ImageShift.fourierShift(image, by: shift, precision: .float64)
             worstPublic64 = max(worstPublic64, zip(plain.pixels, want).map { abs(Double($0) - $1) }.max()! / top)
-            // Two calls of one computation: equal to a Float32 ulp (a vDSP transform is not bit-reproducible, amendment 8 of slice 1).
+            // Two calls of one computation: equal to a Float32 ulp (a vDSP transform is not bit-reproducible).
             #expect(zip(plain.pixels, f64.pixels).allSatisfy { abs($0 - $1) <= 2e-7 * Float(top) })
             // The imaginary residual: NumPy's, to the precision's noise floor (it is exactly rounding where the pin has ~0).
             let floor64 = max(im.imag_max[k] * 1e-6, 1e-12 * top), floor32 = max(im.imag_max[k] * 1e-3, 3e-5 * top)

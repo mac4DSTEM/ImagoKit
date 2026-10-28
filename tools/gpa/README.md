@@ -1,4 +1,4 @@
-# GPA planted truth (ImagoKit task 21)
+# GPA planted truth
 
 `planted.py` writes lattice images with an analytic displacement field, so a GPA strain implementation can be checked against
 a known answer. numpy only; no upstream pin exists (no Python package ships GPA), the planted field is the reference and the

@@ -1,7 +1,7 @@
-# Parity rows, draft (suite tasks 32 and 33)
+# Parity rows, draft
 
 For `docs/parity.md` when the Mac session ports the functions; state is `missing` until then. Pins: `tools/precipitation/pins.py` ->
-`Tests/ImagoCoreTests/Fixtures/threshold-morphology-pins.json` (task 32) and `regionprops-needle-pins.json` (task 33), scikit-image
+`Tests/ImagoCoreTests/Fixtures/threshold-morphology-pins.json` and `regionprops-needle-pins.json`, scikit-image
 0.26.0, NumPy 2.5.4, SciPy 1.18.1. Tolerance wording follows the existing rows: the 0.26.0 wheel ships no tests, so scikit-image
 numbers are `assert_allclose` dtype defaults (rtol 1e-7 f64, 1e-5 f32); masks, labels and integers exact; SciPy's measurement tests
 use decimal 6.

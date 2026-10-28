@@ -1,7 +1,7 @@
 //
 //  PowerSpectrum.swift (ImagoFFT)
 //  The centred Fourier spectrum of an image or of a region of it — magnitude and power, with the frequency axes in the
-//  image's reciprocal unit (registration-slice-1.md 1.2).
+//  image's reciprocal unit.
 //
 //  CONVENTIONS, NumPy's: `F = fftshift(fft2(x))`; the zero frequency at index n/2 (integer division) on each axis, for odd
 //  and even n alike; the axis value at index i is (i − n/2) · (1 / (n · d)), d each axis's own scale, so a non-square or

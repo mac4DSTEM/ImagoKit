@@ -1,4 +1,4 @@
-// Spot spacings and the angle between spots against NumPy 2.5.4 and the planted lattices (registration sections 3, 5.2, 5.4).
+// Spot spacings and the angle between spots against NumPy 2.5.4 and the planted lattices.
 import Foundation
 import ImagoKitTestSupport
 import ImagoCore

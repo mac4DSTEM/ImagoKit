@@ -22,7 +22,7 @@
 //  * `eccentricity` √(1 − λ2/λ1) (0 when λ1 = 0); `equivalent_diameter_area` √(4·area/π); `extent` area / bounding-box area.
 //
 //  ACCURACY: areas, Euler numbers and integer counts exact; floating properties agree with scikit-image's float64 values to rounding
-//  (the suite holds them to assert_allclose rtol 1e-7).
+//  (the tests hold them to assert_allclose rtol 1e-7).
 //
 
 import Foundation

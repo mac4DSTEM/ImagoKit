@@ -7,7 +7,7 @@ Writes Tests/ImagoCoreTests/Fixtures/display-core-pins.json and Tests/ImagoFFTTe
 The numbers here are display conventions with no Python package behind them, so each pin is an independent NumPy / Python
 reading of the DEFINITION recorded in the Swift file's header (box averages by integer division, the 1-2-5 ladder, the
 colour-table interpolation, the square-region rules, ...), written without reference to the Swift code. Float32 arrays are
-stored as uint32 bit patterns (thumbnails: base64 of little-endian float32), so the quick check (D12) can be bit for bit.
+stored as uint32 bit patterns (thumbnails: base64 of little-endian float32), so the quick check can be bit for bit.
 """
 import json
 import math

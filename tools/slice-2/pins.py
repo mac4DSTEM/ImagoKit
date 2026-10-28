@@ -1,4 +1,4 @@
-"""Slice 2 pins (docs/registration-slice-2.md sections 2 to 4): phase correlation, shifts, drift series and aligned sums.
+"""Slice 2 pins: phase correlation, shifts, drift series and aligned sums.
 
     ../References/python/skimage/bin/python -I -B tools/slice-2/pins.py
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""Generate the K1 pins (suite task 36): distance_transform_edt, segmentation.watershed, restoration.rolling_ball.
-Run from the package root:  ../References/python/skimage/bin/python3 -I -B tools/segmentation-k1/pins.py
+"""Generate the K1 pins: distance_transform_edt, segmentation.watershed, restoration.rolling_ball.
+Run from the package root:  python3 -I -B tools/segmentation-k1/pins.py
 (a venv with only scikit-image==0.26.0, which brings NumPy 2.5.4 and SciPy 1.18.1).
 
 Writes Tests/ImagoCoreTests/Fixtures/watershed-edt-rollingball-pins.json.

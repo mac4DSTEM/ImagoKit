@@ -1,4 +1,4 @@
-// distance_transform_edt, watershed and rolling_ball against the pins of tools/segmentation-k1/pins.py (suite task 36).
+// distance_transform_edt, watershed and rolling_ball against the pins of tools/segmentation-k1/pins.py.
 // Tolerances: SciPy's ndimage tests use decimal 6; the EDT values are square roots of exact squared distances so 1e-12 is held.
 // scikit-image 0.26.0 ships no tests in its wheel: rolling_ball floats use assert_allclose dtype defaults (rtol 1e-7 Float64, 1e-5
 // Float32); watershed labels are exact.

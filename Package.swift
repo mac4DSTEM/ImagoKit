@@ -4,12 +4,11 @@
 // ImagoKit — image analysis for electron micrographs on Apple platforms: the calibrated image and the exact-length 2D
 // FFT (ImagoCore); the centred power spectrum, its radial profile, FFT-spot spacings and angles, and the masked inverse
 // FFT (ImagoFFT); the HRTEM background-subtraction and Wiener filters (ImagoFilters); drift and stack alignment
-// (ImagoAlignment). NumPy, SciPy and scikit-image are the references; docs/registration-slice-1.md and
-// docs/registration-slice-2.md hold the definitions and validation notes.
+// (ImagoAlignment). NumPy, SciPy and scikit-image are the references.
 //
 // Swift 6 language mode, nonisolated by default (no `.defaultIsolation`), the three upcoming features enabled below, no
-// unsafe flags (a versioned dependency cannot carry them): a consumer builds the kit optimised itself, and tools/test.sh
-// runs this package's tests with `-c release`. One product per module. What one module needs from another is `package`,
+// unsafe flags (a versioned dependency cannot carry them): a consumer builds the kit optimised itself, and `swift test -c release`
+// runs this package's tests. One product per module. What one module needs from another is `package`,
 // never `public`; what an app reads is `public` and is guarded by tools/consumer-check. Foundation and Accelerate only:
 // every module builds for iOS as well as macOS.
 import PackageDescription

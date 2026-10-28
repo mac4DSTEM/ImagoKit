@@ -1,6 +1,6 @@
 //
 //  FFT2DDouble.swift (ImagoCore)
-//  The reference path (registration-slice-1.md 1.1, amendment 2): FFT2D.swift translated line by line to Double — the vDSP
+//  The reference path: FFT2D.swift translated line by line to Double — the vDSP
 //  `…D` calls, DSPDoubleSplitComplex, Double twiddles — with the same plans and the same small-power-of-two exception.
 //  A change to FFT2D.swift is made here too, in the same commit. One exception, on purpose: the radix-2 Double calls
 //  (`vDSP_fft_zipD`, `vDSP_fft2d_zipD`) are 5 to 7 times slower than `vDSP_DFT_zop` from 128² up, so this file runs
