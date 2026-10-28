@@ -14,3 +14,12 @@ kit's tests hold them to a float64 NumPy/SciPy reading of the same steps.
 
 - ``HRTEMFilter``
 - ``HRTEMFilterError``
+
+### Thresholding
+
+- ``Thresholding``
+
+### Restoration and strain
+
+- ``Denoise``
+- ``GeometricPhaseAnalysis``
