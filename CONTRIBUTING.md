@@ -35,4 +35,4 @@ A test's tolerance is the one the Python package's own tests use for that functi
 Please use the issue templates. For a wrong number, include the input (or a small script that makes it), the result you
 got, and the result you expected from the reference package. For security problems, see [`SECURITY.md`](SECURITY.md).
 
-By contributing you agree that your contribution is licensed under the GPL-3.0 (see [`LICENSE`](LICENSE)).
+By contributing you agree that your contribution is licensed under the GPL-3.0-only (see [`LICENSE`](LICENSE)).

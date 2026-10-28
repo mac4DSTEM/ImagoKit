@@ -178,7 +178,7 @@ scikit-image.
 
 ## Licence
 
-GPL-3.0 ([`LICENSE`](LICENSE)). Copyright (c) 2026 Paul Lobpreis.
+GPL-3.0-only ([`LICENSE`](LICENSE)). Copyright (c) 2026 Paul Lobpreis.
 [`NOTICE`](NOTICE) records the provenance and reference packages.
 
 ## Not claimed

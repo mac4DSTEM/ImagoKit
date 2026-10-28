@@ -12,7 +12,7 @@ claimed (see docs/parity.md).
 GPL-3.0 (licence chosen by the maintainers, 2026-10-16)
 ================================================================================
 
-The entire package is licensed GPL-3.0, including all four modules. The Python
+The entire package is licensed GPL-3.0-only, including all four modules. The Python
 reference packages remain independently licensed; they are run as oracles,
 not copied into this package.
 
