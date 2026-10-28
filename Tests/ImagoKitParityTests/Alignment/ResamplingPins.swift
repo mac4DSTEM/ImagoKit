@@ -1,4 +1,4 @@
-// The pins of tools/resampling/pins.py (suite task 20, K4a): SciPy 1.18.1 ndimage.zoom and ndimage.rotate on float32 images.
+// The pins of tools/resampling/pins.py: SciPy 1.18.1 ndimage.zoom and ndimage.rotate on float32 images.
 import Foundation
 import ImagoKitTestSupport
 

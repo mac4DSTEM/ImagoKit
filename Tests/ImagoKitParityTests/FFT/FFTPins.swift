@@ -1,4 +1,4 @@
-// The slice-1a pins (tools/slice-1/pins.py; registration-slice-1.md sections 2 and 11): the committed subset in
+// The slice-1a pins (tools/slice-1/pins.py): the committed subset in
 // Fixtures/slice-1a-pins.json, or — when IMAGOKIT_PINS_FULL names a folder (tools/slice-1/full-parity.sh sets it to
 // .build/pins-full) — every case, read from the harness manifests there.
 import Foundation

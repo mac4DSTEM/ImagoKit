@@ -2,7 +2,7 @@
 // the pinned runs of tools/filters/pins.py (NumPy 2.5.4, SciPy 1.18.1, scikit-image 0.26.0).
 // Tolerance: the libraries' own tests use assert_allclose / assert_array_almost_equal at the dtype default; Float64 is held to
 // rtol 1e-7 + atol 1e-6 (scipy/ndimage/tests/test_filters.py uses decimal 6), Float32 to 1e-5 of the largest magnitude.
-// scikit-image's wheel ships no tests (checked in References/python/skimage), so its functions use the same dtype defaults.
+// scikit-image's wheel ships no tests, so its functions use the same dtype defaults.
 import Foundation
 import ImagoKitTestSupport
 import ImagoCore

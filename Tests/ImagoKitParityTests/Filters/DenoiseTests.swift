@@ -1,8 +1,7 @@
 // skimage.restoration.denoise_tv_chambolle / denoise_tv_bregman / denoise_nl_means against the pinned runs of
 // tools/denoise/pins.py (scikit-image 0.26.0, NumPy 2.5.4, SciPy 1.18.1).
-// Tolerance: scikit-image's wheel ships no tests (checked in References/python/skimage), so the functions are held to
+// Tolerance: scikit-image's wheel ships no tests, so the functions are held to
 // assert_allclose's dtype defaults: rtol 1e-7 for Float64 and 1e-5 for Float32, atol 0 (|got - want| <= rtol * |want|).
-// The measured agreement (largest relative difference over all pins of the group) is recorded in docs/notes-k4b-denoise.md.
 import Foundation
 import ImagoFilters
 import Testing

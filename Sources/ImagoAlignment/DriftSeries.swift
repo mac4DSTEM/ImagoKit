@@ -1,7 +1,7 @@
 //
 //  DriftSeries.swift (ImagoAlignment)
 //  The drift of a stack of frames: every frame registered against the first frame, the mean of the unshifted frames, or its
-//  predecessor (registration-slice-2.md section 1).
+//  predecessor.
 //
 //  `.first` and `.previous` give frame 0 the shift (0, 0) (not computed: frame 0 is the origin). `.previous` cumulates: the
 //  shift of frame k is s_k = s_(k−1) + r_k, r_k frame k registered onto frame k − 1, added row and column in that order from

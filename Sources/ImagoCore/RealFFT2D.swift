@@ -12,7 +12,7 @@
 //
 //  Both directions are unnormalised; the callers scale. The line transforms are the plan's own one-axis engines (vDSP DFT,
 //  radix-2, the exact radix plans, Bluestein), so every length the complex transform supports works here, and Float64 is the
-//  reference path (D16).
+//  reference path.
 //
 
 import Foundation

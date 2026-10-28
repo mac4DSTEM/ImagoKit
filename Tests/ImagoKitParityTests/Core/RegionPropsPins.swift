@@ -1,4 +1,4 @@
-// The pins of tools/precipitation/pins.py, task 33: scikit-image 0.26.0 regionprops on needle masks and SciPy 1.18.1 ndimage
+// The pins of tools/precipitation/pins.py: scikit-image 0.26.0 regionprops on needle masks and SciPy 1.18.1 ndimage
 // measurements over a label image.
 import Foundation
 import ImagoKitTestSupport

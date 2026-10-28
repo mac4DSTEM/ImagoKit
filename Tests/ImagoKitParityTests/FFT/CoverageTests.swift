@@ -1,4 +1,4 @@
-// Tests added after the Gate B refuter on eb042aa (registration amendment 5): the spot's crop path, the case counts, and the
+// Tests for the spot's crop path, the case counts, and the
 // public members and refusals no other test asserts.
 import Foundation
 import ImagoKitTestSupport
@@ -27,7 +27,7 @@ func spotOnACropIsTheSpotOfTheCroppedImage(_ precision: Precision) throws {
     let onCrop = try SpotMeasurement.measure(image, crop: region, clickRow: row, clickColumn: col, precision: precision)
     let cropped = try #require(image.cropped(region))
     let direct = try SpotMeasurement.measure(cropped, clickRow: row, clickColumn: col, precision: precision)
-    // Not bit equality: a first call of a vDSP size can differ by one Float32 ulp (registration amendment 8), so the two
+    // Not bit equality: a first call of a vDSP size can differ by one Float32 ulp, so the two
     // measurements agree to the registered centroid band.
     let band = precision == .float32 ? 1e-6 : 1e-10
     #expect(onCrop.snappedRow == direct.snappedRow && onCrop.snappedCol == direct.snappedCol && onCrop.units == direct.units)
