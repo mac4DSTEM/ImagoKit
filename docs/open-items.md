@@ -31,7 +31,7 @@ each with its cause as far as it is known (diagnose before changing a number).
   NumPy's `argmax` returns the first NaN); `regionProperties` computes every property per object (use `objectMoments` alone for just the moments);
   (`watershed`, `rolling_ball` and the Euclidean distance transform arrived in 0.8.0.)
 
-- Metal Float32 paths (D16): FFT, then the separable filters; measure the break-even at 2048² to 8192² in the nightly review.
+- Metal Float32 paths: FFT, then the separable filters; measure the break-even at 2048² to 8192² in the nightly review.
 - Study rows still missing (`docs/parity.md`): `ndimage.zoom` and `rotate`, `restoration.denoise_*`, `profile_line`
   multichannel, `peak_local_max` with `footprint`/`labels`.
 - Spline shifts: `constant` and `wrap` modes at orders 2 to 5 (their coordinate rule is not ported; refused by name).
