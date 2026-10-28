@@ -7,7 +7,7 @@ calibration, lattice spacings and angles measured from FFT spots, Bragg (masked 
 background-subtraction and Wiener filters, and drift correction and stack alignment. Each number is defined once,
 pinned against the Python packages the field already uses, and checked against planted lattices whose answer is known.
 
-**Status: pre-release (0.x).** Four modules are available: `ImagoCore`, `ImagoFFT` (spectrum, radial profile, spot
+**Status: pre-release (0.x), current version 0.8.0.** Four modules are available: `ImagoCore`, `ImagoFFT` (spectrum, radial profile, spot
 spacings and angles, the masked inverse FFT) and `ImagoFilters` (the HRTEM filters), each on a Float32 and a Float64 path,
 and `ImagoAlignment`, which registers an image onto another by phase correlation refined to a fraction of a pixel, shifts
 images (SciPy's orders 0 and 1 and the Fourier shift), estimates the drift of a stack and sums it aligned. The supported
@@ -33,8 +33,9 @@ Since 0.6.0: `ImagoCore.FFTSurface` (`fft2`/`ifft2` with `axes` and `norm`, `rff
 `difference_of_gaussians`), `WindowFunction`, `PeakLocalMax`, spline-order `ImageShift` and masked `PhaseCorrelation`.
 `docs/parity.md` lists every function of the references and where it stands; `docs/benchmarks.md` has the timings.
 
-Planned, not yet available: GPA strain (Hÿtch, Snoeck and Kilaas 1998), atom-column finding (Atomap, GPL-3.0,
-in a module of its own), denoising (scikit-image `restoration`), `ndimage.zoom` and `rotate`.
+Since 0.8.0: `Denoise` (total variation by Chambolle and Bregman, non-local means), `GeometricPhaseAnalysis` (GPA strain; unvalidated on real data), `ImageResampling` (`zoom`, `rotate`), `DistanceTransform`, `Segmentation.watershed`, `RollingBall`, and a real-input transform with a mixed-radix Float64 plan.
+
+Planned, not yet available: atom-column finding (Atomap, GPL-3.0, in a module of its own).
 
 ## Complex 1D FFT
 
@@ -76,7 +77,7 @@ NumPy 2.5.4 pins cover lengths 1, 2, 4, 8, 64, 256 and 1024. The tests state the
 ```text
 // Package.swift
 dependencies: [
-    .package(url: "https://github.com/mac4DSTEM/ImagoKit.git", exact: "0.7.0"),
+    .package(url: "https://github.com/mac4DSTEM/ImagoKit.git", exact: "0.8.0"),
 ],
 targets: [
     .target(name: "MyApp", dependencies: [
