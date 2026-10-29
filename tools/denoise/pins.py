@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """Denoising pins: skimage.restoration.denoise_tv_chambolle / denoise_tv_bregman / denoise_nl_means (2D, one channel).
-Run from the package root:  ../References/python/skimage/bin/python3 -I -B tools/denoise/pins.py
+Run from the package root:  python3 -I -B tools/denoise/pins.py
 Writes Tests/ImagoFiltersTests/Fixtures/denoise-pins.json.
 
 Images are float32 draws (a smooth ramp plus noise, a step edge plus noise, tiny and odd sizes, a constant image); the
 float64 cases are the same pixels widened, so every image runs in both dtypes and the float32 case is the library's own
 float32 output. Floats are written as 17 significant digits (round trip). Chambolle is pure NumPy in 0.26.0; Bregman and
 NL-means are compiled Cython kernels, so the compiled package is the oracle (NL-means weighs patches with a
-Schraudolph-style exp approximation, see docs/notes-k4b-denoise.md).
+Schraudolph-style exp approximation).
 """
 import json
 from pathlib import Path

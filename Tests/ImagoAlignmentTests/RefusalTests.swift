@@ -1,4 +1,4 @@
-// Refusals by name, and the error texts (registration-slice-2.md section 1).
+// Refusals by name, and the error texts.
 import Foundation
 import ImagoAlignment
 import ImagoCore

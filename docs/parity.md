@@ -1,10 +1,10 @@
 # Parity with the references' documented API
 
 The checklist that makes "complete" a measured claim: one row per function or option group of the Python counterparts
-a micrograph user reaches for, walked from the sources on disk (`References/python/skimage/lib/python3.12/site-packages`: NumPy 2.5.4, SciPy
+a micrograph user reaches for, walked from the sources on disk (the pinned environment's site-packages: NumPy 2.5.4, SciPy
 1.18.1, scikit-image 0.26.0; run 2026-10-21). States: **present** (ported, pinned, tested), **partial** (a subset, named),
 **missing**. Priority: **study** (on Paul's path: the TEM study and the two apps' open kit asks), **useful**, **not planned**
-(with the reason). The tolerance column is the one the counterpart's own test file uses for that function (D17); the
+(with the reason). The tolerance column is the one the counterpart's own test file uses for that function; the
 scikit-image 0.26.0 wheel ships no test files, so there its functions are held to `assert_allclose` dtype defaults.
 Numerics are never held stricter than that; readers, I/O, indices and metadata are exact.
 
@@ -163,7 +163,7 @@ Numerics are never held stricter than that; readers, I/O, indices and metadata a
 | Quantity | State | Truth |
 |---|---|---|
 | distance and angle between marks (anisotropic scales, Kahan cross product) | done (0.2.0) | `ImageMeasurement`: planted angles, closed forms and 100 NumPy float64 triples |
-| display normalisation, log contrast, thumbnails, colour mapping | done (0.2.0) | `DisplayNormalization`, `Thumbnail`, `DisplayMapping`: Float32 asserted exact today against a NumPy reading of the definition (D12: within the written tolerance); the log to the last Float32 bit |
+| display normalisation, log contrast, thumbnails, colour mapping | done (0.2.0) | `DisplayNormalization`, `Thumbnail`, `DisplayMapping`: Float32 asserted exact today against a NumPy reading of the definition (within the written tolerance); the log to the last Float32 bit |
 | scale-bar numbers (1-2-5 length, unit ladder, text, drawn length) | done (0.2.0) | `ScaleBarMath`: exact on 250 random and 108 usual calibrations, plus the ladder grid across mantissa boundaries |
 | square-region, bin and decade geometry, shown units and aspect | done (0.2.0) | `FFTRegion`, `SpectrumBin`, `RadialChartScale`, `FFTUnits`, `SpectrumShape`: exact against a transcribed definition on random cases |
 | log-power spectrum display and its default window | done (0.2.0) | `SpectrumDisplay`: values to the last Float32 bit, window within a 2048th of the range of the (⌈n/2⌉)-th smallest value |

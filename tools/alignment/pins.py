@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Spline-order shifts and masked registration pins. Run from the package root:
-  ../refs/skimage/bin/python -I -B tools/alignment/pins.py
+  python -I -B tools/alignment/pins.py
 Writes Tests/ImagoAlignmentTests/Fixtures/spline-shift-pins.json (scipy.ndimage.shift, orders 2 to 5) and
 masked-registration-pins.json (skimage.registration.phase_cross_correlation with masks; cross_correlate_masked).
 """

@@ -1,6 +1,6 @@
-"""Slice 2 pins (docs/registration-slice-2.md sections 2 to 4): phase correlation, shifts, drift series and aligned sums.
+"""Slice 2 pins: phase correlation, shifts, drift series and aligned sums.
 
-    ../tools/memcap.sh -- ../References/python/skimage/bin/python -I -B tools/slice-2/pins.py
+    ../References/python/skimage/bin/python -I -B tools/slice-2/pins.py
 
 Run from the repository root, before the Swift code (the registration's rule). Steps:
   1. The three oracle sources are checked against the registration's sha256 values (scikit-image 0.26.0

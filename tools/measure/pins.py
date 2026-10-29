@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Generate the measurement, histogram and line-profile pins; run from the package root:
-../tools/memcap.sh -- ../References/python/skimage/bin/python -I -B tools/measure/pins.py
+../References/python/skimage/bin/python -I -B tools/measure/pins.py
 
 Writes Tests/ImagoCoreTests/Fixtures/measure-pins.json.
   - histogram: numpy.histogram(f[isfinite(f)], bins, range) on float32 arrays; pixels, edges and extremes as float32 bit

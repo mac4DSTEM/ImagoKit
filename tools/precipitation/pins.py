@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Generate the precipitation-analysis pins (suite ROADMAP tasks 32 and 33); run from the package root:
+"""Generate the precipitation-analysis pins; run from the package root:
 python3 -I -B tools/precipitation/pins.py     (a venv with only scikit-image==0.26.0, which brings NumPy 2.5.4 and SciPy 1.18.1)
 
-Writes Tests/ImagoCoreTests/Fixtures/threshold-morphology-pins.json (task 32) and
-Tests/ImagoCoreTests/Fixtures/regionprops-needle-pins.json (task 33).
+Writes Tests/ImagoCoreTests/Fixtures/threshold-morphology-pins.json and
+Tests/ImagoCoreTests/Fixtures/regionprops-needle-pins.json.
 
 Reference: scikit-image 0.26.0 `filters.threshold_*`, `morphology.binary_*` / `remove_small_*`, `segmentation.clear_border`,
 `measure.label` / `regionprops`; SciPy 1.18.1 `ndimage.binary_*`, `binary_fill_holes`, `generate_binary_structure`, `ndimage.sum` etc.
@@ -197,7 +197,7 @@ def task32():
     return len(gr), len(mp)
 
 
-# ---------- task 33 ----------
+# ---------- regionprops ----------
 def prop_row(r):
     d = {"label": int(r.label), "area": int(r.area), "bbox": [int(v) for v in r.bbox],
          "centroid": floats(r.centroid), "orientation": float(r.orientation),

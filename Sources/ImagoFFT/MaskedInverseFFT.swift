@@ -1,6 +1,6 @@
 //
 //  MaskedInverseFFT.swift (ImagoFFT)
-//  An image rebuilt from chosen spots of its spectrum (Bragg filtering; registration-slice-1.md 1.2).
+//  An image rebuilt from chosen spots of its spectrum (Bragg filtering).
 //
 //  THE MASK: each spot is a centre (kx, ky) in frequency-index units from the spectrum's centre, a radius r and a
 //  raised-cosine edge e, both in index units: m = 1 for d ≤ r, ½(1 + cos(π(d − r)/e)) for r < d < r + e, else 0, d the index

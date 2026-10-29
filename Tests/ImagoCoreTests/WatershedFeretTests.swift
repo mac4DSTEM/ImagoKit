@@ -1,4 +1,4 @@
-// Closed forms for the K1 additions (suite task 36): the Feret summary of the counted objects, a watershed ridge between two seeds,
+// Closed forms for the segmentation additions: the Feret summary of the counted objects, a watershed ridge between two seeds,
 // and the distance transform of a line. The pinned comparisons with SciPy and scikit-image are in ImagoKitParityTests.
 import Foundation
 import ImagoCore

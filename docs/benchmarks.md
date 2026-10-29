@@ -14,8 +14,8 @@ non-power-of-two (500²); masked registration, which costs eleven transforms of 
 Reproduce (under the suite's memory cap, one benchmark at a time machine-wide):
 
 ```sh
-IMAGO_BENCH=1 IMAGO_BENCH_OUT=/tmp/swift.json ../tools/memcap.sh -- swift test -c release --filter ImagoKitParityTests.benchmarks
-../tools/memcap.sh -- ../refs/skimage/bin/python -I -B tools/benchmarks/bench.py /tmp/python.json
+IMAGO_BENCH=1 IMAGO_BENCH_OUT=/tmp/swift.json swift test -c release --filter ImagoKitParityTests.benchmarks
+../refs/skimage/bin/python -I -B tools/benchmarks/bench.py /tmp/python.json
 python3 tools/benchmarks/report.py /tmp/swift.json /tmp/python.json
 ```
 
@@ -124,7 +124,7 @@ spectrum only, with a product for order 2); the Float64 `fft2` takes the mixed-r
 prime factors 2, 3, 5, 7 that vDSP does not serve; the masked correlation transforms at the next fast length as scikit-image does.
 
 **Still above 1.2 times Python**, with the cause as far as it is known:
-- `fft2` Float64 480²: 1.12, and the axis is 480 = 15 · 32, a length `vDSP_DFT_zop` serves (`CLAUDE.md` keeps that path). A batch of
+- `fft2` Float64 480²: 1.12, and the axis is 480 = 15 · 32, a length `vDSP_DFT_zop` serves (the kit keeps that path by design). A batch of
   480 lines of 480 takes 0.49 ms on `vDSP_DFT_zop` and 0.49 ms on the mixed-radix plan, so the 1.5 ms are two such batches
   plus the transposes around the vDSP calls; the mixed-radix plan, which needs no transpose for the columns, is the lever if that
   rule is ever relaxed.
@@ -136,7 +136,7 @@ prime factors 2, 3, 5, 7 that vDSP does not serve; the masked correlation transf
 Not in the table because there is no counterpart on the same inputs: `PeakLocalMax.find` (counterpart `peak_local_max`
 needs `maximum_filter`; not timed this session).
 
-## Backend decision per function (D16)
+## Backend decision per function
 
 Today every function above is CPU (Accelerate, Float64 reference plus Float32 where it exists). **No function has a Metal path,
 so no Metal break-even has been measured**; the column says what the CPU table implies and what the nightly run must measure.
@@ -150,6 +150,6 @@ A guess is not recorded as a measurement.
 | `shift` order 1 | CPU | CPU only: 0.65 ms at 512² |
 | `shift` order 3 (prefilter plus taps) | CPU | CPU; the prefilter is sequential along lines, the tap sum is the Metal-friendly part: candidate above 2048², not measured |
 | `phase_cross_correlation` | CPU | CPU; FFT-bound, follows `fft2` |
-| `profile_line` | CPU | CPU: small arrays stay on the CPU (D16) |
+| `profile_line` | CPU | CPU: small arrays stay on the CPU |
 | `label` | CPU | CPU: union-find is not a Metal workload |
 | `peak_local_max` | CPU | CPU; the window maximum is a Metal candidate only above 4096² |

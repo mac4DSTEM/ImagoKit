@@ -1,4 +1,4 @@
-# ImagoKit's oracle stack: exact versions, installed with --no-deps into ../References/python/skimage (macEM-suite tools/setup-python-refs.sh skimage),
+# ImagoKit's oracle stack: exact versions, installed with --no-deps into ../References/python/skimage (by a pinned-environment setup script),
 # so nothing floats. The same NumPy, SciPy and scikit-image releases macTEM's FFT, spot and HRTEM-filter harnesses were
 # measured on (macTEM tools/lib/references-lock.txt, 2026-10-12/13), on CPython 3.14.7 (arm64). scikit-image's closure:
 # lazy-loader, networkx, ImageIO, pillow, packaging, tifffile.

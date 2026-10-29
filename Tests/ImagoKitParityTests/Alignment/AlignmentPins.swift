@@ -1,4 +1,4 @@
-// The slice-2 pins (tools/slice-2/pins.py; registration-slice-2.md sections 2 to 4): the committed subset in
+// The slice-2 pins (tools/slice-2/pins.py): the committed subset in
 // Fixtures/slice-2-pins.json, or, when IMAGOKIT_PINS_FULL names a folder (tools/slice-2/full-parity.sh sets it to
 // .build/pins-full), every case, read from alignment/slice-2-pins.json there.
 import Foundation

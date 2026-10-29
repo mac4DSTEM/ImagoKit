@@ -1,6 +1,6 @@
 //
 //  FFT2D.swift (ImagoCore)
-//  The exact N-point 2D DFT on Accelerate's vDSP, Float32 (registration-slice-1.md 1.1; NOTICE names its origin; the
+//  The exact N-point 2D DFT on Accelerate's vDSP, Float32 (NOTICE names its origin; the
 //  arithmetic is unchanged from that origin, only access modifiers and comments differ). FFT2DDouble.swift is the same code
 //  in Double, the reference path.
 //

@@ -2,7 +2,7 @@
 # published to GitHub Pages at https://mac4dstem.github.io/ImagoKit/documentation/ on every tag.
 # On a pull request the site is built and uploaded as an artifact only, so a broken catalog fails before the tag.
 #
-# No swift-docc-plugin: the kit takes no package dependencies (CLAUDE.md). `xcodebuild docbuild` builds the archives
+# No swift-docc-plugin: the kit takes no package dependencies. `xcodebuild docbuild` builds the archives
 # from the package's own schemes; `docc merge` (Xcode 16+) joins them. Needs Pages enabled with source "GitHub Actions"
 # (repository Settings > Pages). Copied from CuboKit's pattern; the module list is read from the .docc catalogs.
 name: Docs
@@ -28,7 +28,7 @@ jobs:
     runs-on: macos-latest
     timeout-minutes: 60
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Select the newest Xcode
         run: |
           xcode=$(ls -d /Applications/Xcode*.app | sort -V | tail -1)
@@ -36,7 +36,7 @@ jobs:
           xcodebuild -version
       - name: Build the site
         run: tools/build-docs.sh .docs-site /ImagoKit
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: .docs-site
 
@@ -49,4 +49,4 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5

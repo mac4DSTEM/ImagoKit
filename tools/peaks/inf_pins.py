@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """skimage.feature.peak_local_max on images holding +inf and -inf (0.6.1: infinite pixels are accepted and match; NaN stays refused).
-../References/python/skimage/bin/python -I -B tools/peaks/inf_pins.py
+python -I -B tools/peaks/inf_pins.py
 Writes Tests/ImagoFiltersTests/Fixtures/peak-inf-pins.json; pixels are numbers, "inf" or "-inf"."""
 import json
 from pathlib import Path

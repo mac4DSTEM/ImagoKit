@@ -1,5 +1,5 @@
 // swift-tools-version: 6.2
-// apps-parity (ImagoKit slice 1, registration section 6): macTEM 3d17311's Float32 originals (target MacTEMRef, extracted
+// apps-parity (ImagoKit slice 1): macTEM 3d17311's Float32 originals (target MacTEMRef, extracted
 // unchanged by `git show` into Sources/MacTEMRef by run.sh, never committed here) against ImagoKit's Float32 path, bit for
 // bit, on every planted case of .build/pins-full. Maintainer tooling: it needs macTEM checked out beside this repository.
 import Foundation

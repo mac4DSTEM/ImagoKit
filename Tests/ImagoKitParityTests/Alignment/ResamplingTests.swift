@@ -1,4 +1,4 @@
-// ndimage.zoom and ndimage.rotate against the pins of tools/resampling/pins.py (suite task 20). Tolerance: SciPy's interpolation tests
+// ndimage.zoom and ndimage.rotate against the pins of tools/resampling/pins.py. Tolerance: SciPy's interpolation tests
 // use decimal 6; the pins are float32, so 1.5e-6 absolute is held in both outputs' range [0, 1) (as the kit's shift pins are).
 // Shapes and the cval pixels (a source coordinate outside the image in constant mode) are exact.
 import Foundation

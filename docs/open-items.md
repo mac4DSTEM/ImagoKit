@@ -1,7 +1,7 @@
 # Open items
 
 A plain list. The first entries are functions slower than their Python counterpart at the typical size (512², `docs/benchmarks.md`),
-each with its cause as far as it is known (diagnose before changing a number, `../CLAUDE.md`).
+each with its cause as far as it is known (diagnose before changing a number).
 
 ## Slower than Python at the typical size
 
@@ -13,11 +13,11 @@ each with its cause as far as it is known (diagnose before changing a number, `.
    another stage. Fix: the two small complex matrix products on Accelerate (`cblas`/`vDSP_mmul`).
 3. **`fft2` Float64 on the vDSP lengths (2^n x {3,5,15}) is up to 1.12x**, e.g. 480² 1.53 ms against 1.37 (NumPy). A batch of 480 lines takes the same time on
    `vDSP_DFT_zop` and on the mixed-radix plan (0.49 ms), so the remainder is the transposes around the vDSP calls; the mixed-radix plan needs none for the columns.
-   `CLAUDE.md` keeps the vDSP path.
+   The kit keeps the vDSP path by design.
 
 ## Work items from the audit
 
-- **1.0 item, naming:** the new surface takes `rows`/`columns` (decided 2026-10-22, as `CLAUDE.md` asks: `DistanceTransform`, `Segmentation.watershed`/`markers`, `RollingBall`, `Denoise`, `GeometricPhaseAnalysis`, `ImageResampling`); `LabelImage`, `Micrograph` and the older morphology and segmentation API still say `width`/`height`. Unify at 1.0 (a break). Four error enums carry a `.shape` case (`MorphologyError`, `RestorationError`, `DenoiseError`, `GeometricPhaseAnalysisError`); `RestorationError` and `DenoiseError` have no `LocalizedError` text yet.
+- **1.0 item, naming:** the new surface takes `rows`/`columns` (decided 2026-10-22: `DistanceTransform`, `Segmentation.watershed`/`markers`, `RollingBall`, `Denoise`, `GeometricPhaseAnalysis`, `ImageResampling`); `LabelImage`, `Micrograph` and the older morphology and segmentation API still say `width`/`height`. Unify at 1.0 (a break). Four error enums carry a `.shape` case (`MorphologyError`, `RestorationError`, `DenoiseError`, `GeometricPhaseAnalysisError`); `RestorationError` and `DenoiseError` have no `LocalizedError` text yet.
 
 - 0.8.0 gaps, none blocking: mixed radix has radices 2, 3, 5, 7 only (11 and 13, a Float32 plan and a generic odd-radix pass are open: Float32 500² runs Bluestein at 1.53 ms, 0.8x NumPy); 1D `rfft`/`irfft` take power-of-two lengths only; `hfft`/`ihfft` missing;
   `watershed` has no `compactness` or `watershed_line`; `distance_transform_edt` is 2D without `return_indices`; `rolling_ball` has no `nansafe`; `zoom`/`rotate` are 2D; the denoisers are 2D single-channel, float only, and Bregman refuses an axis of length 1;
@@ -31,7 +31,7 @@ each with its cause as far as it is known (diagnose before changing a number, `.
   NumPy's `argmax` returns the first NaN); `regionProperties` computes every property per object (use `objectMoments` alone for just the moments);
   (`watershed`, `rolling_ball` and the Euclidean distance transform arrived in 0.8.0.)
 
-- Metal Float32 paths (D16): FFT, then the separable filters; measure the break-even at 2048² to 8192² in the nightly review.
+- Metal Float32 paths: FFT, then the separable filters; measure the break-even at 2048² to 8192² in the nightly review.
 - Study rows still missing (`docs/parity.md`): `ndimage.zoom` and `rotate`, `restoration.denoise_*`, `profile_line`
   multichannel, `peak_local_max` with `footprint`/`labels`.
 - Spline shifts: `constant` and `wrap` modes at orders 2 to 5 (their coordinate rule is not ported; refused by name).

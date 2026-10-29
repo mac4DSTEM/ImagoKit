@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Generate the segmentation pins; run from the package root:
-../tools/memcap.sh -- ../References/python/skimage/bin/python -I -B tools/segmentation/pins.py [APP_SEG_BINARY]
+../References/python/skimage/bin/python -I -B tools/segmentation/pins.py [APP_SEG_BINARY]
 
 Writes Tests/ImagoCoreTests/Fixtures/segmentation-pins.json.
 

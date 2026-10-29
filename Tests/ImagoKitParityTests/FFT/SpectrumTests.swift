@@ -1,4 +1,4 @@
-// Spectrum and radial profile against NumPy 2.5.4 and the planted truth (registration-slice-1.md sections 3, 5.1).
+// Spectrum and radial profile against NumPy 2.5.4 and the planted truth.
 import Foundation
 import ImagoKitTestSupport
 import ImagoCore
@@ -28,7 +28,7 @@ func spectrumMatchesNumPy(_ c: FFTPin, _ precision: Precision) throws {
     let magnitude = FFTPins.relativeToMaximum(s.magnitude.doubles, wantPower.map { $0.squareRoot() })
     #expect(magnitude <= band, "magnitude: \(magnitude) of the maximum, band \(band)")
     #expect(s.power.precision == precision)
-    // The axes are NumPy's fftshift(fftfreq(n, d)); asserted exact today (D12 allows a written tolerance).
+    // The axes are NumPy's fftshift(fftfreq(n, d)); asserted exact today.
     #expect(s.axisX == FFTPins.doubles(c.axis_x!, section: "fft"))
     #expect(s.axisY == FFTPins.doubles(c.axis_y!, section: "fft"))
     #expect(s.unitsX == c.axis_units && s.unitsY == c.axis_units)
@@ -56,7 +56,7 @@ func cropEqualsTheCroppedImage(_ c: FFTPin, _ precision: Precision) throws {
     let a = try PowerSpectrum.compute(image, crop: region, precision: precision)
     let cropped = try #require(image.cropped(region))
     let b = try PowerSpectrum.compute(cropped, precision: precision)
-    // The same computation twice; equal to one Float32 ulp, not bit for bit (a first vDSP call can differ, amendment 8).
+    // The same computation twice; equal to one Float32 ulp, not bit for bit (a first vDSP call can differ).
     let band = precision == .float32 ? 1e-6 : 1e-14
     #expect(FFTPins.relativeToMaximum(a.power.doubles, b.power.doubles) <= band && a.axisX == b.axisX && a.axisY == b.axisY)
     // The crop's pixels are the harness's cropped input, and its origin moved by the offset.

@@ -1,5 +1,5 @@
 // The mixed-radix Float64 plan (lengths of prime factors 2, 3, 5, 7) against the direct O(n²) DFT, alone and inside the 2D
-// transform, and the routing: which lengths take which engine is part of the contract (CLAUDE.md: vDSP_DFT_zop for
+// transform, and the routing: which lengths take which engine is part of the contract (design rule: vDSP_DFT_zop for
 // 2ⁿ × {1, 3, 5, 15}, Bluestein for the rest).
 import Foundation
 import Testing
@@ -97,7 +97,7 @@ func mixedRadix2DEqualsSeparableDirectDFT(_ shape: (Int, Int)) throws {
     #expect(trip <= 1e-13, "round trip \(w)x\(h): \(trip)")
 }
 
-/// Which engine serves a length (the contract of CLAUDE.md), seen through the plan's routing.
+/// Which engine serves a length (the kit's design contract), seen through the plan's routing.
 @Test func lengthsAreRoutedToTheirEngine() {
     // vDSP_DFT_zop (2ⁿ × {1, 3, 5, 15}) and the radix plans keep their lengths; the mixed-radix plan only takes smooth lengths
     // nothing else serves; Bluestein stays for any other prime factor.

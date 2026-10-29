@@ -12,7 +12,7 @@
 //  inverse FFT, multiplication by exp(-2 pi i g . r) (the perfect carrier), phase gradient without unwrapping,
 //  Im(conj(H) grad H) / |H|^2, with grad by central differences (one-sided on the frame edge, as numpy.gradient).
 //  The mask distance is measured on the signed frequency axis (no periodic aliasing). Everything is Float64 on the CPU,
-//  the reference path (D16); there is no Metal path yet.
+//  the reference path; there is no Metal path yet.
 //
 
 import Foundation

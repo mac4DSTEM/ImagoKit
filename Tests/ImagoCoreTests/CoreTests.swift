@@ -1,4 +1,4 @@
-// ImagoCore: the FFT engines against a direct Double DFT, round trips, the image and the units (registration 1.1, 3, 4).
+// ImagoCore: the FFT engines against a direct Double DFT, round trips, the image and the units.
 import Foundation
 import ImagoCore
 import Testing
@@ -117,7 +117,7 @@ func floatFFTIsWithinItsBandOfTheDirectDFT(_ k: Int) throws {
     #expect(LengthUnit.realSampling(AxisCalibration(scale: -1, unit: "nm")) == (1, "px"))
 }
 
-/// At roundoff on one axis (added after the slice-1a mutants, amendment 6): a prime Bluestein length and radix-5 lengths,
+/// At roundoff on one axis: a prime Bluestein length and radix-5 lengths,
 /// where the registered 1e-12 is too loose to see a chirp without its mod-2N reduction (3e-13 at 1009) or a radix-5
 /// constant off by 7e-15. Measured unmutated: 1.9e-15 (1009), 2.5e-16 (5), 6.2e-16 (125).
 @Test(arguments: [(1009, 1e-14), (5, 2e-15), (125, 2e-15)])

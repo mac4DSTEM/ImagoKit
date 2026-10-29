@@ -45,20 +45,6 @@ public nonisolated enum BandpassFilters {
                             squared: squaredButterworth, npad: npad)
     }
 
-    /// The mask, `rows × columns`, in Double: `1/(1+q²^order)` (× q²^order for a high pass), square-rooted when not squared.
-    static func butterworthMask(rows: Int, columns: Int, cutoffFrequencyRatio: Double, highPass: Bool, order: Double,
-                                       squaredButterworth: Bool) -> [Double] {
-        let q2 = q2Grid(rows, columns, cutoffFrequencyRatio)
-        return q2.map { maskValue($0, order, highPass, squaredButterworth) }
-    }
-
-    private static func maskValue(_ q2: Double, _ order: Double, _ high: Bool, _ squared: Bool) -> Double {
-        let p = pow(q2, order)
-        var v = 1 / (1 + p)
-        if high { v *= p }
-        return squared ? v : v.squareRoot()
-    }
-
     /// q² at every ifftshifted bin: (Σ_axis (index / (n · factor))²) with scikit-image's index range −(n−1)//2 … (n−1)//2 (floored).
     private static func axisTerms(_ n: Int, _ factor: Double) -> [Double] {
         let start = -(n / 2)                       // Python's −(n − 1) // 2
@@ -67,13 +53,6 @@ public nonisolated enum BandpassFilters {
         let s = n / 2
         v = (0..<n).map { v[($0 + s) % n] }
         return v
-    }
-
-    private static func q2Grid(_ h: Int, _ w: Int, _ factor: Double) -> [Double] {
-        let ar = axisTerms(h, factor), ac = axisTerms(w, factor)
-        var out = [Double](repeating: 0, count: h * w)
-        for r in 0..<h { for c in 0..<w { out[r * w + c] = ar[r] + ac[c] } }
-        return out
     }
 
     private static func butterworthCore<S: FFTSurfaceScalar>(

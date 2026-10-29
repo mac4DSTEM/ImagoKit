@@ -1,7 +1,6 @@
 //
 //  SpotMeasurement.swift (ImagoFFT)
-//  The spacing of one spot of an image's spectrum, from where the user clicked, and the angle between two spots
-//  (registration-slice-1.md 1.2).
+//  The spacing of one spot of an image's spectrum, from where the user clicked, and the angle between two spots.
 //
 //  THE ESTIMATOR (every step registered): the image (or crop) minus its mean, times a Hann window (NumPy's
 //  hanning(n) = 0.5 − 0.5·cos(2πk/(n − 1)), x and y), transformed; the power of the centred spectrum; the clicked bin snapped
