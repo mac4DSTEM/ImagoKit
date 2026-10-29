@@ -1,21 +1,22 @@
 # Benchmarks against NumPy, SciPy and scikit-image
 
-Run 2026-10-21 on the audit session (ImagoKit 0.6.0 sources). **Header.** Apple M5 Pro, macOS (Darwin 27.0.0), Swift 6.4
-(swiftlang-6.4.0.34.1), `swift test -c release`; Python 3.12.14 from `References/python/skimage` with NumPy 2.5.4, SciPy 1.18.1,
+Run 2026-10-21 (ImagoKit 0.6.0 sources). **Header.** Apple M5 Pro, macOS (Darwin 27.0.0), Swift 6.4
+(swiftlang-6.4.0.34.1), `swift test -c release`; Python 3.12.14 with NumPy 2.5.4, SciPy 1.18.1,
 scikit-image 0.26.0 (single-threaded `np.fft`/`ndimage`). **Method.** The same function, dtype and input size on both sides
 (uniform random pixels 30 to 70); one warm-up call, then five timed calls; the table shows the median and (min–max) in
 milliseconds. FFTs reuse their plan (`FFT2D`, `FFT2DDouble`; NumPy caches its own); `rfft2`, `butterworth`, the shifts,
-registrations and filters are the public one-call API. **Caveat.** The five other kit audits ran on the machine at the same
+registrations and filters are the public one-call API. **Caveat.** Other builds ran on the machine at the same
 time (load average 11 to 25 during these runs, 6 to 8 before): absolute times are noisy, and both sides were measured in the
 same minutes so the ratios are comparable but not exact. The sizes are the small (128²) and typical (512²) ones plus one
 non-power-of-two (500²); masked registration, which costs eleven transforms of (2n−1)², is at 64² and 256².
-**Large sizes (2048², 4096², 8192²) are nightly:** `IMAGO_BENCH_LARGE=1` and `--large` add them; they were not run here.
+**Large sizes (2048², 4096², 8192²) are not measured yet:** `IMAGO_BENCH_LARGE=1` and `--large` add them.
 
-Reproduce (under the suite's memory cap, one benchmark at a time machine-wide):
+Re-run from a fresh clone of the kit, on a quiet Mac, one benchmark at a time:
 
 ```sh
+python3.12 -m venv .venv-bench && .venv-bench/bin/pip install numpy==2.5.4 scipy==1.18.1 scikit-image==0.26.0
 IMAGO_BENCH=1 IMAGO_BENCH_OUT=/tmp/swift.json swift test -c release --filter ImagoKitParityTests.benchmarks
-../refs/skimage/bin/python -I -B tools/benchmarks/bench.py /tmp/python.json
+.venv-bench/bin/python -I -B tools/benchmarks/bench.py /tmp/python.json
 python3 tools/benchmarks/report.py /tmp/swift.json /tmp/python.json
 ```
 
@@ -81,10 +82,10 @@ The harness is `Tests/ImagoKitParityTests/Benchmarks/Benchmarks.swift` (its one 
 ## FFT work of 2026-10-22 (real-input transform, mixed radix): before and after
 
 The rows of the main table above for `rfft2`, `irfft2`, `butterworth`, masked and plain `phase_cross_correlation` and `fft2`
-at 360², 480², 500² and 504² were re-measured after the changes of this session; the other rows are the audit's. **Method.** Three
+at 360², 480², 500² and 504² were re-measured after the changes of 2026-10-22; the other rows are the 2026-10-21 run's. **Method.** Three
 rounds, each running the kit before the changes (a copy of the sources of the parent commit), the kit after, and the Python
 harness (`tools/benchmarks/bench.py`), in turn, one benchmark at a time; the cells show the median and (min–max) of the fifteen
-timed calls of the three rounds, in milliseconds. The machine was shared with other sessions (load average 4 to 8): the rows
+timed calls of the three rounds, in milliseconds. The machine was shared with other builds (load average 4 to 8): the rows
 of the table that the changes did not touch (`gaussian_filter`, `uniform_filter`, `shift`, `profile_line`, `label`, `difference_of_gaussians`)
 came out within 3% of their "before" values in the same runs, which is the noise to read the table by.
 
@@ -130,23 +131,23 @@ prime factors 2, 3, 5, 7 that vDSP does not serve; the masked correlation transf
   rule is ever relaxed.
 - `phase_cross_correlation upsample=10` Float32: 1.15 (128²) and 1.27 (512²). The FFTs are no longer the cost: the upsampled case takes
   4.9 ms against 2.2 ms for the whole integer-pixel case at 512², and that difference is the Hermitian completion of P plus
-  the matrix-multiply DFT (`upsampledDFT`, scalar loops). Not changed in this session.
+  the matrix-multiply DFT (`upsampledDFT`, scalar loops). Not changed yet.
 - `irfft2` Float32 512²: 1.09 and `butterworth` Float32 512²: 1.06 are inside the noise of the shared machine.
 
 Not in the table because there is no counterpart on the same inputs: `PeakLocalMax.find` (counterpart `peak_local_max`
-needs `maximum_filter`; not timed this session).
+needs `maximum_filter`; not measured yet).
 
 ## Backend decision per function
 
 Today every function above is CPU (Accelerate, Float64 reference plus Float32 where it exists). **No function has a Metal path,
-so no Metal break-even has been measured**; the column says what the CPU table implies and what the nightly run must measure.
+so no Metal break-even has been measured**; the column says what the CPU table implies and what a large-size run must measure.
 A guess is not recorded as a measurement.
 
 | function | backend today | decision |
 |---|---|---|
-| `fft2` Float32/Float64 | CPU | CPU only at 128² to 512² (0.02 to 2 ms: a Metal dispatch cannot win). Float64 lengths of prime factors 2, 3, 5, 7 run on the mixed-radix plan. Work item: a Metal Float32 FFT prototype, break-even to be measured nightly at 2048², 4096², 8192² |
-| `rfft2`, `irfft2`, `butterworth`, masked registration | CPU | CPU; real-input transform since 2026-10-22 (0.7 ms Float64 at 512², 1.1 times NumPy); a Metal path would have to beat 0.4 to 0.7 ms at 512², which a dispatch cannot, so the break-even is again a question for 2048² and up (nightly) |
-| `gaussian_filter`, `uniform_filter`, `difference_of_gaussians` | CPU | CPU only at 128² to 512² (1 to 4 ms, memory bound). Metal candidate above 2048² for large sigma; to be measured nightly |
+| `fft2` Float32/Float64 | CPU | CPU only at 128² to 512² (0.02 to 2 ms: a Metal dispatch cannot win). Float64 lengths of prime factors 2, 3, 5, 7 run on the mixed-radix plan. Work item: a Metal Float32 FFT prototype, break-even not measured yet (2048², 4096², 8192²) |
+| `rfft2`, `irfft2`, `butterworth`, masked registration | CPU | CPU; real-input transform since 2026-10-22 (0.7 ms Float64 at 512², 1.1 times NumPy); a Metal path would have to beat 0.4 to 0.7 ms at 512², which a dispatch cannot, so the break-even is again a question for 2048² and up, not measured yet |
+| `gaussian_filter`, `uniform_filter`, `difference_of_gaussians` | CPU | CPU only at 128² to 512² (1 to 4 ms, memory bound). Metal candidate above 2048² for large sigma; not measured yet |
 | `shift` order 1 | CPU | CPU only: 0.65 ms at 512² |
 | `shift` order 3 (prefilter plus taps) | CPU | CPU; the prefilter is sequential along lines, the tap sum is the Metal-friendly part: candidate above 2048², not measured |
 | `phase_cross_correlation` | CPU | CPU; FFT-bound, follows `fft2` |
