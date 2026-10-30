@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 //
 //  SpectrumGeometry.swift (ImagoFFT)
 //  The pure geometry around a spectrum on screen: which pixels a drawn region transforms, which bin a click names, the decades

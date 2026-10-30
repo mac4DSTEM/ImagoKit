@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 //
 //  ProfileCSV.swift (ImagoCore)
 //  A `LineProfile` as CSV text: a `# key: value` header that says what the numbers are and where they came from, the

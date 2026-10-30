@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 //
 //  RealFFT2D.swift (ImagoCore)
 //  The real-input 2D transform behind `FFTSurface.rfft2` / `irfft2` and the real-image callers (butterworth, registration):

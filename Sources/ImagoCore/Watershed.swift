@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 //
 //  Watershed.swift (ImagoCore)
 //  scikit-image 0.26.0's `segmentation.watershed(image, markers, mask=, connectivity=)` on a 2D image: marker-controlled flooding

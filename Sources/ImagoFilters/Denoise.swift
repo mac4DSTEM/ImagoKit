@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 //
 //  Denoise.swift (ImagoFilters)
 //  scikit-image 0.26.0's `restoration.denoise_tv_chambolle`, `denoise_tv_bregman` and `denoise_nl_means` for one 2D

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 //
 //  ArealDensity.swift (ImagoCore)
 //  The areal number density of a set of counted objects in a frame, with the Miles–Lantuéjoul edge correction, the length and width

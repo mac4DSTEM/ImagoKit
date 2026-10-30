@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 //
 //  Segmentation.swift (ImagoCore)
 //  Connected components of a mask or a label map, and the moments of each object: scikit-image's `label` and the

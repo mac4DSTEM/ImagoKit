@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 //
 //  Colormap.swift (ImagoCore)
 //  The four colour tables of the display, as 256-entry RGBA tables for `DisplayMapping`.

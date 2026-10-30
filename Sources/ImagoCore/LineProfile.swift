@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 //
 //  LineProfile.swift (ImagoCore)
 //  `skimage.measure.profile_line(image, src, dst, linewidth, order, mode, cval, reduce_func=...)` of a `Micrograph`, for

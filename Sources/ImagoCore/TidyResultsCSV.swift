@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 //
 //  TidyResultsCSV.swift (ImagoCore)
 //  Every finished measurement of one file as ONE tidy CSV: a `# key: value` header, then the columns

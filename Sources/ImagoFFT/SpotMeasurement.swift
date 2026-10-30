@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 //
 //  SpotMeasurement.swift (ImagoFFT)
 //  The spacing of one spot of an image's spectrum, from where the user clicked, and the angle between two spots.

@@ -10,7 +10,7 @@ authors:
   - family-names: Lobpreis
     given-names: Paul
 license: GPL-3.0-only
-version: 0.8.0
+version: 0.8.0 # x-release-please-version
 date-released: 2026-10-22
 repository-code: "https://github.com/mac4DSTEM/ImagoKit"
 keywords:

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 //
 //  RadialChartSamples.swift (ImagoFFT)
 //  The radial profile as a chart draws it, and the defaults of the spot mask.

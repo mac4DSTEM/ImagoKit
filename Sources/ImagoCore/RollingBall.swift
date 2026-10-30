@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 //
 //  RollingBall.swift (ImagoCore)
 //  scikit-image 0.26.0's `restoration.rolling_ball` on a 2D image, with `ball_kernel` and `ellipsoid_kernel`: the background

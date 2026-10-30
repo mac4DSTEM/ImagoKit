@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 //
 //  SeparableFilters.swift (ImagoFilters)
 //  SciPy 1.18.1's `ndimage.gaussian_filter` (order 0) and `ndimage.uniform_filter` on a 2D row-major array, in the five

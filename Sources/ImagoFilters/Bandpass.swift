@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 //
 //  Bandpass.swift (ImagoFilters)
 //  scikit-image 0.26.0's `filters.difference_of_gaussians` and `filters.butterworth` for one real 2D image.

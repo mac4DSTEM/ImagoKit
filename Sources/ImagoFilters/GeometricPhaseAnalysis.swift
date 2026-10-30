@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 //
 //  GeometricPhaseAnalysis.swift (ImagoFilters)
 //  Geometric phase analysis (GPA) of a lattice image after Hytch, Snoeck and Kilaas, Ultramicroscopy 74 (1998) 131.

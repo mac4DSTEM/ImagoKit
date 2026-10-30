@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 //
 //  FFTSurface.swift (ImagoCore)
 //  NumPy's `numpy.fft` surface over the kit's exact-length 2D transforms: `fft2` / `ifft2` with `axes=` and `norm=`,

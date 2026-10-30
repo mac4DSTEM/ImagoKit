@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 //
 //  Window.swift (ImagoFilters)
 //  scikit-image 0.26.0's `filters.window(window_type, shape)` for a 2D shape: a 1D `scipy.signal.get_window(type, max(shape),

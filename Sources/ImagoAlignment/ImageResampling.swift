@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 //
 //  ImageResampling.swift (ImagoAlignment)
 //  SciPy 1.18.1's `ndimage.zoom` and `ndimage.rotate` on a 2D image, on the kit's spline machinery (the B-spline prefilter and

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 //
 //  RadialProfile.swift (ImagoFFT)
 //  The power of a centred spectrum against the PHYSICAL spatial frequency |q|.

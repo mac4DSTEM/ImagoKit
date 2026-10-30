@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 //
 //  SpectrumDisplay.swift (ImagoFFT)
 //  How a power spectrum is drawn: v = log₁₀(|F|² / (W·H)²), log because the power spans six to ten decades; the divisor makes

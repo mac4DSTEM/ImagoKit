@@ -1,7 +1,7 @@
 # ``ImagoAlignment``
 
-Drift and stack alignment: the translation between two images, the drift of a stack, a sub-pixel shift, and the sum of a
-stack after it is aligned.
+Drift and stack alignment: the translation between two images, the drift of a stack, a sub-pixel shift, zoom and
+rotation, and the sum of a stack after it is aligned.
 
 The translation comes from phase cross-correlation with sub-pixel refinement (scikit-image's `phase_cross_correlation`
 without masks), the shifts are SciPy's `ndimage.shift` of order 0 and 1 and the Fourier shift, and every one runs on a
@@ -22,6 +22,12 @@ registers onto the reference; it is in pixels, row first.
 - ``ImageShift``
 - ``ShiftOrder``
 - ``ShiftMode``
+
+### Zoom and rotate
+
+SciPy's `ndimage.zoom` and `ndimage.rotate` (2D, spline orders 0 to 5).
+
+- ``ImageResampling``
 
 ### Drift and stack sums
 

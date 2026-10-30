@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 //
 //  AlignmentTypes.swift (ImagoAlignment)
 //  The vocabulary of drift and stack alignment: a shift in pixels, the registration of one image onto another, the

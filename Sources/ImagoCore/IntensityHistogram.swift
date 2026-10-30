@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 //
 //  IntensityHistogram.swift (ImagoCore)
 //  `numpy.histogram(f, bins, range)` of an image's finite pixels, bin for bin, in Float32 like NumPy 2.5.4 with float32 data.

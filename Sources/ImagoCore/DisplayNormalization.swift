@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 //
 //  DisplayNormalization.swift (ImagoCore)
 //  The arithmetic that takes raw pixels to the [0, 1] values a display samples, in Float32: the finite range, the linear and

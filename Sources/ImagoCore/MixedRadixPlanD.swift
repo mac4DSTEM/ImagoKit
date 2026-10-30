@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 //
 //  MixedRadixPlanD.swift (ImagoCore)
 //  The exact Float64 DFT of a length whose prime factors are 2, 3, 5 and 7, with no padding and no Bluestein: a Stockham

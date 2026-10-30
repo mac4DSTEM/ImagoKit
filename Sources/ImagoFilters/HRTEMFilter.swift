@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 //
 //  HRTEMFilter.swift (ImagoFilters)
 //  The HRTEM filters — the average background subtraction filter (ABSF) and the Wiener filter after R. Kilaas (1998), as

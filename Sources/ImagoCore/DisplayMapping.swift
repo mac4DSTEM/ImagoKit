@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 //
 //  DisplayMapping.swift (ImagoCore)
 //  One normalised value to an 8-bit colour: the window, the gamma and a 256-entry colour table, in Double.

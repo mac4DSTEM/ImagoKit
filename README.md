@@ -2,17 +2,21 @@
 
 # ImagoKit
 
+[![CI](https://github.com/mac4DSTEM/ImagoKit/actions/workflows/ci.yml/badge.svg)](https://github.com/mac4DSTEM/ImagoKit/actions/workflows/ci.yml)
+[![Docs](https://github.com/mac4DSTEM/ImagoKit/actions/workflows/docs.yml/badge.svg)](https://mac4dstem.github.io/ImagoKit/documentation/)
+[![Licence: GPL-3.0-only](https://img.shields.io/badge/licence-GPL--3.0--only-blue.svg)](LICENSE)
+
 Image analysis for electron micrographs, in Swift, for macOS and iPadOS: the Fourier transform of an image with its
 calibration, lattice spacings and angles measured from FFT spots, Bragg (masked inverse FFT) filtering, the HRTEM
-background-subtraction and Wiener filters, and drift correction and stack alignment. Each number is defined once,
-pinned against the Python packages the field already uses, and checked against planted lattices whose answer is known.
+background-subtraction and Wiener filters, drift correction and stack alignment, thresholds, morphology, segmentation and
+object statistics, denoising, zoom and rotate, and GPA strain. Each number is defined once, pinned against the Python
+packages the field already uses, and checked against planted lattices whose answer is known.
 
-**Status: pre-release (0.x), current version 0.8.0.** Four modules are available: `ImagoCore`, `ImagoFFT` (spectrum, radial profile, spot
-spacings and angles, the masked inverse FFT) and `ImagoFilters` (the HRTEM filters), each on a Float32 and a Float64 path,
-and `ImagoAlignment`, which registers an image onto another by phase correlation refined to a fraction of a pixel, shifts
-images (SciPy's orders 0 and 1 and the Fourier shift), estimates the drift of a stack and sums it aligned. The supported
-functions, set against the reference packages' documented API, are listed in [`docs/parity.md`](docs/parity.md). The
-definitions and validation notes behind each number are in [`docs/`](docs/).
+**Status: pre-release (0.x), current version 0.8.0.** Four modules: `ImagoCore`, `ImagoFFT`, `ImagoFilters` and
+`ImagoAlignment`; most functions have a Float32 and a Float64 path. The supported functions, set against the reference
+packages' documented API, are listed in [`docs/parity.md`](docs/parity.md); the API reference is the
+[DocC site](https://mac4dstem.github.io/ImagoKit/documentation/). The definitions and validation notes behind each number
+are in [`docs/`](docs/).
 
 **Platform.** Apple platforms only today (macOS 15 and iOS 18 or newer): the FFT engine uses Accelerate's vDSP, and the
 package is built and tested on macOS only. Linux is not supported yet.
@@ -25,17 +29,18 @@ package is built and tested on macOS only. Linux is not supported yet.
 | `ImagoFFT` | the centred magnitude and power spectrum with `fftshift(fftfreq(n, d))` axes per axis; the radial profile against physical \|q\|; a spot's position (snap, sub-pixel centroid of a Hann-windowed spectrum), its spacing d = 1/\|q\| and the angle between two spots; the masked inverse FFT with raised-cosine spots and Friedel partners | NumPy, and planted lattices | 0.0.1 |
 | `ImagoFilters` | the HRTEM average background subtraction filter (ABSF) and Wiener filter (Kilaas 1998, as D. R. G. Mitchell's DigitalMicrograph script describes them) | a float64 NumPy/SciPy reading of the same steps (`scipy.ndimage.median_filter`, `map_coordinates`) | 0.0.2 |
 | `ImagoAlignment` | phase cross-correlation with sub-pixel refinement, sub-pixel shifts, drift series and aligned stack sums | `skimage.registration.phase_cross_correlation`, `scipy.ndimage.shift`, `fourier_shift` | 0.1.0 |
+| `ImagoCore` | `FFTSurface`: `fft2`/`ifft2` with `axes` and `norm`, `rfft2`/`irfft2`, `fftshift`/`ifftshift` | `numpy.fft` | 0.6.0 |
+| `ImagoFilters` | `SeparableFilters` (Gaussian, uniform), `BandpassFilters` (Butterworth, difference of Gaussians), `WindowFunction`, `PeakLocalMax` | `scipy.ndimage`, `skimage.filters`, `scipy.signal.get_window`, `skimage.feature.peak_local_max` | 0.6.0 |
+| `ImagoAlignment` | spline-order shifts (orders 0 to 5) and masked phase correlation | `scipy.ndimage.shift`, `phase_cross_correlation` with masks | 0.6.0 |
+| `ImagoFilters` | `Thresholding`: Otsu, Li, Yen, triangle, mean, ISODATA, local, hysteresis | `skimage.filters` | 0.7.0 |
+| `ImagoCore` | `BinaryMorphology`, labelled `ObjectStatistics` (sums, extrema, centre of mass, areal density, `N_V`), `Segmentation.regionProperties` (perimeter, Feret, solidity, Euler number, intensity) | `scipy.ndimage`, `skimage.measure.regionprops` | 0.7.0 |
+| `ImagoCore` | `DistanceTransform`, `Segmentation.watershed` and `markers`, `RollingBall` | `scipy.ndimage.distance_transform_edt`, `skimage.segmentation.watershed`, `skimage.restoration.rolling_ball` | 0.8.0 |
+| `ImagoFilters` | `Denoise` (total variation by Chambolle and Bregman, non-local means); `GeometricPhaseAnalysis` (GPA strain; planted truth only, not validated on real data) | `skimage.restoration`; planted lattices | 0.8.0 |
+| `ImagoAlignment` | `ImageResampling`: `zoom` and `rotate` (2D, orders 0 to 5) | `scipy.ndimage.zoom`, `rotate` | 0.8.0 |
+| `ImagoFFT` / `ImagoCore` | 1D `rfft`/`irfft`; a real-input 2D path and a mixed-radix Float64 plan (speed; same numbers) | `numpy.fft` | 0.8.0 |
 
-Since 0.7.0: `ImagoFilters.Thresholding` (Otsu, Li, Yen, triangle, mean, ISODATA, local, hysteresis), `ImagoCore.BinaryMorphology`, `ObjectStatistics` (labelled sums, extrema, centre of mass, areal density and `N_V`), `Segmentation.regionProperties` (perimeter, Feret, solidity, Euler number, intensity), `WindowFunction.apply`, `PeakLocalMax` spectrum symmetry.
-
-Since 0.6.0: `ImagoCore.FFTSurface` (`fft2`/`ifft2` with `axes` and `norm`, `rfft2`/`irfft2`, `fftshift`/`ifftshift`),
-`ImagoFilters` `SeparableFilters` (`gaussian_filter`, `uniform_filter`), `BandpassFilters` (`butterworth`,
-`difference_of_gaussians`), `WindowFunction`, `PeakLocalMax`, spline-order `ImageShift` and masked `PhaseCorrelation`.
-`docs/parity.md` lists every function of the references and where it stands; `docs/benchmarks.md` has the timings.
-
-Since 0.8.0: `Denoise` (total variation by Chambolle and Bregman, non-local means), `GeometricPhaseAnalysis` (GPA strain; unvalidated on real data), `ImageResampling` (`zoom`, `rotate`), `DistanceTransform`, `Segmentation.watershed`, `RollingBall`, and a real-input transform with a mixed-radix Float64 plan.
-
-Planned, not yet available: atom-column finding (Atomap, GPL-3.0, in a module of its own).
+`docs/benchmarks.md` has the timings against the Python packages. Planned, not yet available: atom-column finding (in a
+module of its own); see [`ROADMAP.md`](ROADMAP.md).
 
 ## Complex 1D FFT
 
@@ -92,7 +97,8 @@ or with `-O` for the kit: the manifest carries no optimisation flags (a versione
 ## The first ten minutes
 
 A lattice image with two spots: its spectrum, its radial profile, both spacings and the angle between them, a Bragg filter
-on one spot, the HRTEM filters, and the registration of a drifted copy. This program is compiled and run as it stands by `tools/readme-consumer` (every line
+on one spot, the HRTEM filters, the registration of a drifted copy, and the particles of a field (denoise, threshold,
+watershed). This program is compiled and run as it stands by `tools/readme-consumer` (every line
 below is checked against that consumer's source in CI).
 
 ```swift
@@ -146,6 +152,17 @@ let drifted = try ImageShift.fourierShift(field, by: PixelShift(row: -2.5, colum
 let drift = try PhaseCorrelation.register(reference: field, moving: drifted, upsampleFactor: 20, normalization: .unnormalized)
 let summed = try AlignedSum.sum([field, drifted], shifts: [.zero, drift.shift])
 print("registered drift:", drift.shift.row, drift.shift.column, "px; aligned sum of", summed.frameCount, "frames")
+
+// Particles in the same field: total-variation denoising, Otsu's threshold, one marker per blob from peak_local_max, and a
+// marker-controlled watershed inside the thresholded mask.
+let smooth = try Denoise.totalVariationChambolle(blobs, rows: n, columns: n, weight: 2)
+let level = Float(try Thresholding.otsu(.float32(smooth)))
+let foreground = Thresholding.mask(smooth, threshold: level)
+let peaks = try PeakLocalMax.find(smooth, rows: n, columns: n, minDistance: 10, thresholdAbs: Double(level))
+let seeds = try Segmentation.markers(peakRows: peaks.map(\.row), peakColumns: peaks.map(\.column), rows: n, columns: n)
+let particles = try Segmentation.watershed(image: smooth.map { -Double($0) }, markers: seeds, rows: n, columns: n,
+                                           mask: foreground)
+print("particles:", Set(particles.filter { $0 > 0 }).count, "above Otsu's level", level)
 ```
 
 ## Checking it yourself
@@ -156,8 +173,9 @@ tools/consumer-check/run.sh        # a separate package that uses only the publi
 tools/readme-consumer/run.sh       # this README's program, compiled and run
 ```
 
-The fixtures the tests read are generated by `tools/slice-*/pins.py` against the pinned NumPy, SciPy and scikit-image
-(`tools/oracle/references-lock.txt`; a pinned-environment setup script builds it). Numbers are held to the Python
+The fixtures the tests read are generated by the `pins.py` scripts under `tools/` against the pinned NumPy, SciPy and
+scikit-image (the versions are in `tools/oracle/references-lock.txt`; install them into a virtual environment with
+`pip install -r tools/oracle/references-lock.txt`). Numbers are held to the Python
 reference within its own tolerance; `docs/parity.md` lists each function, its state and its tolerance. See
 [`CONTRIBUTING.md`](CONTRIBUTING.md) before changing a number.
 

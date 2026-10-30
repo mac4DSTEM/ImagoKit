@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 //
 //  FFTExportCSV.swift (ImagoFFT)
 //  The radial profile and the measured spots as CSV text: `# key: value` header lines that say what the numbers are, a
