@@ -51,7 +51,7 @@ let package = Package(
         .testTarget(name: "ImagoFiltersTests", dependencies: ["ImagoCore", "ImagoFFT", "ImagoFilters", "ImagoKitTestSupport"], exclude: ["Fixtures"],
                     swiftSettings: settings),
         // The comparisons with the pinned NumPy, SciPy and scikit-image values (Fixtures stay in the four old test folders), and the
-        // benchmark harness (tools/benchmarks/README: IMAGO_BENCH=1; without that variable its one test returns at once).
+        // benchmark harness (tools/benchmarks/README: IMAGOKIT_BENCH=1; without that variable its one test returns at once).
         .testTarget(name: "ImagoKitParityTests",
                     dependencies: ["ImagoCore", "ImagoFFT", "ImagoFilters", "ImagoAlignment", "ImagoKitTestSupport"],
                     swiftSettings: settings),

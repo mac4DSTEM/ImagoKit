@@ -1,6 +1,6 @@
-// Per-function timings for docs/benchmarks.md. Off unless IMAGO_BENCH=1 (a normal `swift test -c release` returns at once).
-//   IMAGO_BENCH=1 IMAGO_BENCH_OUT=/path/swift.json swift test -c release --filter ImagoBenchmarks
-//   IMAGO_BENCH_LARGE=1   adds the large sizes (the nightly review's)
+// Per-function timings for docs/benchmarks.md. Off unless IMAGOKIT_BENCH=1 (a normal `swift test -c release` returns at once).
+//   IMAGOKIT_BENCH=1 IMAGOKIT_BENCH_OUT=/path/swift.json swift test -c release --filter ImagoKitParityTests.benchmarks
+//   IMAGOKIT_BENCH_LARGE=1   adds the large sizes (the nightly review's)
 // Each case: one warm-up call, then five timed calls; the JSON holds all five times in milliseconds. The Python side is
 // tools/benchmarks/bench.py on the same sizes and dtypes; tools/benchmarks/report.py joins the two files.
 import Foundation
@@ -34,14 +34,14 @@ private func time(_ body: () throws -> Void) rethrows -> [Double] {
     return out
 }
 
-@Test(.enabled(if: ProcessInfo.processInfo.environment["IMAGO_BENCH"] == "1"))
+@Test(.enabled(if: ProcessInfo.processInfo.environment["IMAGOKIT_BENCH"] == "1"))
 func benchmarks() throws {
     let env = ProcessInfo.processInfo.environment
     var sizes = [128, 512]
-    if env["IMAGO_BENCH_LARGE"] == "1" { sizes += [2048, 4096, 8192] }
+    if env["IMAGOKIT_BENCH_LARGE"] == "1" { sizes += [2048, 4096, 8192] }
     var results: [Result] = []
-    // IMAGO_BENCH_ONLY=rfft2,fft2 runs only the cases whose name starts with one of the comma-separated prefixes.
-    let only = env["IMAGO_BENCH_ONLY"]?.split(separator: ",").map(String.init)
+    // IMAGOKIT_BENCH_ONLY=rfft2,fft2 runs only the cases whose name starts with one of the comma-separated prefixes.
+    let only = env["IMAGOKIT_BENCH_ONLY"]?.split(separator: ",").map(String.init)
     func record(_ name: String, _ dtype: String, _ n: Int, _ body: () throws -> Void) rethrows {
         if let only, !only.contains(where: { name.hasPrefix($0) }) { return }
         let t = try time(body)
@@ -113,7 +113,7 @@ func benchmarks() throws {
         try record("masked phase_cross_correlation", "float32", n) { _ = try PhaseCorrelation.registerMasked(reference: a, moving: b, referenceMask: m) }
         try record("masked phase_cross_correlation", "float64", n) { _ = try PhaseCorrelation.registerMasked(reference: a, moving: b, referenceMask: m, precision: .float64) }
     }
-    if let out = env["IMAGO_BENCH_OUT"] {
+    if let out = env["IMAGOKIT_BENCH_OUT"] {
         try JSONEncoder().encode(results).write(to: URL(fileURLWithPath: out))
     }
 }
