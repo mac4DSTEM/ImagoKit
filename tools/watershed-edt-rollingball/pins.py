@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Generate the K1 pins: distance_transform_edt, segmentation.watershed, restoration.rolling_ball.
-Run from the package root:  python3 -I -B tools/segmentation-k1/pins.py
+Run from the package root:  python3 -I -B tools/watershed-edt-rollingball/pins.py
 (a venv with only scikit-image==0.26.0, which brings NumPy 2.5.4 and SciPy 1.18.1).
 
 Writes Tests/ImagoCoreTests/Fixtures/watershed-edt-rollingball-pins.json.
@@ -26,7 +26,7 @@ assert skimage.__version__ == "0.26.0", skimage.__version__
 ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / "Tests/ImagoCoreTests/Fixtures/watershed-edt-rollingball-pins.json"
 rng = np.random.Generator(np.random.PCG64(20261022))
-CMD = "python3 -I -B tools/segmentation-k1/pins.py"
+CMD = "python3 -I -B tools/watershed-edt-rollingball/pins.py"
 
 
 def fl(a):

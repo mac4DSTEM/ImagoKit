@@ -96,7 +96,7 @@ do {
     check(error == .notSquare(width: 128, height: 96), "a non-square image is refused")
 }
 
-// The rest of slice 1's public surface .
+// The rest of the FFT, spot and filter public surface.
 let spotA = try SpotMeasurement.measure(image, clickRow: h / 2 - 7, clickColumn: w / 2 + 10)
 let maskSpot = spotA.maskSpot(radius: 2, edge: 1)
 check(abs(maskSpot.kx - 10) < 0.01 && abs(maskSpot.ky + 7) < 0.01 && maskSpot.weight(atDistance: 0) == 1
@@ -128,7 +128,7 @@ for e in [HRTEMFilterError.oddSize(33), .tooSmall(16), .pixelCount(expected: 4, 
     check(e.errorDescription?.isEmpty == false, "HRTEMFilterError text: \(e)")
 }
 
-// ImagoAlignment (slice 2): shifts, registrations, drift series and aligned sums, on the lattice above.
+// ImagoAlignment: shifts, registrations, drift series and aligned sums, on the lattice above.
 check(PixelShift.zero == PixelShift(row: 0, column: 0) && PixelShift(row: 1, column: 2).column == 2, "PixelShift")
 check(Normalization.allCases.count == 2 && Normalization.phase.rawValue == "phase" && Normalization.unnormalized.rawValue == "unnormalized",
       "Normalization")

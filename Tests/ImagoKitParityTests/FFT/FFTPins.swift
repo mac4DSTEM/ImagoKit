@@ -1,6 +1,6 @@
-// The slice-1a pins (tools/slice-1/pins.py): the committed subset in
-// Fixtures/slice-1a-pins.json, or — when IMAGOKIT_PINS_FULL names a folder (tools/slice-1/full-parity.sh sets it to
-// .build/pins-full) — every case, read from the harness manifests there.
+// The FFT, spot and angle pins: the committed subset in Fixtures/slice-1a-pins.json (NumPy 2.5.4 on planted lattices,
+// frozen: the generator read macTEM's parity harnesses from a commit whose history was squashed, so it was retired), or,
+// when IMAGOKIT_PINS_FULL names a folder holding the full case set, every case, read from the harness manifests there.
 import Foundation
 import ImagoKitTestSupport
 import ImagoCore

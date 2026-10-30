@@ -9,18 +9,18 @@ registrations and filters are the public one-call API. **Caveat.** Other builds 
 time (load average 11 to 25 during these runs, 6 to 8 before): absolute times are noisy, and both sides were measured in the
 same minutes so the ratios are comparable but not exact. The sizes are the small (128²) and typical (512²) ones plus one
 non-power-of-two (500²); masked registration, which costs eleven transforms of (2n−1)², is at 64² and 256².
-**Large sizes (2048², 4096², 8192²) are not measured yet:** `IMAGO_BENCH_LARGE=1` and `--large` add them.
+**Large sizes (2048², 4096², 8192²) are not measured yet:** `IMAGOKIT_BENCH_LARGE=1` and `--large` add them.
 
 Re-run from a fresh clone of the kit, on a quiet Mac, one benchmark at a time:
 
 ```sh
-python3.12 -m venv .venv-bench && .venv-bench/bin/pip install numpy==2.5.4 scipy==1.18.1 scikit-image==0.26.0
-IMAGO_BENCH=1 IMAGO_BENCH_OUT=/tmp/swift.json swift test -c release --filter ImagoKitParityTests.benchmarks
-.venv-bench/bin/python -I -B tools/benchmarks/bench.py /tmp/python.json
+python3 -m venv .venv && .venv/bin/pip install -r tools/requirements.txt
+IMAGOKIT_BENCH=1 IMAGOKIT_BENCH_OUT=/tmp/swift.json swift test -c release --filter ImagoKitParityTests.benchmarks
+.venv/bin/python -I -B tools/benchmarks/bench.py /tmp/python.json
 python3 tools/benchmarks/report.py /tmp/swift.json /tmp/python.json
 ```
 
-The harness is `Tests/ImagoKitParityTests/Benchmarks/Benchmarks.swift` (its one test returns at once unless `IMAGO_BENCH=1`);
+The harness is `Tests/ImagoKitParityTests/Benchmarks/Benchmarks.swift` (its one test returns at once unless `IMAGOKIT_BENCH=1`);
 `tools/benchmarks/bench.py` is the Python side. "kit / Python" below 1 means the kit is faster.
 
 ## Kit CPU against Python

@@ -1,5 +1,6 @@
-// The HRTEM filters against the float64 NumPy/SciPy reading of the same steps (macTEM's hrtem-filter-parity at 3d17311,
-// pinned by tools/slice-1/pins.py), with that harness's checks.
+// The HRTEM filters against a float64 NumPy/SciPy reading of the same steps, with that reading's checks. The pins in
+// Fixtures/slice-1b-pins.json are frozen: their generator read macTEM's parity harness from a commit whose history was
+// squashed, so it was retired.
 import Foundation
 import ImagoKitTestSupport
 import ImagoCore

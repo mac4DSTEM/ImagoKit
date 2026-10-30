@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Generate the display-numerics pins; run from the package root:
-../References/python/skimage/bin/python -I -B tools/display/pins.py
+python3 -I -B tools/display/pins.py
 
 Writes Tests/ImagoCoreTests/Fixtures/display-core-pins.json and Tests/ImagoFFTTests/Fixtures/display-fft-pins.json.
 

@@ -1,9 +1,9 @@
-"""Slice 2 pins: phase correlation, shifts, drift series and aligned sums.
+"""Registration and drift pins: phase correlation, shifts, drift series and aligned sums.
 
-    ../References/python/skimage/bin/python -I -B tools/slice-2/pins.py
+    python3 -I -B tools/registration-drift/pins.py
 
-Run from the repository root, before the Swift code (the registration's rule). Steps:
-  1. The three oracle sources are checked against the registration's sha256 values (scikit-image 0.26.0
+Run from the repository root, in a virtual environment made from tools/requirements.txt. Steps:
+  1. The three oracle sources are checked against the sha256 values recorded below (scikit-image 0.26.0
      `_phase_cross_correlation.py`, SciPy 1.18.1 `_interpolation.py` and `_fourier.py`) and the versions against the lock.
   2. The planted HRTEM-like image (DC 1000, three lattices of amplitude 20 to 80 with second harmonics at half amplitude, an
      amorphous continuum of rms 15 band-limited to 0.4 cycles per pixel, so that a Fourier shift is exact) is shifted by
@@ -15,7 +15,7 @@ Run from the repository root, before the Swift code (the registration's rule). S
   3. SciPy's `ndimage.shift` (orders 0 and 1, the seven modes) and `fourier_shift` on small images, a 12-frame drift stack
      (noisy and noise-free) with scikit-image's series against `.first`, `.mean` and `.previous`, and the aligned sums.
   4. The committed subset (under 4 MB) goes to Tests/ImagoAlignmentTests/Fixtures/ with slice-2-pins.json (every file's
-     sha256, the versions); every case goes to .build/pins-full/alignment/ for tools/slice-2/full-parity.sh.
+     sha256, the versions); every case goes to .build/pins-full/alignment/ for tools/registration-drift/full-parity.sh.
 """
 import hashlib
 import json
@@ -23,6 +23,7 @@ import math
 import os
 import shutil
 import sys
+import sysconfig
 import warnings
 
 import numpy as np
@@ -32,7 +33,7 @@ FULL = os.path.join(ROOT, ".build", "pins-full", "alignment")
 FIX = os.path.join(ROOT, "Tests", "ImagoAlignmentTests", "Fixtures")
 BUDGET = 4 * 1024 * 1024
 
-SITE = os.path.join(ROOT, "..", "References", "python", "skimage", "lib", "python3.12", "site-packages")
+SITE = sysconfig.get_paths()["purelib"]   # the running environment's site-packages (made from tools/requirements.txt)
 SHA256 = {
     "skimage/registration/_phase_cross_correlation.py":
         "c37ea680db40565e06b47a7cc6de2fec93d1230cab32ba5ddd280d23eebd6512",
@@ -570,11 +571,11 @@ def main():
     for rel, want in SHA256.items():
         got = sha256_file(os.path.join(SITE, rel))
         if got != want:
-            fail("%s sha256 %s, registered %s" % (rel, got, want))
-    print("pins.py: the three oracle sources match the registration's sha256 values")
+            fail("%s sha256 %s, recorded %s" % (rel, got, want))
+    print("pins.py: the three oracle sources match the recorded sha256 values")
 
     out = Out()
-    manifest = {"generator": "tools/slice-2/pins.py", "plant_seed": PLANT_SEED, "drift_seed": DRIFT_SEED,
+    manifest = {"generator": "tools/registration-drift/pins.py", "plant_seed": PLANT_SEED, "drift_seed": DRIFT_SEED,
                 "versions": {"python": sys.version.split()[0], "numpy": np.__version__, "scipy": scipy.__version__,
                              "scikit-image": skimage.__version__},
                 "oracle_sha256": SHA256, "tie_tolerances": {"float64": TIE64, "float32": TIE32}}
