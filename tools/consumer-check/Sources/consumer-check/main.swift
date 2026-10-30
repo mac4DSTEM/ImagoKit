@@ -341,5 +341,53 @@ check((try? WindowFunction.apply(.hann, to: [Float](repeating: 1, count: 9), row
 check(Thresholding.mask([Float(1), 3], threshold: 2) == [false, true], "public threshold mask")
 check(SpectrumSymmetry(centreRow: 1, centreColumn: 1).oneOfEachMirrorPair, "public spectrum symmetry")
 
+// 0.8.0: distance transform, watershed, rolling ball, zoom and rotate, 1D real transforms, denoising, GPA strain.
+let edt = try DistanceTransform.euclidean(foreground: [false, true, true, true, false], rows: 1, columns: 5, sampling: (1, 2))
+check(edt == [0, 2, 4, 2, 0], "public distance transform with sampling, got \(edt)")
+let seeds = try Segmentation.markers(peakRows: [0, 0], peakColumns: [0, 5], rows: 1, columns: 6)
+check(seeds == [1, 0, 0, 0, 0, 2], "public watershed markers from peaks")
+check((try? Segmentation.watershed(image: [0, 1, 2, 2, 1, 0], markers: seeds, rows: 1, columns: 6)) == [1, 1, 1, 2, 2, 2],
+      "public watershed floods each basin from its marker")
+let ball = try RollingBall.ballKernel(radius: 2)
+check(ball.rows == 5 && ball.columns == 5 && ball.values.count == 25, "public ball kernel on a (2r + 1) grid")
+let ellipsoid = try RollingBall.ellipsoidKernel(rows: 3, columns: 5, intensity: 1)
+check(ellipsoid.values.count == ellipsoid.rows * ellipsoid.columns, "public ellipsoid kernel")
+check((try? RollingBall.background(image: [Double](repeating: 3, count: 64), rows: 8, columns: 8, radius: 5))?
+    .allSatisfy { abs($0 - 3) < 1e-9 } == true, "public rolling ball: a constant is all background")
+let zoomed = try ImageResampling.zoom(image, zoom: (rows: 0.5, columns: 0.5))
+check(zoomed.width == w / 2 && zoomed.height == h / 2 && abs(zoomed.x!.scale - 2 * dx) < 1e-12 && abs(zoomed.y!.scale - 2 * dy) < 1e-12,
+      "public zoom halves the size and doubles the pixel scale")
+let turned = try ImageResampling.rotate(image, degrees: 90, order: .linear)
+check(turned.width == h && turned.height == w, "public rotate by 90 degrees swaps the sides")
+let ones4: [Float] = [1, 1, 1, 1]
+let half1D = FFT1D(n: 4)!.rfft(ones4)
+check(half1D.re == [4, 0, 0] && half1D.im == [0, 0, 0], "public 1D rfft of a constant")
+check(FFT1D(n: 4)!.irfft(re: half1D.re, im: half1D.im) == ones4, "public 1D irfft round trip")
+check(FFT1DDouble.rfft([1, 2, 3], n: 3) == nil, "public 1D rfft refuses a length that is not a power of two")
+let flat = [Float](repeating: 0.5, count: 64)
+check((try? Denoise.totalVariationChambolle(flat, rows: 8, columns: 8))?.allSatisfy { abs($0 - 0.5) < 1e-6 } == true,
+      "public TV Chambolle keeps a constant")
+check((try? Denoise.totalVariationBregman(flat.map(Double.init), rows: 8, columns: 8))?.allSatisfy { abs($0 - 0.5) < 1e-9 } == true,
+      "public TV Bregman keeps a constant")
+check((try? Denoise.nonLocalMeans(flat, rows: 8, columns: 8, patchSize: 3, patchDistance: 2))?.allSatisfy { abs($0 - 0.5) < 1e-6 } == true,
+      "public non-local means keeps a constant")
+do { _ = try Denoise.totalVariationChambolle(flat, rows: 8, columns: 8, maxNumIter: 0); check(false, "maxNumIter 0 is refused") }
+catch is DenoiseError { check(true, "maxNumIter 0 is refused") } catch { check(false, "maxNumIter 0: another error \(error)") }
+// A perfect zero-mean two-fringe lattice, 8 cycles across 64 pixels on each axis (a mean would leak through the masks): no strain.
+let lattice: [Double] = (0..<4096).map {
+    let (r, c) = (Double($0 / 64), Double($0 % 64))
+    return cos(2 * Double.pi * c / 8) + 0.6 * cos(2 * Double.pi * r / 8)
+}
+let found = try GeometricPhaseAnalysis.findReflections(lattice, rows: 64, columns: 64)
+let foundSet = [found.g1, found.g2].map { [($0.row * 1e6).rounded() / 1e6, ($0.column * 1e6).rounded() / 1e6] }
+check(foundSet == [[0, 0.125], [0.125, 0]], "public GPA finds the two reflections, got \(foundSet)")
+let gpa = try GeometricPhaseAnalysis.analyze(lattice, rows: 64, columns: 64, g1: (0, 0.125), g2: (0.125, 0))
+let worst = (gpa.strainRR + gpa.strainCC + gpa.strainRC + gpa.rotation).map(abs).max() ?? .nan
+check(gpa.validation == GeometricPhaseAnalysis.Result.validationNone && worst < 1e-8,
+      "public GPA of a perfect lattice: zero strain and rotation, badged unvalidated (worst \(worst))")
+do { _ = try GeometricPhaseAnalysis.analyze(lattice, rows: 64, columns: 64, g1: (0, 0.125), g2: (0, 0.25)); check(false, "collinear g") }
+catch let e as GeometricPhaseAnalysisError { check(e == .collinearReflections, "public GPA refuses collinear reflections") }
+catch { check(false, "collinear g: another error \(error)") }
+
 print("consumer-check summary: \(checks) checks, \(failures) failures")
 if failures > 0 { exit(1) }
