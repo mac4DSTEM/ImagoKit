@@ -60,6 +60,17 @@ let drift = try PhaseCorrelation.register(reference: field, moving: drifted, ups
 let summed = try AlignedSum.sum([field, drifted], shifts: [.zero, drift.shift])
 print("registered drift:", drift.shift.row, drift.shift.column, "px; aligned sum of", summed.frameCount, "frames")
 
+// Particles in the same field: total-variation denoising, Otsu's threshold, one marker per blob from peak_local_max, and a
+// marker-controlled watershed inside the thresholded mask.
+let smooth = try Denoise.totalVariationChambolle(blobs, rows: n, columns: n, weight: 2)
+let level = Float(try Thresholding.otsu(.float32(smooth)))
+let foreground = Thresholding.mask(smooth, threshold: level)
+let peaks = try PeakLocalMax.find(smooth, rows: n, columns: n, minDistance: 10, thresholdAbs: Double(level))
+let seeds = try Segmentation.markers(peakRows: peaks.map(\.row), peakColumns: peaks.map(\.column), rows: n, columns: n)
+let particles = try Segmentation.watershed(image: smooth.map { -Double($0) }, markers: seeds, rows: n, columns: n,
+                                           mask: foreground)
+print("particles:", Set(particles.filter { $0 > 0 }).count, "above Otsu's level", level)
+
 // The planted truth: d = 1/|q| with q = (40, 12) and (−15, 35) cycles over 5.12 nm; the angle between them.
 let qa = (40.0 / 5.12, 12.0 / 5.12), qb = (-15.0 / 5.12, 35.0 / 5.12)
 let plantedAngle = try SpotMeasurement.angle(qa: qa, qb: qb)
@@ -70,5 +81,8 @@ let ok = real[0] == 64 && real.dropFirst().allSatisfy { $0 == 0 }
     && abs(pair.angle - plantedAngle) < 0.1
     && bragg.image.count == n * n && filtered.passes >= 1
     && drift.shift == PixelShift(row: 2.5, column: -1.25) && summed.frameCount == 2 && summed.counts.allSatisfy { $0 == 2 }
+    && Set(peaks.map { [$0.row, $0.column] }) == [[60, 70], [120, 180], [190, 90]]
+    && Set(particles) == [0, 1, 2, 3]
+    && [(60, 70), (120, 180), (190, 90)].allSatisfy { particles[$0.0 * n + $0.1] > 0 }
 print("readme-consumer summary: \(ok ? "passed" : "FAILED")")
 if !ok { exit(1) }
