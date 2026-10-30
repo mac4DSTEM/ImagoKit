@@ -129,7 +129,7 @@ def th(fn, img, **kw):
         return {"raises": type(e).__name__, "message": str(e)[:120]}
 
 
-def task32():
+def thresholds_and_morphology():
     gr = []
     for name, g in grey_cases().items():
         e = {"name": name, "dtype": str(g.dtype), "width": g.shape[1], "height": g.shape[0], "values": floats(g)}
@@ -212,7 +212,7 @@ def prop_row(r):
     return d
 
 
-def task33():
+def region_properties():
     ent = []
     for name, m in binary_cases().items():
         if name in ("salt-noise", "empty"):
@@ -255,6 +255,7 @@ def task33():
     return len(ent), sum(e["count2"] for e in ent)
 
 
-a = task32()
-b = task33()
-print("task 32:", a[0], "grey images,", a[1], "binary cases; task 33:", b[0], "masks,", b[1], "objects (8-connected)")
+a = thresholds_and_morphology()
+b = region_properties()
+print("thresholds and morphology:", a[0], "grey images,", a[1], "binary cases; region properties:", b[0], "masks,", b[1],
+      "objects (8-connected)")
