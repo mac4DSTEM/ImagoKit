@@ -9,8 +9,8 @@
 #   tools/registration-drift/full-parity.sh
 set -euo pipefail
 cd "${0:A:h}/../.."
-[[ -f .build/pins-full/alignment/slice-2-pins.json ]] || {
-  print -u2 "full-parity: .build/pins-full/alignment/slice-2-pins.json is missing; run tools/registration-drift/pins.py first"; exit 1 }
+[[ -f .build/pins-full/alignment/registration-drift-pins.json ]] || {
+  print -u2 "full-parity: .build/pins-full/alignment/registration-drift-pins.json is missing; run tools/registration-drift/pins.py first"; exit 1 }
 log=.build/pins-full/alignment-full-parity.log
 set +e
 IMAGOKIT_BANDS=1 IMAGOKIT_PINS_FULL=$PWD/.build/pins-full swift test -c release --filter ImagoKitParityTests >$log 2>&1

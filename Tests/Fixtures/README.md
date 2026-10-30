@@ -123,7 +123,7 @@ under `tools/` that reads the pinned Python reference only.
 | `ImagoAlignmentTests/Fixtures/size64x32-t0-ref.f32` | 8.0 KB | `tools/alignment/pins.py`, `tools/registration-drift/pins.py` (module only) |  |
 | `ImagoAlignmentTests/Fixtures/size64x32-t1-mov.f32` | 8.0 KB | `tools/alignment/pins.py`, `tools/registration-drift/pins.py` (module only) |  |
 | `ImagoAlignmentTests/Fixtures/size64x32-t1-ref.f32` | 8.0 KB | `tools/alignment/pins.py`, `tools/registration-drift/pins.py` (module only) |  |
-| `ImagoAlignmentTests/Fixtures/slice-2-pins.json` | 81.2 KB | `tools/registration-drift/full-parity.sh`, `tools/registration-drift/pins.py` |  |
+| `ImagoAlignmentTests/Fixtures/registration-drift-pins.json` | 81.2 KB | `tools/registration-drift/full-parity.sh`, `tools/registration-drift/pins.py` |  |
 | `ImagoAlignmentTests/Fixtures/spline-shift-pins.json` | 4.3 MB | `tools/alignment/pins.py` |  |
 | `ImagoCoreTests/Fixtures/colormap-pins.json` | 75.8 KB | `tools/colormap/pins.py` |  |
 | `ImagoCoreTests/Fixtures/csv-tidy-pins.json` | 82.8 KB | `tools/csvexport/pins.py` |  |
