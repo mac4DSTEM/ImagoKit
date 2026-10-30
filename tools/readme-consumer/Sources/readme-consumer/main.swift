@@ -5,8 +5,6 @@ import ImagoCore
 import ImagoFFT
 import ImagoFilters
 
-import ImagoFFT
-
 var real = [Float](repeating: 0, count: 64)
 var imaginary = real
 real[0] = 1
