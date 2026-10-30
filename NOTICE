@@ -1,7 +1,9 @@
 ImagoKit
 Copyright (c) 2026 Paul Lobpreis
 
-Licensed under the GNU General Public License v3.0 (LICENSE).
+Licensed under the GNU General Public License v3.0 only (SPDX: GPL-3.0-only;
+LICENSE). Parts port BSD-3-Clause code from scikit-image and SciPy (listed
+below); their licence texts are in Licenses/.
 
 No number computed by this library is validated on a microscope: agreement with
 NumPy and SciPy, recovery of planted lattices and stated closed forms are what is
@@ -13,15 +15,16 @@ GPL-3.0 (licence chosen by the maintainers, 2026-10-16)
 ================================================================================
 
 The entire package is licensed GPL-3.0-only, including all four modules. The Python
-reference packages remain independently licensed; they are run as oracles,
-not copied into this package.
+reference packages remain independently licensed. They are run as oracles; where
+a file ports one of their algorithms, it is named in "Ports of scikit-image and
+SciPy" below and the BSD-3-Clause notice is kept.
 
 
 ================================================================================
 Origin of the first modules (the copyright holder's own code)
 ================================================================================
 
-macTEM (github.com/mac4DSTEM/macTEM) at commit 3d17311:
+macTEM (github.com/mac4DSTEM/macTEM) before v1.0.0 (history squashed):
   Sources/TEMCore/Compute/PowerSpectrum.swift, RadialProfile.swift,
   SpotMeasure.swift, MaskedInverseFFT.swift, HRTEMFilter.swift,
   FFTRoomMath.swift (the unit rules), Data/CalibratedImage.swift (the axis
@@ -63,18 +66,54 @@ mask formulas, never copied.
 
 
 ================================================================================
-The line profile (a port of scikit-image)
+Ports of scikit-image and SciPy (BSD-3-Clause)
 ================================================================================
 
-ImagoCore/LineProfile.swift ports the algorithm of skimage/measure/profile.py
-(scikit-image 0.26.0, Copyright (c) 2009-2022 the scikit-image team, BSD-3-Clause)
-and follows SciPy's ndimage.map_coordinates. The BSD-3-Clause notice is kept
-here; the BSD licence is compatible with this package's GPL-3.0. numpy.histogram
-(NumPy, BSD-3-Clause) is reproduced as a definition in IntensityHistogram.swift.
+These files reimplement in Swift the algorithms of the named functions, step
+for step where the result must agree with the reference to its tolerance:
+
+scikit-image 0.26.0 (Copyright (c) 2009-2022 the scikit-image team,
+BSD-3-Clause; Licenses/scikit-image.txt):
+  ImagoCore/LineProfile.swift       measure.profile_line
+  ImagoCore/Watershed.swift         segmentation.watershed
+  ImagoCore/RollingBall.swift       restoration.rolling_ball, ball_kernel,
+                                    ellipsoid_kernel
+  ImagoCore/RegionProperties.swift  measure.regionprops (perimeter, Feret,
+                                    solidity, Euler number, intensity)
+  ImagoFilters/Denoise.swift        restoration.denoise_tv_chambolle,
+                                    denoise_tv_bregman, denoise_nl_means
+  ImagoFilters/Thresholding.swift   filters.threshold_otsu, _li, _yen,
+                                    _triangle, _mean, _isodata, _local,
+                                    apply_hysteresis_threshold
+  ImagoFilters/PeakLocalMax.swift   feature.peak_local_max
+  ImagoFilters/Bandpass.swift       filters.butterworth,
+                                    difference_of_gaussians
+  ImagoAlignment/PhaseCorrelation.swift and MaskedRegistration.swift
+                                    registration.phase_cross_correlation
+
+SciPy 1.18.1 (Copyright (c) 2001-2002 Enthought, Inc. 2003, SciPy Developers,
+BSD-3-Clause; Licenses/SciPy.txt):
+  ImagoAlignment/ImageShift.swift   ndimage.shift, fourier_shift, and the
+                                    spline prefilter of map_coordinates
+  ImagoAlignment/ImageResampling.swift
+                                    ndimage.zoom, ndimage.rotate
+  ImagoCore/LineProfile.swift       ndimage.map_coordinates (the sampling)
+  ImagoCore/DistanceTransform.swift ndimage.distance_transform_edt
+  ImagoCore/BinaryMorphology.swift  ndimage binary morphology
+  ImagoFilters/SeparableFilters.swift
+                                    ndimage.gaussian_filter, uniform_filter
+  ImagoFilters/Window.swift         signal.get_window
+
+NumPy 2.5.4 (Copyright (c) 2005-2025, NumPy Developers, BSD-3-Clause;
+Licenses/NumPy.txt): numpy.histogram is reproduced as a definition in
+ImagoCore/IntensityHistogram.swift.
+
+The BSD-3-Clause licence is compatible with this package's GPL-3.0-only; the
+notices are kept here and in Licenses/.
 
 
 ================================================================================
-The oracles (run, not copied)
+The oracles (run by the fixture generators under tools/)
 ================================================================================
 
 NumPy 2.5.4        Copyright (c) 2005-2025, NumPy Developers. BSD-3-Clause.

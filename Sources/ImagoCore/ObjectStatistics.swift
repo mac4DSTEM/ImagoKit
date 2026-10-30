@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 //
 //  ObjectStatistics.swift (ImagoCore)
 //  SciPy 1.18.1's labelled measurements over a `LabelImage` and any same-sized image: `ndimage.sum`, `mean`,

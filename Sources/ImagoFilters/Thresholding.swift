@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 //
 //  Thresholding.swift (ImagoFilters)
 //  scikit-image 0.26.0's `filters` thresholds on a 2D image: `threshold_otsu`, `_li`, `_yen`, `_triangle`, `_mean`, `_isodata`,

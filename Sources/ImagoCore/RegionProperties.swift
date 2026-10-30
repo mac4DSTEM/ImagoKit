@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 //
 //  RegionProperties.swift (ImagoCore)
 //  The rest of scikit-image 0.26.0's `measure.regionprops` that a particle study reads, beside `Segmentation.objectMoments`:

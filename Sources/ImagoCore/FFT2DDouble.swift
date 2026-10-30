@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 //
 //  FFT2DDouble.swift (ImagoCore)
 //  The reference path: FFT2D.swift translated line by line to Double — the vDSP

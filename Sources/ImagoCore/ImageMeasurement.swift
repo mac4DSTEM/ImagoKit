@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 //
 //  ImageMeasurement.swift (ImagoCore)
 //  Distance and angle between marks on a calibrated image, in pixels and, when the calibration allows it, in the axes' unit.

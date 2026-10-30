@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 //
 //  BinaryMorphology.swift (ImagoCore)
 //  SciPy 1.18.1's `ndimage` binary morphology on a 2D mask (`binary_erosion`, `binary_dilation`, `binary_opening`,

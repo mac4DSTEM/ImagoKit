@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 //
 //  ImageShift.swift (ImagoAlignment)
 //  A shifted copy of an image: SciPy 1.18.1's `ndimage.shift` of order 0 and 1 in its seven boundary modes, and the exact

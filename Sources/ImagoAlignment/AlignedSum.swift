@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 //
 //  AlignedSum.swift (ImagoAlignment)
 //  A stack summed after each frame is shifted by its shift: the Fourier shift (exact for

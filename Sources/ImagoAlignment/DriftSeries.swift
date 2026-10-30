@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 //
 //  DriftSeries.swift (ImagoAlignment)
 //  The drift of a stack of frames: every frame registered against the first frame, the mean of the unshifted frames, or its

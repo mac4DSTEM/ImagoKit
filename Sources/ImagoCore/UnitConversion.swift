@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 //
 //  UnitConversion.swift (ImagoCore)
 //  Conversions between the unit spellings image and diffraction files write and the units a calculation needs:

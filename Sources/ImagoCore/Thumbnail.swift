@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 //
 //  Thumbnail.swift (ImagoCore)
 //  The box-average downsample of display-normalised pixels into a small copy: aspect kept, never upscaled. No colormap.

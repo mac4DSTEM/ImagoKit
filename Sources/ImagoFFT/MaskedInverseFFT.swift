@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 //
 //  MaskedInverseFFT.swift (ImagoFFT)
 //  An image rebuilt from chosen spots of its spectrum (Bragg filtering).

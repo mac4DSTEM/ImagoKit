@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 //
 //  Micrograph.swift (ImagoCore)
 //  The image the kit computes on: one 2D Float32 image and the calibration of each axis exactly as the caller states it. Nothing here converts, guesses or rounds a calibration: a unit is the caller's string.

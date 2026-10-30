@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 //
 //  FFT2D.swift (ImagoCore)
 //  The exact N-point 2D DFT on Accelerate's vDSP, Float32 (NOTICE names its origin; the

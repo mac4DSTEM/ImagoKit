@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 //
 //  PowerSpectrum.swift (ImagoFFT)
 //  The centred Fourier spectrum of an image or of a region of it — magnitude and power, with the frequency axes in the

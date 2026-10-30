@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 //
 //  PeakLocalMax.swift (ImagoFilters)
 //  scikit-image 0.26.0's `feature.peak_local_max` for one 2D image without `footprint=` or `labels=`: the pixels equal to the

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 //
 //  MaskedRegistration.swift (ImagoAlignment)
 //  scikit-image 0.26.0's masked phase_cross_correlation: Padfield's masked normalised cross-correlation

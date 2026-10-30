@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 //
 //  DFTPairD.swift (ImagoCore)
 //  A forward and an inverse `vDSP_DFT_zop` Double setup for one length. Accelerate's radix-2 Double FFT

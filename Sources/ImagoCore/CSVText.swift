@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 //
 //  CSVText.swift (ImagoCore)
 //  The text primitives of the kit's CSV writers: a number, a header value, a cell and a calibration line.

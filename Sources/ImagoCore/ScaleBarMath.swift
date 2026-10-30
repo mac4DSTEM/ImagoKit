@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 //
 //  ScaleBarMath.swift (ImagoCore)
 //  The numbers of a scale bar drawn over an image of `width` × `height` pixels: which unit a calibrated axis reads in, the

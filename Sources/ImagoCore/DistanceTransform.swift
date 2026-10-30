@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 //
 //  DistanceTransform.swift (ImagoCore)
 //  SciPy 1.18.1's `ndimage.distance_transform_edt` on a 2D mask: for every foreground pixel the Euclidean distance to the nearest

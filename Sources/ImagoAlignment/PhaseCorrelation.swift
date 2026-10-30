@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 //
 //  PhaseCorrelation.swift (ImagoAlignment)
 //  The translation that registers one image onto another: scikit-image 0.26.0's `phase_cross_correlation` without masks and
