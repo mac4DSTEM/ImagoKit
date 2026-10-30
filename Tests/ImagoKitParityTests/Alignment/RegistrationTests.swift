@@ -6,7 +6,7 @@ import ImagoAlignment
 import ImagoCore
 import Testing
 
-/// "BAND" lines are the measured values tools/slice-2/full-parity.sh summarises (it sets IMAGOKIT_BANDS); otherwise it is silent.
+/// "BAND" lines are the measured values tools/registration-drift/full-parity.sh summarises (it sets IMAGOKIT_BANDS); otherwise it is silent.
 let printsBands = ProcessInfo.processInfo.environment["IMAGOKIT_BANDS"] != nil
 
 func band(_ label: String, _ value: Double, _ limit: Double, _ pin: String) {

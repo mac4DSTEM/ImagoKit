@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Generate the radial-chart sample pins; run from the package root:
-../References/python/skimage/bin/python -I -B tools/radialchart/pins.py
+python3 -I -B tools/radialchart/pins.py
 
 Writes Tests/ImagoFFTTests/Fixtures/radial-chart-pins.json.
 

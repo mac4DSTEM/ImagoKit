@@ -1,0 +1,4 @@
+# One Python environment for every script under tools/ (the fixture generators and the benchmark side):
+#   python3 -m venv .venv && .venv/bin/pip install -r tools/requirements.txt
+# The pinned versions live in tools/oracle/references-lock.txt.
+-r oracle/references-lock.txt

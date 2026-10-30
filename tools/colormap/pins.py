@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Generate the colour-table pins; run from the package root:
-../References/python/skimage/bin/python -I -B tools/colormap/pins.py [APP_LUT_JSON]
+python3 -I -B tools/colormap/pins.py [APP_LUT_JSON]
 
 Writes Tests/ImagoCoreTests/Fixtures/colormap-pins.json.
 
