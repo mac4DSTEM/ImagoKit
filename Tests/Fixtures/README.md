@@ -7,7 +7,7 @@ Licence: every fixture is generated from this kit's own code and the pinned Pyth
 
 ## Frozen pins (generator retired)
 
-`ImagoFFTTests/Fixtures/fft-spot-angle-pins.json`, `ImagoFiltersTests/Fixtures/slice-1b-pins.json` and the 24 planted inputs below
+`ImagoFFTTests/Fixtures/fft-spot-angle-pins.json`, `ImagoFiltersTests/Fixtures/hrtem-filter-pins.json` and the 24 planted inputs below
 (read through `fft-spot-angle-pins.json`) were written by a generator that ran macTEM's parity harnesses from a commit whose
 history was squashed, so it cannot run from a clone and was retired. The pins stay as they are: NumPy 2.5.4 values on
 planted lattices, with each file's sha256 in the manifest. A new or changed FFT, spot or HRTEM pin gets a new generator
@@ -262,4 +262,4 @@ under `tools/` that reads the pinned Python reference only.
 | `ImagoFiltersTests/Fixtures/hrtem/pct5-128.wienermask.f64` | 128.0 KB | `tools/filters/pins.py`, `tools/peaks/inf_pins.py`, `tools/peaks/pins.py` +1 (module only) |  |
 | `ImagoFiltersTests/Fixtures/peak-inf-pins.json` | 8.8 KB | `tools/peaks/inf_pins.py` |  |
 | `ImagoFiltersTests/Fixtures/peak-pins.json` | 6.1 MB | `tools/peaks/pins.py` |  |
-| `ImagoFiltersTests/Fixtures/slice-1b-pins.json` | 5.0 KB | retired generator (frozen, see above) |  |
+| `ImagoFiltersTests/Fixtures/hrtem-filter-pins.json` | 5.0 KB | retired generator (frozen, see above) |  |
