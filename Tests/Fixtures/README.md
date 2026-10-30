@@ -261,5 +261,5 @@ under `tools/` that reads the pinned Python reference only.
 | `ImagoFiltersTests/Fixtures/hrtem/pct5-128.wiener.f64` | 128.0 KB | `tools/filters/pins.py`, `tools/peaks/inf_pins.py`, `tools/peaks/pins.py` +1 (module only) |  |
 | `ImagoFiltersTests/Fixtures/hrtem/pct5-128.wienermask.f64` | 128.0 KB | `tools/filters/pins.py`, `tools/peaks/inf_pins.py`, `tools/peaks/pins.py` +1 (module only) |  |
 | `ImagoFiltersTests/Fixtures/peak-inf-pins.json` | 8.8 KB | `tools/peaks/inf_pins.py` |  |
-| `ImagoFiltersTests/Fixtures/peak-pins.json` | 6.1 MB | `tools/peaks/pins.py` |  |
+| `ImagoFiltersTests/Fixtures/peak-pins.json` | 206.2 KB | `tools/peaks/pins.py` |  |
 | `ImagoFiltersTests/Fixtures/hrtem-filter-pins.json` | 5.0 KB | retired generator (frozen, see above) |  |
