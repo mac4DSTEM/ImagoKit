@@ -1,6 +1,6 @@
-// What the apps carried as "delete at ImagoKit 0.7.0" interims, now in the kit: the window product, the threshold compare and the
-// fraction level, the particle size summary, and PeakLocalMax's spectrum symmetry. Each test holds the kit to the interim's own
-// definition, written out literally here, so the apps drop their copies at the re-pin without a number moving.
+// The window product, the threshold compare and the fraction level, the particle size summary, and PeakLocalMax's spectrum
+// symmetry. Each test holds the kit to a plain definition written out literally here (the element-wise product, the strict
+// compare, low + fraction x range, the report's counting rules, peaks then centre exclusion and one of each mirror pair).
 import Foundation
 import ImagoKitTestSupport
 import ImagoCore
@@ -14,7 +14,7 @@ import Testing
         for type in [WindowType.hann, .hamming, .blackman, .tukey(alpha: 0.5)] {
             let w = try WindowFunction.window2D(type, rows: rows, columns: columns)
             var expected = pixels
-            for i in expected.indices { expected[i] *= Float(w[i]) }   // the macTEM interim, verbatim
+            for i in expected.indices { expected[i] *= Float(w[i]) }   // the element-wise product
             #expect(try WindowFunction.apply(type, to: pixels, rows: rows, columns: columns) == expected)
             #expect(try WindowFunction.apply(window: w, to: pixels) == expected)
             let doubles = pixels.map(Double.init)
@@ -38,7 +38,7 @@ import Testing
 
     @Test func levelIsLowPlusFractionOfTheFiniteRange() throws {
         let pixels: [Float] = [4, .nan, 10, .infinity, 7]
-        // The interim: range.lowerBound + Float(min(max(f, 0), 1)) * (upper - lower).
+        // The definition: range.lowerBound + Float(min(max(f, 0), 1)) * (upper - lower).
         for f in [0.0, 0.25, 0.5, 1.0, -3.0, 9.0] {
             let expected: Float = 4 + Float(min(max(f, 0), 1)) * (10 - 4)
             #expect(Thresholding.level(pixels, atFraction: f) == expected)
@@ -69,8 +69,8 @@ import Testing
 }
 
 @Suite("PeakLocalMax spectrum symmetry") struct SpectrumSymmetryTests {
-    /// macTEM's `FFTSpotFinder.find`, verbatim: the peaks, then the centre exclusion and one of each mirror pair, strongest first.
-    private func interim(_ values: [Float], width: Int, height: Int, minDistance: Int, thresholdAbs: Double,
+    /// The plain definition: the peaks, then the centre exclusion and one of each mirror pair, strongest first.
+    private func reference(_ values: [Float], width: Int, height: Int, minDistance: Int, thresholdAbs: Double,
                          centreExclusion: Int, count: Int) throws -> [PeakCoordinate] {
         let peaks = try PeakLocalMax.find(values, rows: height, columns: width, minDistance: minDistance, thresholdAbs: thresholdAbs)
         let cy = height / 2, cx = width / 2
@@ -85,7 +85,7 @@ import Testing
         return kept
     }
 
-    @Test func matchesTheAppsInterimOnRandomCentrosymmetricSpectra() throws {
+    @Test func matchesThePlainDefinitionOnRandomCentrosymmetricSpectra() throws {
         var rng = SystemRandomNumberGeneratorSeeded(seed: 7)
         let width = 48, height = 40
         for _ in 0..<25 {
@@ -99,7 +99,7 @@ import Testing
                 if r >= 0 && r < height && c >= 0 && c < width { v[r * width + c] += amplitude }
                 if mr >= 0 && mr < height && mc >= 0 && mc < width { v[mr * width + mc] += amplitude }
             }
-            let expected = try interim(v, width: width, height: height, minDistance: 3, thresholdAbs: 0.2, centreExclusion: 4, count: 6)
+            let expected = try reference(v, width: width, height: height, minDistance: 3, thresholdAbs: 0.2, centreExclusion: 4, count: 6)
             let got = try PeakLocalMax.find(
                 v, rows: height, columns: width, minDistance: 3, thresholdAbs: 0.2, numPeaks: 6,
                 symmetry: SpectrumSymmetry(centreRow: cy, centreColumn: cx, excludedRadius: 4))

@@ -15,7 +15,7 @@ each with its cause as far as it is known (diagnose before changing a number).
    `vDSP_DFT_zop` and on the mixed-radix plan (0.49 ms), so the remainder is the transposes around the vDSP calls; the mixed-radix plan needs none for the columns.
    The kit keeps the vDSP path by design.
 
-## Work items from the audit
+## Other open work
 
 - **1.0 item, naming:** the new surface takes `rows`/`columns` (decided 2026-10-22: `DistanceTransform`, `Segmentation.watershed`/`markers`, `RollingBall`, `Denoise`, `GeometricPhaseAnalysis`, `ImageResampling`); `LabelImage`, `Micrograph` and the older morphology and segmentation API still say `width`/`height`. Unify at 1.0 (a break). Four error enums carry a `.shape` case (`MorphologyError`, `RestorationError`, `DenoiseError`, `GeometricPhaseAnalysisError`); `RestorationError` and `DenoiseError` have no `LocalizedError` text yet.
 
@@ -24,7 +24,7 @@ each with its cause as far as it is known (diagnose before changing a number).
   GPA is Float64 CPU, two reflections, `validation: "none"` until one dataset with truth passes (the apps should show the amplitude maps).
 
 - 0.7.0 (precipitation) gaps, none blocking: the thresholds, binary morphology, `ObjectStatistics`, `regionProperties` and `arealDensity` are CPU
-  (Double or Float32 as the reference is) and not yet benchmarked against the Python (add rows to `docs/benchmarks.md` with the next audit);
+  (Double or Float32 as the reference is) and not yet benchmarked against the Python (rows for `docs/benchmarks.md` are open);
   `BinaryMorphology` refuses even structures and an all-false structure (SciPy shifts the origin and answers) and runs a per-pixel loop
   (fine at the 512² of a micrograph, slow for a 4096² mask: a bit-packed or separable path is the fix if an app asks); `Thresholding.yen`
   can differ from scikit-image on an image of more than 2^24 pixels whose last histogram bin is nearly empty (Float32 `P1` reaches 1 and
@@ -32,8 +32,8 @@ each with its cause as far as it is known (diagnose before changing a number).
   (`watershed`, `rolling_ball` and the Euclidean distance transform arrived in 0.8.0.)
 
 - Metal Float32 paths: FFT, then the separable filters; measure the break-even at 2048² to 8192² in the nightly review.
-- Study rows still missing (`docs/parity.md`): `ndimage.zoom` and `rotate`, `restoration.denoise_*`, `profile_line`
-  multichannel, `peak_local_max` with `footprint`/`labels`.
+- Study rows still missing (`docs/parity.md`): `profile_line` multichannel, `peak_local_max` with `footprint`/`labels`.
+  (`ndimage.zoom` and `rotate` and the TV and non-local-means denoisers arrived in 0.8.0.)
 - Spline shifts: `constant` and `wrap` modes at orders 2 to 5 (their coordinate rule is not ported; refused by name).
 - `window`: the 14 `get_window` families beyond the 11 ported (triang, parzen, bohman, barthann, cosine, exponential, taylor,
   lanczos, kaiser_bessel_derived, general_cosine, general_gaussian, general_hamming, dpss, chebwin).

@@ -12,8 +12,8 @@ Output per case (`uniform`, `bump`, `perfect`, `bump_oblique`): `<case>.npy` (th
 `_distortion.npy` (D, shape 2x2xrowsxcols), `_strain.npy`, `_rotation.npy`, and one `truth.json` with the reflections, the
 conventions, the interior margin and the measured error of a plain numpy GPA (`selfcheck`).
 
-## How the Mac session uses it
-1. Generate into a temporary folder; do not commit the `.npy` files (rule: generated files do not live in a repo). If a small
+## How the tests use it
+1. Generate into a temporary folder; do not commit the `.npy` files (generated files do not live in the repository). If a small
    case is wanted as a fixture, use `--size 128` and commit it in its own commit with the reason.
 2. The Swift test builds the same field from the formulas in the `planted.py` docstring (or loads the `.npy`) and compares
    inside the interior (`interior_margin_px`), never at the frame edge.
