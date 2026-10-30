@@ -45,3 +45,11 @@ Both directions are unnormalised; divide inverse output by the length for NumPy'
 - ``RadialChartScale``
 - ``SpectrumShape``
 - ``FFTUnits``
+- ``FFTMask``
+
+### Export
+
+- ``FFTExportHeader``
+- ``FFTExportText``
+- ``RadialProfileCSV``
+- ``SpotsCSV``
