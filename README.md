@@ -196,7 +196,7 @@ reference within its own tolerance; `docs/parity.md` lists each function, its st
 - iOS 18 builds but has never been run on a device or simulator; macOS 15 is declared but built and tested on macOS 27 only.
 - A first call of a vDSP 1D FFT or DFT size can differ by one Float32 ulp.
 - Float32 tolerances are claims on the planted and pinned cases, not proofs for every input.
-- Spline-order shifts refuse the `constant` and `wrap` modes; the masked registration returns the shift only, and a symmetric pair with exactly tied maxima is not reproducible (`docs/open-items.md`).
+- Zoom and rotate refuse the `wrap` mode at spline orders 2 to 5; the masked registration returns the shift only, and a symmetric pair with exactly tied maxima is not reproducible (`docs/open-items.md`).
 - No number is validated on a microscope; the HRTEM filters have never been compared with DigitalMicrograph.
 - Not yet checked on a raw (counts) HRTEM image; the available TIFFs are 8-bit renders.
 
