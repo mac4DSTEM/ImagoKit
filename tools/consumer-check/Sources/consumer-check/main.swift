@@ -317,6 +317,10 @@ check(abs(((try? WindowFunction.window2D(.hann, rows: 9, columns: 9))?[40] ?? 0)
 check((try? WindowFunction.window1D(.dpss(nw: 2.5), count: 9))?.max() == 1 && (try? WindowFunction.window1D(.taylor(), count: 9))?.count == 9
       && (try? WindowFunction.window1D(.kaiserBesselDerived(beta: 4), count: 7)) == nil, "public window families")
 let peakImage: [Float] = (0..<49).map { $0 == 24 ? 2 : ($0 == 10 ? 1 : 0) }
+let squareFootprint = try? PeakFootprint(rows: 3, columns: 3, mask: [Bool](repeating: true, count: 9))
+check(squareFootprint != nil && (try? PeakLocalMax.find(peakImage, rows: 7, columns: 7, footprint: squareFootprint,
+                              labels: [Int](repeating: 1, count: 49), numPeaksPerLabel: 1))?.map { [$0.row, $0.column] } == [[3, 3]],
+      "public peak_local_max with footprint and labels")
 check((try? PeakLocalMax.find(peakImage, rows: 7, columns: 7, minDistance: 1))?.map { [$0.row, $0.column] } == [[3, 3], [1, 3]],
       "public peak_local_max")
 check(SpotMeasurementError.noPower != SpotMeasurementError.nonFinite, "public noPower and nonFinite")
