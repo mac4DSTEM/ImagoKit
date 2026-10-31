@@ -32,7 +32,6 @@ each with its cause as far as it is known (diagnose before changing a number).
   (`watershed`, `rolling_ball` and the Euclidean distance transform arrived in 0.8.0.)
 
 - Metal Float32 paths: FFT, then the separable filters; measure the break-even at 2048² to 8192² in the nightly review.
-- Study row still missing (`docs/parity.md`): `peak_local_max` with `footprint`/`labels`.
   (`ndimage.zoom` and `rotate` and the TV and non-local-means denoisers arrived in 0.8.0.)
 - Spline shifts: `constant` and `wrap` modes at orders 2 to 5 (their coordinate rule is not ported; refused by name).
 - Masked registration: scikit-image's `xcorr == xcorr.max()` tie rule is reproducible only for a unique maximum (FFT length

@@ -32,6 +32,7 @@ the script that writes it. A regenerated fixture that changes is its own commit,
 | `gpa` | `planted.py` | planted lattices with known strain (see `tools/gpa/README.md`) |
 | `measure` | `pins.py`, `spline_pins.py` | histograms, line profiles, measurement |
 | `peaks` | `pins.py`, `inf_pins.py` | `peak_local_max` |
+| `peak-footprint-labels` | `pins.py` | `peak_local_max` with `footprint=`, `labels=` and `num_peaks_per_label` |
 | `precipitation` | `pins.py` | thresholds, binary morphology, `regionprops` |
 | `profile-multichannel` | `pins.py` | `profile_line` of a channel-last image |
 | `radialchart` | `pins.py` | radial-chart samples and marks |
