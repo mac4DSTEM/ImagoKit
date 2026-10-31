@@ -97,8 +97,8 @@ or with `-O` for the kit: the manifest carries no optimisation flags (a versione
 ## The first ten minutes
 
 A lattice image with two spots: its spectrum, its radial profile, both spacings and the angle between them, a Bragg filter
-on one spot, the HRTEM filters, the registration of a drifted copy, and the particles of a field (denoise, threshold,
-watershed). This program is compiled and run as it stands by `tools/readme-consumer` (every line
+on one spot, the HRTEM filters, the registration of a drifted copy, the particles of a field (denoise, threshold,
+watershed), its rolling-ball background and a binary opening, and the GPA strain of the lattice. This program is compiled and run as it stands by `tools/readme-consumer` (every line
 below is checked against that consumer's source in CI).
 
 ```swift
@@ -163,6 +163,18 @@ let seeds = try Segmentation.markers(peakRows: peaks.map(\.row), peakColumns: pe
 let particles = try Segmentation.watershed(image: smooth.map { -Double($0) }, markers: seeds, rows: n, columns: n,
                                            mask: foreground)
 print("particles:", Set(particles.filter { $0 > 0 }).count, "above Otsu's level", level)
+
+// The field's background by a rolling ball of radius 20 px, and the mask cleaned by a binary opening.
+let background = try RollingBall.background(image: blobs, rows: n, columns: n, radius: 20)
+let cleaned = try BinaryMorphology.opening(foreground, width: n, height: n)
+print("background at a corner:", background[0], "; mask pixels before and after the opening:",
+      foreground.filter { $0 }.count, cleaned.filter { $0 }.count)
+
+// GPA strain of the lattice image from its two strongest reflections (planted truth only; not validated on real data).
+let lattice = pixels.map(Double.init)
+let reflections = try GeometricPhaseAnalysis.findReflections(lattice, rows: n, columns: n)
+let strain = try GeometricPhaseAnalysis.analyze(lattice, rows: n, columns: n, g1: reflections.g1, g2: reflections.g2)
+print("GPA reflections:", reflections.g1, reflections.g2, "; strain at the centre:", strain.strainRR[n / 2 * n + n / 2])
 ```
 
 ## Checking it yourself
