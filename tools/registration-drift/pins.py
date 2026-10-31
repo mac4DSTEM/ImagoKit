@@ -14,7 +14,7 @@ Run from the repository root, in a virtual environment made from tools/requireme
      asserted to reproduce its shift.
   3. SciPy's `ndimage.shift` (orders 0 and 1, the seven modes) and `fourier_shift` on small images, a 12-frame drift stack
      (noisy and noise-free) with scikit-image's series against `.first`, `.mean` and `.previous`, and the aligned sums.
-  4. The committed subset (under 4 MB) goes to Tests/ImagoAlignmentTests/Fixtures/ with slice-2-pins.json (every file's
+  4. The committed subset (under 4 MB) goes to Tests/ImagoAlignmentTests/Fixtures/ with registration-drift-pins.json (every file's
      sha256, the versions); every case goes to .build/pins-full/alignment/ for tools/registration-drift/full-parity.sh.
 """
 import hashlib
@@ -610,7 +610,7 @@ def main():
     for name, (data, _) in out.files.items():
         with open(os.path.join(FULL, name), "wb") as f:
             f.write(data)
-    with open(os.path.join(FULL, "slice-2-pins.json"), "w") as f:
+    with open(os.path.join(FULL, "registration-drift-pins.json"), "w") as f:
         json.dump(manifest, f, indent=1)
     if os.path.exists(FIX):
         shutil.rmtree(FIX)
@@ -636,9 +636,9 @@ def main():
             f.write(data)
         files.append({"file": name, "sha256": hashlib.sha256(data).hexdigest(), "bytes": len(data)})
     committed_manifest["files"] = files
-    with open(os.path.join(FIX, "slice-2-pins.json"), "w") as f:
+    with open(os.path.join(FIX, "registration-drift-pins.json"), "w") as f:
         json.dump(committed_manifest, f, separators=(",", ":"))
-    total = sum(x["bytes"] for x in files) + os.path.getsize(os.path.join(FIX, "slice-2-pins.json"))
+    total = sum(x["bytes"] for x in files) + os.path.getsize(os.path.join(FIX, "registration-drift-pins.json"))
     full_total = sum(len(d) for d, _ in out.files.values())
     print("pins.py: committed %d files, %.2f MB of the 4 MB budget (%d of %d registration cases, %d of %d drift stacks); "
           "the full set, %.1f MB, is in .build/pins-full/alignment/"
