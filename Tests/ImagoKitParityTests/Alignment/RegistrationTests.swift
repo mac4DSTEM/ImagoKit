@@ -97,7 +97,7 @@ struct RegistrationAgainstOracle {
     }
 }
 
-@Suite("Planted shifts (section 4)")
+@Suite("Planted shifts within their truth band")
 struct PlantedShifts {
     static let gated = AlignmentPins.register.filter { $0.truth != nil && $0.truth_band != nil }
 

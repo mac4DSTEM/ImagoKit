@@ -9,7 +9,7 @@ Run from the repository root, in a virtual environment made from tools/requireme
      amorphous continuum of rms 15 band-limited to 0.4 cycles per pixel, so that a Fourier shift is exact) is shifted by
      known sub-pixel vectors (`fourier_shift`), noise sigma 0, 5, 20 is added, and scikit-image's `phase_cross_correlation`
      is run on the float32 pixels and on the same pixels widened to float64 (scikit-image computes in its input's
-     precision). Section 4's truths are checked in NumPy, or this script exits 1. The near-tie flags (the second largest
+     precision). Each shift is checked against its planted vector within its truth band, or this script exits 1. The near-tie flags (the second largest
      |CC| or |CC'| within 1e-12 / 1e-5 relative of the largest) are computed in NumPy from the oracle's own steps, which are
      asserted to reproduce its shift.
   3. SciPy's `ndimage.shift` (orders 0 and 1, the seven modes) and `fourier_shift` on small images, a 12-frame drift stack
@@ -47,7 +47,7 @@ DRIFT_SEED = 20261018
 SIGMAS = [0.0, 5.0, 20.0]
 UPSAMPLES = [1, 20, 100]
 TIE64, TIE32 = 1e-12, 1e-5
-TIE64_FACTOR, TIE32_FACTOR = 8.0, 4.0     # amendment 1: the near-tie rule scales with the measured noise of the arrays
+TIE64_FACTOR, TIE32_FACTOR = 8.0, 4.0     # the near-tie rule scales with the measured noise of the arrays
 # 24 truth vectors (row, column) in pixels: |s| from 0.14 to 40, half-pixel and near-midpoint (x.5) ones among them.
 VECTORS = [(0.1, -0.1), (0.3, 0.2), (-0.45, 0.45), (0.5, 0.5), (1.5, -2.5), (2.5, 3.5), (-0.5, 0.0), (0.0, 0.7),
            (0.7, -0.3), (3.25, -4.75), (5.1, 7.9), (-8.5, 6.5), (10.37, -12.62), (13.5, 0.5), (-17.25, 20.75),
@@ -55,7 +55,7 @@ VECTORS = [(0.1, -0.1), (0.3, 0.2), (-0.45, 0.45), (0.5, 0.5), (1.5, -2.5), (2.5
            (0.0, -40.0), (-27.5, 29.5)]
 # Which of them, at which noise, are committed: (image size, noise) -> vector indices. The 256 x 256 images are 256 kB each;
 # every vector at every noise is run in the full set. (A 128 x 128 plant was tried and not used: noise-free at u = 100 its
-# error reached 0.02 px, beyond section 4's 0.015, the roundoff bins above the band limit weighing twice as much.)
+# error reached 0.02 px, beyond the 0.015 px truth band, the roundoff bins above the band limit weighing twice as much.)
 COMMITTED_PLANTS = {(256, 0.0): [3, 9], (256, 5.0): [10], (256, 20.0): [20]}
 
 
@@ -335,7 +335,7 @@ def planted_cases(out, cases):
                     cases.append(c)
                     report.append((size, sigma, u, vi, err, band if gated else None))
                     if gated and err > band + 1e-9:
-                        fail("%s: |shift - truth| = %.4f beyond the band %.4f (section 4)" % (c["name"], err, band))
+                        fail("%s: |shift - truth| = %.4f beyond the truth band %.4f" % (c["name"], err, band))
     return report
 
 
@@ -515,7 +515,7 @@ def drift_pins(out, manifest, size_committed, size_full):
             if kind == "previous":
                 band = 0.05 * np.sqrt(np.maximum(k, 1))
             else:
-                band = np.full(n, 0.20 if kind == "mean" else 0.05)     # amendment 1: the mean reference smears the drift
+                band = np.full(n, 0.20 if kind == "mean" else 0.05)     # the mean reference smears the drift
             entry.setdefault("truth_error", {})[kind] = [float(v) for v in err.max(axis=1)]
             entry.setdefault("truth_band", {})[kind] = [float(v) for v in band]
             worst[kind] = float((err.max(axis=1) / band).max())
@@ -588,7 +588,7 @@ def main():
     fourier_pins(out, manifest)
     drift_pins(out, manifest, 96, 256)
 
-    # The planted-truth report (section 4): the measured worst errors.
+    # The planted-truth report: the measured worst errors.
     for size in (256, 128):
         for sigma in SIGMAS:
             for u in UPSAMPLES:
