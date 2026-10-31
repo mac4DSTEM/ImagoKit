@@ -114,6 +114,16 @@ private struct ExportPins: Decodable, Sendable {
         #expect(written == pins.spots.filter { $0.expected != nil }.count && written >= 8)
     }
 
+    /// The pinned sentences are the ones the application writes today: they name what each number is checked against and
+    /// carry no internal milestone id and promise nothing for a later one.
+    @Test func pinnedSentencesNameNoMilestone() throws {
+        let c = try ExportPins.load().constants
+        for sentence in [c.profileValidation, c.spotsValidation, c.lineage] {
+            #expect(sentence.range(of: #"V[0-9]+-[0-9]"#, options: .regularExpression) == nil, "\(sentence)")
+            #expect(!sentence.contains("until"), "\(sentence)")
+        }
+    }
+
     @Test func subjectAndNoFileWithoutBins() throws {
         #expect(FFTExportText.subject(crop: nil, imageWidth: 2048, imageHeight: 1024) == "the whole image, 2048 x 1024 px")
         #expect(FFTExportText.subject(crop: PixelCrop(row: 404, col: 812, height: 256, width: 256), imageWidth: 1, imageHeight: 1)
