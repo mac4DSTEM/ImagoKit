@@ -35,6 +35,7 @@ the script that writes it. A regenerated fixture that changes is its own commit,
 | `radialchart` | `pins.py` | radial-chart samples and marks |
 | `registration-drift` | `pins.py`, `full-parity.sh` | phase correlation, shifts, drift series and aligned sums; `full-parity.sh` runs the parity tests on the full case set |
 | `resampling` | `pins.py` | `ndimage.zoom` and `rotate` |
+| `rolling-ball-kernel-overflow` | `pins.py` | `rolling_ball(kernel=)` with a kernel value that overflows Float32 |
 | `rolling-ball-nansafe` | `pins.py` | `rolling_ball` with `nansafe=True` |
 | `segmentation` | `pins.py` | `measure.label` and the object moments (see "Not yet from the Python reference") |
 | `watershed-edt-rollingball` | `pins.py` | `distance_transform_edt`, `watershed`, `rolling_ball` |
