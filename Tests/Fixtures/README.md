@@ -7,8 +7,8 @@ Licence: every fixture is generated from this kit's own code and the pinned Pyth
 
 ## Frozen pins (generator retired)
 
-`ImagoFFTTests/Fixtures/slice-1a-pins.json`, `ImagoFiltersTests/Fixtures/slice-1b-pins.json` and the 24 planted inputs below
-(read through `slice-1a-pins.json`) were written by a generator that ran macTEM's parity harnesses from a commit whose
+`ImagoFFTTests/Fixtures/fft-spot-angle-pins.json`, `ImagoFiltersTests/Fixtures/hrtem-filter-pins.json` and the 24 planted inputs below
+(read through `fft-spot-angle-pins.json`) were written by a generator that ran macTEM's parity harnesses from a commit whose
 history was squashed, so it cannot run from a clone and was retired. The pins stay as they are: NumPy 2.5.4 values on
 planted lattices, with each file's sha256 in the manifest. A new or changed FFT, spot or HRTEM pin gets a new generator
 under `tools/` that reads the pinned Python reference only.
@@ -123,7 +123,7 @@ under `tools/` that reads the pinned Python reference only.
 | `ImagoAlignmentTests/Fixtures/size64x32-t0-ref.f32` | 8.0 KB | `tools/alignment/pins.py`, `tools/registration-drift/pins.py` (module only) |  |
 | `ImagoAlignmentTests/Fixtures/size64x32-t1-mov.f32` | 8.0 KB | `tools/alignment/pins.py`, `tools/registration-drift/pins.py` (module only) |  |
 | `ImagoAlignmentTests/Fixtures/size64x32-t1-ref.f32` | 8.0 KB | `tools/alignment/pins.py`, `tools/registration-drift/pins.py` (module only) |  |
-| `ImagoAlignmentTests/Fixtures/slice-2-pins.json` | 81.2 KB | `tools/registration-drift/full-parity.sh`, `tools/registration-drift/pins.py` |  |
+| `ImagoAlignmentTests/Fixtures/registration-drift-pins.json` | 81.2 KB | `tools/registration-drift/full-parity.sh`, `tools/registration-drift/pins.py` |  |
 | `ImagoAlignmentTests/Fixtures/spline-shift-pins.json` | 4.3 MB | `tools/alignment/pins.py` |  |
 | `ImagoCoreTests/Fixtures/colormap-pins.json` | 75.8 KB | `tools/colormap/pins.py` |  |
 | `ImagoCoreTests/Fixtures/csv-tidy-pins.json` | 82.8 KB | `tools/csvexport/pins.py` |  |
@@ -209,7 +209,7 @@ under `tools/` that reads the pinned Python reference only.
 | `ImagoFFTTests/Fixtures/fft/u125x243-uncal.pow.f64` | 237.3 KB | `tools/fftsurface/pins.py` |  |
 | `ImagoFFTTests/Fixtures/fft1d.json` | 133.3 KB | `tools/fft1d/pins.py` |  |
 | `ImagoFFTTests/Fixtures/radial-chart-pins.json` | 26.3 KB | `tools/radialchart/pins.py` |  |
-| `ImagoFFTTests/Fixtures/slice-1a-pins.json` | 40.6 KB | retired generator (frozen, see above) |  |
+| `ImagoFFTTests/Fixtures/fft-spot-angle-pins.json` | 40.6 KB | retired generator (frozen, see above) |  |
 | `ImagoFFTTests/Fixtures/spot/dc1000-128x128-k5.in.f32` | 64.0 KB | none found |  |
 | `ImagoFFTTests/Fixtures/spot/dc1000-256x128-k5.in.f32` | 128.0 KB | none found |  |
 | `ImagoFFTTests/Fixtures/spot/neighbour-3bins.in.f32` | 256.0 KB | `tools/csvexport/pins.py` (name prefix) |  |
@@ -261,5 +261,5 @@ under `tools/` that reads the pinned Python reference only.
 | `ImagoFiltersTests/Fixtures/hrtem/pct5-128.wiener.f64` | 128.0 KB | `tools/filters/pins.py`, `tools/peaks/inf_pins.py`, `tools/peaks/pins.py` +1 (module only) |  |
 | `ImagoFiltersTests/Fixtures/hrtem/pct5-128.wienermask.f64` | 128.0 KB | `tools/filters/pins.py`, `tools/peaks/inf_pins.py`, `tools/peaks/pins.py` +1 (module only) |  |
 | `ImagoFiltersTests/Fixtures/peak-inf-pins.json` | 8.8 KB | `tools/peaks/inf_pins.py` |  |
-| `ImagoFiltersTests/Fixtures/peak-pins.json` | 6.1 MB | `tools/peaks/pins.py` |  |
-| `ImagoFiltersTests/Fixtures/slice-1b-pins.json` | 5.0 KB | retired generator (frozen, see above) |  |
+| `ImagoFiltersTests/Fixtures/peak-pins.json` | 206.2 KB | `tools/peaks/pins.py` |  |
+| `ImagoFiltersTests/Fixtures/hrtem-filter-pins.json` | 5.0 KB | retired generator (frozen, see above) |  |

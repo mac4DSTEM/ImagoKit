@@ -190,7 +190,7 @@ def thresholds_and_morphology():
     structures = {f"rank{r}_conn{c}": {"rank": r, "connectivity": c, "structure": ints(ndi.generate_binary_structure(r, c)),
                                         "shape": [3] * r}
                   for r in (2, 3) for c in range(1, r + 1)}
-    out = {**meta(), "task": 32,
+    out = {**meta(),
            "note": "ndimage defaults: structure rank2/conn1 cross, border_value 0 (erosion eats the border). skimage.morphology.binary_*: cross, mode='ignore'. remove_small_objects max_size=N removes area <= N.",
            "grey": gr, "binary": mp, "structures": structures}
     (FIX / "threshold-morphology-pins.json").write_text(json.dumps(out))
@@ -248,7 +248,7 @@ def region_properties():
                          "centroid_weighted": floats(r.centroid_weighted)}
                         for r in measure.regionprops(lab, intensity_image=img)],
     }
-    out = {**meta(), "task": 33,
+    out = {**meta(),
            "note": "feret_diameter_max is the needle length (maximum caliper distance over the convex hull); axis_major_length is 4*sqrt(largest inertia eigenvalue), which is about 2/sqrt(3) times the length of a thin straight rod, so the two differ on every needle in the pins. Tolerance: skimage assert_allclose dtype defaults (rtol 1e-7); ints exact; scipy ndimage decimal 6.",
            "cases": ent, "intensity": intensity}
     (FIX / "regionprops-needle-pins.json").write_text(json.dumps(out))
