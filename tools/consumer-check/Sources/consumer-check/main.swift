@@ -344,6 +344,9 @@ check(SpectrumSymmetry(centreRow: 1, centreColumn: 1).oneOfEachMirrorPair, "publ
 // 0.8.0: distance transform, watershed, rolling ball, zoom and rotate, 1D real transforms, denoising, GPA strain.
 let edt = try DistanceTransform.euclidean(foreground: [false, true, true, true, false], rows: 1, columns: 5, sampling: (1, 2))
 check(edt == [0, 2, 4, 2, 0], "public distance transform with sampling, got \(edt)")
+let nearest = try DistanceTransform.euclideanWithIndices(foreground: [false, true, true, true, false], rows: 1, columns: 5)
+check(nearest.nearestColumns == [0, 0, 0, 4, 4] && nearest.nearestRows == [0, 0, 0, 0, 0] && nearest.distances == [0, 1, 2, 1, 0],
+      "public distance transform indices: the tie goes to the first background pixel")
 let seeds = try Segmentation.markers(peakRows: [0, 0], peakColumns: [0, 5], rows: 1, columns: 6)
 check(seeds == [1, 0, 0, 0, 0, 2], "public watershed markers from peaks")
 check((try? Segmentation.watershed(image: [0, 1, 2, 2, 1, 0], markers: seeds, rows: 1, columns: 6)) == [1, 1, 1, 2, 2, 2],
