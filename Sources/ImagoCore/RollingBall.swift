@@ -122,18 +122,18 @@ public nonisolated enum RollingBall {
         let centre = S(kernel.values[centreR * kernel.columns + centreC])
         // Offsets D = K(centre) - K in the image's type. Without nanSafe the infinite cells are dropped (they would add +infinity);
         // with it every cell stays and K = +infinity gives D = +infinity, as scikit-image's `intensity_difference[kernel == inf] = inf`.
+        // Both paths test the kernel after its conversion, as scikit-image does: a Double that overflows Float becomes +-infinity.
         var cells: [(dr: Int, dc: Int, d: S)] = []
         for r in 0..<kernel.rows {
             for c in 0..<kernel.columns {
-                let k = kernel.values[r * kernel.columns + c]
+                let ks = S(kernel.values[r * kernel.columns + c])
                 if nanSafe {
-                    // Tested after the conversion, as scikit-image does: a Double that overflows Float becomes +infinity.
-                    let ks = S(k)
                     cells.append((r - centreR, c - centreC, ks == .infinity ? .infinity : centre - ks))
                     continue
                 }
-                if k.isInfinite { continue }
-                cells.append((r - centreR, c - centreC, centre - S(k)))
+                // K = -infinity gives D = +infinity in scikit-image, which never wins the minimum: dropped with +infinity.
+                if ks.isInfinite { continue }
+                cells.append((r - centreR, c - centreC, centre - ks))
             }
         }
         return nanSafe ? scanNaNSafe(image, width, height, cells) : scan(image, width, height, cells)
