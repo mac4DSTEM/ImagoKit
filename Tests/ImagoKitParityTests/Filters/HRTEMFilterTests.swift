@@ -1,5 +1,5 @@
 // The HRTEM filters against a float64 NumPy/SciPy reading of the same steps, with that reading's checks. The pins in
-// Fixtures/slice-1b-pins.json are frozen: their generator read macTEM's parity harness from a commit whose history was
+// Fixtures/hrtem-filter-pins.json are frozen: their generator read macTEM's parity harness from a commit whose history was
 // squashed, so it was retired.
 import Foundation
 import ImagoKitTestSupport
@@ -36,7 +36,7 @@ enum HRTEMPins {
         if let full {
             return try! JSONDecoder().decode(Harness.self, from: Data(contentsOf: full.appendingPathComponent("manifest.json"))).cases
         }
-        return try! JSONDecoder().decode(File.self, from: Data(contentsOf: fixtures.appendingPathComponent("slice-1b-pins.json"))).hrtem
+        return try! JSONDecoder().decode(File.self, from: Data(contentsOf: fixtures.appendingPathComponent("hrtem-filter-pins.json"))).hrtem
     }()
     static func doubles(_ name: String) -> [Double] {
         try! Data(contentsOf: folder.appendingPathComponent(name)).withUnsafeBytes { Array($0.bindMemory(to: Double.self)) }

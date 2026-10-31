@@ -24,7 +24,7 @@ public nonisolated enum ProfileCSV {
     }
 
     /// The default `# lineage:` sentence (marks carry no lineage id).
-    public static let noLineage = "none — marks carry no lineage id until V1-2; the mark's parameters above stand in"
+    public static let noLineage = "none — marks carry no lineage id; the mark's parameters above stand in"
 
     /// The whole text; nil when the profile has no samples.
     ///

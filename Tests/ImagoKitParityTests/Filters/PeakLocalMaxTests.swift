@@ -11,11 +11,30 @@ struct PeakPin: Decodable, Sendable, CustomStringConvertible {
     let threshold_abs, threshold_rel: Double?; let border: [Int]?; let num_peaks: Int?; let p_norm: Double?
     let peaks: [[Int]]
     var description: String { "\(h)x\(w) \(dtype) d\(min_distance) abs\(String(describing: threshold_abs)) rel\(String(describing: threshold_rel)) border\(String(describing: border)) n\(String(describing: num_peaks)) p\(String(describing: p_norm))" }
+    /// The fixture stores each source image once, in Float64; a case names it by index. A float32 case runs on
+    /// `Float(value)`, as the generator's `astype(np.float32)` (both round to nearest, ties to even).
     static let all: [PeakPin] = {
-        struct File: Decodable { let cases: [PeakPin] }
+        struct Image: Decodable { let h, w: Int; let x: [Double] }
+        struct Case: Decodable {
+            let image: Int; let dtype: String; let min_distance: Int
+            let threshold_abs, threshold_rel: Double?; let border: [Int]?; let num_peaks: Int?; let p_norm: Double?
+            let peaks: [[Int]]
+        }
+        struct File: Decodable { let images: [Image]; let cases: [Case] }
         let url = FixtureDirs.fixtures(of: "ImagoFiltersTests").appendingPathComponent("peak-pins.json")
-        return try! JSONDecoder().decode(File.self, from: Data(contentsOf: url)).cases
+        let file = try! JSONDecoder().decode(File.self, from: Data(contentsOf: url))
+        return file.cases.map { c in
+            let image = file.images[c.image]
+            return PeakPin(h: image.h, w: image.w, dtype: c.dtype, x: image.x, min_distance: c.min_distance,
+                           threshold_abs: c.threshold_abs, threshold_rel: c.threshold_rel, border: c.border,
+                           num_peaks: c.num_peaks, p_norm: c.p_norm, peaks: c.peaks)
+        }
     }()
+}
+
+@Test func peakPinsHoldEveryCase() {
+    #expect(PeakPin.all.count == 166)
+    #expect(PeakPin.all.filter { $0.dtype == "float32" }.count == 83)
 }
 
 @Test(arguments: PeakPin.all)
