@@ -38,6 +38,7 @@ the script that writes it. A regenerated fixture that changes is its own commit,
 | `rolling-ball-nansafe` | `pins.py` | `rolling_ball` with `nansafe=True` |
 | `segmentation` | `pins.py` | `measure.label` and the object moments (see "Not yet from the Python reference") |
 | `watershed-edt-rollingball` | `pins.py` | `distance_transform_edt`, `watershed`, `rolling_ball` |
+| `window-families` | `pins.py` | the 14 further `get_window` families and their 2D `window` |
 
 The FFT, spot, angle and HRTEM-filter pins (`fft-spot-angle-pins.json`, `hrtem-filter-pins.json` and their inputs) are frozen: their
 generator could not run from a clone and was retired (`Tests/Fixtures/README.md`).

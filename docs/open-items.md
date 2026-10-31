@@ -35,8 +35,6 @@ each with its cause as far as it is known (diagnose before changing a number).
 - Study rows still missing (`docs/parity.md`): `profile_line` multichannel, `peak_local_max` with `footprint`/`labels`.
   (`ndimage.zoom` and `rotate` and the TV and non-local-means denoisers arrived in 0.8.0.)
 - Spline shifts: `constant` and `wrap` modes at orders 2 to 5 (their coordinate rule is not ported; refused by name).
-- `window`: the 14 `get_window` families beyond the 11 ported (triang, parzen, bohman, barthann, cosine, exponential, taylor,
-  lanczos, kaiser_bessel_derived, general_cosine, general_gaussian, general_hamming, dpss, chebwin).
 - Masked registration: scikit-image's `xcorr == xcorr.max()` tie rule is reproducible only for a unique maximum (FFT length
   differs from SciPy's fast length); symmetric pairs decide on rounding noise (the kit's fast length is the next 7-smooth length, SciPy's also allows 11).
 - `butterworth` with `channel_axis` and `difference_of_gaussians` with `channel_axis` (multichannel images).
