@@ -37,4 +37,3 @@ each with its cause as far as it is known (diagnose before changing a number).
 - Spline shifts: `constant` and `wrap` modes at orders 2 to 5 (their coordinate rule is not ported; refused by name).
 - Masked registration: scikit-image's `xcorr == xcorr.max()` tie rule is reproducible only for a unique maximum (FFT length
   differs from SciPy's fast length); symmetric pairs decide on rounding noise (the kit's fast length is the next 7-smooth length, SciPy's also allows 11).
-- `butterworth` with `channel_axis` and `difference_of_gaussians` with `channel_axis` (multichannel images).

@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-only
 //
 //  Bandpass.swift (ImagoFilters)
-//  scikit-image 0.26.0's `filters.difference_of_gaussians` and `filters.butterworth` for one real 2D image.
+//  scikit-image 0.26.0's `filters.difference_of_gaussians` and `filters.butterworth` for a real 2D image, single-channel or
+//  channel-last multichannel (`channel_axis=-1`).
 //
 //  difference_of_gaussians: `gaussian(low) − gaussian(high)` with `mode='nearest'`, `truncate=4.0`, high = 1.6 · low when not
 //  given (both subtractions in the image's precision, as NumPy does for float32). butterworth: the Fourier-domain mask
@@ -16,14 +17,21 @@ import ImagoCore
 public nonisolated enum BandpassFilters {
     /// `skimage.filters.difference_of_gaussians(image, low_sigma, high_sigma, mode='nearest', cval=0, truncate=4.0)`.
     /// `highSigma` defaults to 1.6 × `lowSigma` per axis; a high sigma below the low sigma on an axis is refused.
+    /// `channels` above 1 reads `a` channel-last, as `channel_axis=-1`, and filters each channel alone.
     @_specialize(where S == Float)
     @_specialize(where S == Double)
     public static func differenceOfGaussians<S: BinaryFloatingPoint & Sendable>(
-        _ a: [S], rows: Int, columns: Int, lowSigma: (row: Double, column: Double),
+        _ a: [S], rows: Int, columns: Int, channels: Int = 1, lowSigma: (row: Double, column: Double),
         highSigma: (row: Double, column: Double)? = nil, mode: BoundaryMode = .nearest, cval: Double = 0, truncate: Double = 4
     ) throws -> [S] {
         let high = highSigma ?? (lowSigma.row * 1.6, lowSigma.column * 1.6)
         guard high.row >= lowSigma.row, high.column >= lowSigma.column else { throw FilterError.sigmaOrder }
+        if channels != 1 {
+            return try perChannel(a, rows: rows, columns: columns, channels: channels) {
+                try differenceOfGaussians($0, rows: rows, columns: columns, lowSigma: lowSigma, highSigma: high, mode: mode,
+                                          cval: cval, truncate: truncate)
+            }
+        }
         let one = try SeparableFilters.gaussianFilter(a, rows: rows, columns: columns, sigma: lowSigma, truncate: truncate, mode: mode, cval: cval)
         let two = try SeparableFilters.gaussianFilter(a, rows: rows, columns: columns, sigma: high, truncate: truncate, mode: mode, cval: cval)
         return zip(one, two).map { $0 - $1 }
@@ -31,19 +39,46 @@ public nonisolated enum BandpassFilters {
 
     /// `skimage.filters.butterworth(image, cutoff_frequency_ratio, high_pass, order, squared_butterworth=, npad=)` of a real image.
     /// `cutoffFrequencyRatio` is in (0, 0.5]; 0, which scikit-image accepts and answers NaN to, is refused.
-    public static func butterworth(_ a: [Double], rows: Int, columns: Int, cutoffFrequencyRatio: Double = 0.005,
+    /// `channels` above 1 reads `a` channel-last, as `channel_axis=-1`, and filters each channel alone.
+    public static func butterworth(_ a: [Double], rows: Int, columns: Int, channels: Int = 1, cutoffFrequencyRatio: Double = 0.005,
                                    highPass: Bool = true, order: Double = 2, squaredButterworth: Bool = true,
                                    npad: Int = 0) throws -> [Double] {
-        try butterworthCore(a, rows: rows, columns: columns, cutoff: cutoffFrequencyRatio, highPass: highPass, order: order,
-                            squared: squaredButterworth, npad: npad)
+        try perChannel(a, rows: rows, columns: columns, channels: channels) {
+            try butterworthCore($0, rows: rows, columns: columns, cutoff: cutoffFrequencyRatio, highPass: highPass, order: order,
+                                squared: squaredButterworth, npad: npad)
+        }
     }
 
-    /// The Float32 path (scikit-image on a float32 image: mask and transforms in single precision).
-    public static func butterworth(_ a: [Float], rows: Int, columns: Int, cutoffFrequencyRatio: Double = 0.005,
+    /// The Float32 path (scikit-image on a float32 image: mask and transforms in single precision); `channels` as above.
+    public static func butterworth(_ a: [Float], rows: Int, columns: Int, channels: Int = 1, cutoffFrequencyRatio: Double = 0.005,
                                    highPass: Bool = true, order: Double = 2, squaredButterworth: Bool = true,
                                    npad: Int = 0) throws -> [Float] {
-        try butterworthCore(a, rows: rows, columns: columns, cutoff: cutoffFrequencyRatio, highPass: highPass, order: order,
-                            squared: squaredButterworth, npad: npad)
+        try perChannel(a, rows: rows, columns: columns, channels: channels) {
+            try butterworthCore($0, rows: rows, columns: columns, cutoff: cutoffFrequencyRatio, highPass: highPass, order: order,
+                                squared: squaredButterworth, npad: npad)
+        }
+    }
+
+    /// A channel-last image (`a[(row · columns + column) · channels + k]`, scikit-image's `channel_axis=-1`) filtered one
+    /// channel at a time: scikit-image filters only the spatial axes (`butterworth` broadcasts its mask over the channels, and
+    /// the `npad` it adds to the channel axis is cropped away; `difference_of_gaussians` has sigma 0 there). One channel passes
+    /// straight through.
+    private static func perChannel<S>(_ a: [S], rows: Int, columns: Int, channels: Int,
+                                      _ filter: ([S]) throws -> [S]) throws -> [S] {
+        if channels == 1 { return try filter(a) }
+        guard channels > 1, rows > 0, columns > 0, rows <= Int.max / columns, rows * columns <= Int.max / channels,
+              a.count == rows * columns * channels else { throw FilterError.shape }
+        let n = rows * columns
+        var out = a
+        var plane = [S]()
+        plane.reserveCapacity(n)
+        for k in 0..<channels {
+            plane.removeAll(keepingCapacity: true)
+            for i in 0..<n { plane.append(a[i * channels + k]) }
+            let filtered = try filter(plane)
+            for i in 0..<n { out[i * channels + k] = filtered[i] }
+        }
+        return out
     }
 
     /// q² at every ifftshifted bin: (Σ_axis (index / (n · factor))²) with scikit-image's index range −(n−1)//2 … (n−1)//2 (floored).

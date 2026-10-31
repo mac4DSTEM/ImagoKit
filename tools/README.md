@@ -20,6 +20,7 @@ the script that writes it. A regenerated fixture that changes is its own commit,
 | Folder | Script | What it pins |
 |---|---|---|
 | `alignment` | `pins.py` | spline-order shifts and masked phase correlation |
+| `bandpass-channels` | `pins.py` | `butterworth` and `difference_of_gaussians` with `channel_axis` |
 | `colormap` | `pins.py` | the four display colour tables and the sampler |
 | `csvexport` | `pins.py` | the radial-profile, spots and tidy-results CSV text (see "Not yet from the Python reference") |
 | `denoise` | `pins.py` | TV (Chambolle, Bregman) and non-local-means denoising |

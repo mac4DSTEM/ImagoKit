@@ -309,6 +309,8 @@ check((try? SeparableFilters.gaussianFilter([Float](repeating: 5, count: 20), ro
     .allSatisfy { abs($0 - 5) < 1e-5 } == true, "public Gaussian filter keeps a constant")
 check((try? BandpassFilters.butterworth([Double](repeating: 3, count: 64), rows: 8, columns: 8, cutoffFrequencyRatio: 0.2, highPass: true))?
     .allSatisfy { abs($0) < 1e-12 } == true, "public high-pass Butterworth removes a constant")
+check((try? BandpassFilters.butterworth([Double](repeating: 3, count: 192), rows: 8, columns: 8, channels: 3, cutoffFrequencyRatio: 0.2,
+                                        highPass: true))?.allSatisfy { abs($0) < 1e-12 } == true, "public multichannel Butterworth")
 check(abs(((try? WindowFunction.window2D(.hann, rows: 9, columns: 9))?[40] ?? 0) - 1) < 1e-12, "public window")
 check((try? WindowFunction.window1D(.dpss(nw: 2.5), count: 9))?.max() == 1 && (try? WindowFunction.window1D(.taylor(), count: 9))?.count == 9
       && (try? WindowFunction.window1D(.kaiserBesselDerived(beta: 4), count: 7)) == nil, "public window families")
