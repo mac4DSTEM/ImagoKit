@@ -41,6 +41,7 @@ the script that writes it. A regenerated fixture that changes is its own commit,
 | `resampling` | `pins.py` | `ndimage.zoom` and `rotate` |
 | `rolling-ball-kernel-overflow` | `pins.py` | `rolling_ball(kernel=)` with a kernel value that overflows Float32 |
 | `rolling-ball-nansafe` | `pins.py` | `rolling_ball` with `nansafe=True` |
+| `spline-shift-modes` | `pins.py` | `ndimage.shift` in `constant` and `wrap` modes at orders 2 to 5 |
 | `segmentation` | `pins.py` | `measure.label` and the object moments (see "Not yet from the Python reference") |
 | `watershed-compact` | `pins.py` | `watershed` with `compactness` and `watershed_line` |
 | `watershed-edt-rollingball` | `pins.py` | `distance_transform_edt`, `watershed`, `rolling_ball` |

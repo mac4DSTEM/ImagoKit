@@ -329,6 +329,8 @@ check((try? SpotMeasurement.measure(try Micrograph(width: 16, height: 16, pixels
 let squareImage = try Micrograph(width: 8, height: 8, pixels: (0..<64).map { Float((abs(sin(Double($0) * 12.9898) * 43758.5453)).truncatingRemainder(dividingBy: 1)) })
 check((try? ImageShift.shift(squareImage, by: .zero, order: .cubic, mode: .mirror))?.pixels.enumerated()
     .allSatisfy { abs($0.element - squareImage.pixels[$0.offset]) < 1e-4 } == true, "public cubic shift by zero")
+check((try? ImageShift.shift(squareImage, by: PixelShift(row: 100, column: 0), order: .cubic, mode: .constant, cval: 3))?.pixels
+    .allSatisfy { $0 == 3 } == true, "public cubic constant-mode shift off the image gives cval")
 let maskAll = [Bool](repeating: true, count: 64)
 check((try? PhaseCorrelation.registerMasked(reference: squareImage, moving: squareImage, referenceMask: maskAll))
     == PixelShift(row: 0, column: 0), "public masked registration of an image with itself")

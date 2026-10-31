@@ -33,6 +33,7 @@ each with its cause as far as it is known (diagnose before changing a number).
 
 - Metal Float32 paths: FFT, then the separable filters; measure the break-even at 2048² to 8192² in the nightly review.
   (`ndimage.zoom` and `rotate` and the TV and non-local-means denoisers arrived in 0.8.0.)
-- Spline shifts: `constant` and `wrap` modes at orders 2 to 5 (their coordinate rule is not ported; refused by name).
+- `zoom` and `rotate` with `wrap` at spline orders 2 to 5 (refused by name). The shifts measured the rule (prefilter and
+  taps as `mirror`, the coordinate mapped with period n − 1); the resampling coordinate path has not been checked against it.
 - Masked registration: scikit-image's `xcorr == xcorr.max()` tie rule is reproducible only for a unique maximum (FFT length
   differs from SciPy's fast length); symmetric pairs decide on rounding noise (the kit's fast length is the next 7-smooth length, SciPy's also allows 11).
