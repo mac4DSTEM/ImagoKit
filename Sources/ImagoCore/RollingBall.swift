@@ -7,7 +7,9 @@
 //  METHOD, as scikit-image: the kernel's surface heights K (+infinity outside the ball) become offsets D = K(centre) - K (infinity
 //  stays infinity); the image is padded with +infinity by the kernel's half size; the background at a pixel is the minimum over the
 //  kernel cells of (padded image + D). Computed in the image's own type (Double or Float; the kernel is built in Double and
-//  converted, as scikit-image does with `kernel.astype(float_type)`). Results are held to `assert_allclose` dtype defaults.
+//  converted, as scikit-image does with `kernel.astype(float_type)`). A narrower type (Float16) is promoted to Float, computed
+//  there and the background cast back, as scikit-image does through `_supported_float_type` and `astype(image.dtype)`. Results are
+//  held to `assert_allclose` dtype defaults; Float16 exact against the pins (one rounding of the same Float minimum).
 //
 //  `nanSafe` is scikit-image's `nansafe=True` (`apply_kernel_nan`): every kernel cell is visited, the ones outside the ball (D =
 //  +infinity) and the padding (+infinity) included, and the background is NaN as soon as one (padded image + D) is NaN. So a NaN
@@ -87,6 +89,9 @@ public nonisolated enum RollingBall {
     /// ball or not, holds a NaN.
     public static func background<S: BinaryFloatingPoint & Sendable>(image: [S], rows height: Int, columns width: Int, radius: Double,
                                                                      nanSafe: Bool = false) throws -> [S] {
+        if let promoted = try inFloat(image, { try background(image: $0, rows: height, columns: width, radius: radius, nanSafe: nanSafe) }) {
+            return promoted
+        }
         guard radius.isFinite, radius >= 0 else { throw RestorationError.parameter("radius must be finite and not negative") }
         if radius <= maximumRadius {
             return try background(image: image, rows: height, columns: width, kernel: ballKernel(radius: radius), nanSafe: nanSafe)
@@ -115,6 +120,9 @@ public nonisolated enum RollingBall {
     /// value makes the whole background NaN.
     public static func background<S: BinaryFloatingPoint & Sendable>(image: [S], rows height: Int, columns width: Int, kernel: Kernel,
                                                                      nanSafe: Bool = false) throws -> [S] {
+        if let promoted = try inFloat(image, { try background(image: $0, rows: height, columns: width, kernel: kernel, nanSafe: nanSafe) }) {
+            return promoted
+        }
         let (n, overflow) = width.multipliedReportingOverflow(by: height)
         guard width > 0, height > 0, !overflow, image.count == n else { throw RestorationError.shape }
         guard nanSafe || !image.contains(where: \.isNaN) else { throw RestorationError.nonFinite }
@@ -137,6 +145,14 @@ public nonisolated enum RollingBall {
             }
         }
         return nanSafe ? scanNaNSafe(image, width, height, cells) : scan(image, width, height, cells)
+    }
+
+    /// scikit-image's `_supported_float_type`: a type narrower than Float (Float16) is computed in Float and the background cast
+    /// back to the image type, as `background.astype(image.dtype)`. Nil for Float and Double, and for a wider type (Float80 on
+    /// x86_64), which is computed natively where scikit-image would compute a longdouble in float64.
+    private static func inFloat<S: BinaryFloatingPoint>(_ image: [S], _ compute: ([Float]) throws -> [Float]) rethrows -> [S]? {
+        guard S.significandBitCount < Float.significandBitCount || S.exponentBitCount < Float.exponentBitCount else { return nil }
+        return try compute(image.map { Float($0) }).map { S($0) }
     }
 
     /// `apply_kernel_nan`: the minimum of (padded image + D) over every cell, NaN as soon as one sum is NaN; outside the image the
