@@ -317,6 +317,10 @@ check(abs(((try? WindowFunction.window2D(.hann, rows: 9, columns: 9))?[40] ?? 0)
 check((try? WindowFunction.window1D(.dpss(nw: 2.5), count: 9))?.max() == 1 && (try? WindowFunction.window1D(.taylor(), count: 9))?.count == 9
       && (try? WindowFunction.window1D(.kaiserBesselDerived(beta: 4), count: 7)) == nil, "public window families")
 let peakImage: [Float] = (0..<49).map { $0 == 24 ? 2 : ($0 == 10 ? 1 : 0) }
+let squareFootprint = try? PeakFootprint(rows: 3, columns: 3, mask: [Bool](repeating: true, count: 9))
+check(squareFootprint != nil && (try? PeakLocalMax.find(peakImage, rows: 7, columns: 7, footprint: squareFootprint,
+                              labels: [Int](repeating: 1, count: 49), numPeaksPerLabel: 1))?.map { [$0.row, $0.column] } == [[3, 3]],
+      "public peak_local_max with footprint and labels")
 check((try? PeakLocalMax.find(peakImage, rows: 7, columns: 7, minDistance: 1))?.map { [$0.row, $0.column] } == [[3, 3], [1, 3]],
       "public peak_local_max")
 check(SpotMeasurementError.noPower != SpotMeasurementError.nonFinite, "public noPower and nonFinite")
@@ -325,6 +329,8 @@ check((try? SpotMeasurement.measure(try Micrograph(width: 16, height: 16, pixels
 let squareImage = try Micrograph(width: 8, height: 8, pixels: (0..<64).map { Float((abs(sin(Double($0) * 12.9898) * 43758.5453)).truncatingRemainder(dividingBy: 1)) })
 check((try? ImageShift.shift(squareImage, by: .zero, order: .cubic, mode: .mirror))?.pixels.enumerated()
     .allSatisfy { abs($0.element - squareImage.pixels[$0.offset]) < 1e-4 } == true, "public cubic shift by zero")
+check((try? ImageShift.shift(squareImage, by: PixelShift(row: 100, column: 0), order: .cubic, mode: .constant, cval: 3))?.pixels
+    .allSatisfy { $0 == 3 } == true, "public cubic constant-mode shift off the image gives cval")
 let maskAll = [Bool](repeating: true, count: 64)
 check((try? PhaseCorrelation.registerMasked(reference: squareImage, moving: squareImage, referenceMask: maskAll))
     == PixelShift(row: 0, column: 0), "public masked registration of an image with itself")

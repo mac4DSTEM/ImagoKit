@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 //
 //  ImageShift.swift (ImagoAlignment)
-//  A shifted copy of an image: SciPy 1.18.1's `ndimage.shift` of order 0 and 1 in its seven boundary modes, and the exact
+//  A shifted copy of an image: SciPy 1.18.1's `ndimage.shift` of orders 0 to 5 in its seven boundary modes, and the exact
 //  shift of a periodic image, `ifft2(fourier_shift(fft2(x), s)).real`.
 //
 //  THE COORDINATE: output pixel (i, j) takes the input at (i − s_row, j − s_col), mapped into the image by the mode (a
@@ -84,17 +84,31 @@ public nonisolated enum ImageShift {
         case .reflect: boundary = .reflect
         case .mirror: boundary = .mirror
         case .gridWrap: boundary = .gridWrap
-        case .constant, .wrap: throw AlignmentError.splineMode(mode)
+        // SciPy prefilters "constant" and "wrap" as "mirror" and folds a tap beyond the edge as "mirror" does; only the
+        // coordinate differs: "constant" gives `cval` for a coordinate outside [0, n − 1] on either axis, "wrap" first maps
+        // it with period n − 1 (measured against SciPy 1.18.1 at orders 2 to 5, tools/spline-shift-modes/pins.py).
+        case .constant, .wrap: boundary = .mirror
         }
         let w = image.width, h = image.height
         let field = LineProfile.SplineField(image, order: order.rawValue, boundary: boundary, cval: cval)
-        var out = [Float](repeating: 0, count: w * h)
-        // The taps of an axis depend on that axis's coordinate alone: built once per row and per column.
-        let rowTaps = (0..<h).map { field.taps(Double($0) - shift.row, field.rows) }
-        let columnTaps = (0..<w).map { field.taps(Double($0) - shift.column, field.cols) }
-        for r in 0..<h { for c in 0..<w {
-            out[r * w + c] = Float(field.value(rowTaps: rowTaps[r], columnTaps: columnTaps[c], cval: cval))
-        } }
+        var out = [Float](repeating: Float(cval), count: w * h)
+        // The taps of an axis depend on that axis's coordinate alone: built once per row and per column (nil: cval).
+        func axisTaps(_ x: Double, _ n: Int) -> (indices: [Int], weights: [Double])? {
+            switch mode {
+            case .constant: return x < 0 || x > Double(n - 1) ? nil : field.taps(x, n)
+            case .wrap: return field.taps(mapped(x, n, .wrap), n)
+            default: return field.taps(x, n)
+            }
+        }
+        let rowTaps = (0..<h).map { axisTaps(Double($0) - shift.row, field.rows) }
+        let columnTaps = (0..<w).map { axisTaps(Double($0) - shift.column, field.cols) }
+        for r in 0..<h {
+            guard let rt = rowTaps[r] else { continue }
+            for c in 0..<w {
+                guard let ct = columnTaps[c] else { continue }
+                out[r * w + c] = Float(field.value(rowTaps: rt, columnTaps: ct, cval: cval))
+            }
+        }
         return out
     }
 

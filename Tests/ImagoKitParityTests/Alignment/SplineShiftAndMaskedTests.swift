@@ -17,6 +17,11 @@ struct SplineShiftPin: Decodable, Sendable, CustomStringConvertible {
         let url = FixtureDirs.fixtures(of: "ImagoAlignmentTests").appendingPathComponent("spline-shift-pins.json")
         return try! JSONDecoder().decode(File.self, from: Data(contentsOf: url)).cases
     }()
+    static let modes: [SplineShiftPin] = {
+        struct File: Decodable { let cases: [SplineShiftPin] }
+        let url = FixtureDirs.fixtures(of: "ImagoAlignmentTests").appendingPathComponent("spline-shift-mode-pins.json")
+        return try! JSONDecoder().decode(File.self, from: Data(contentsOf: url)).cases
+    }()
 }
 
 struct MaskedPin: Decodable, Sendable, CustomStringConvertible {
@@ -45,13 +50,10 @@ func splineShiftMatchesSciPy(_ c: SplineShiftPin) throws {
     }
 }
 
-@Test func splineOrdersRefuseTheModesNotPorted() throws {
-    let image = try Micrograph(width: 4, height: 4, pixels: (0..<16).map(Float.init), x: nil, y: nil)
-    for mode in [ShiftMode.constant, .wrap] {
-        #expect(throws: AlignmentError.splineMode(mode)) {
-            try ImageShift.shift(image, by: PixelShift(row: 0.5, column: 0.5), order: .cubic, mode: mode)
-        }
-    }
+/// "constant" and "wrap" at orders 2 to 5 (tools/spline-shift-modes/pins.py), held to the same decimal 6.
+@Test(arguments: SplineShiftPin.modes)
+func splineShiftInConstantAndWrapModesMatchesSciPy(_ c: SplineShiftPin) throws {
+    try splineShiftMatchesSciPy(c)
 }
 
 @Test func splineShiftByZeroIsTheIdentity() throws {

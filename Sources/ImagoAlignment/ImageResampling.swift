@@ -3,7 +3,7 @@
 //  ImageResampling.swift (ImagoAlignment)
 //  SciPy 1.18.1's `ndimage.zoom` and `ndimage.rotate` on a 2D image, on the kit's spline machinery (the B-spline prefilter and
 //  taps of `ndimage.shift`): orders 0 to 5, modes `constant` (SciPy's default), `grid-constant`, `nearest`, `reflect`, `mirror` and
-//  `grid-wrap` (`wrap` for orders 0 and 1 only: its spline coordinate rule is not ported, `AlignmentError.splineMode`).
+//  `grid-wrap` (`wrap` for orders 0 and 1 only: its spline rule is ported for shifts but not checked here, `AlignmentError.splineMode`).
 //
 //  ZOOM. The output has `round(n * zoom)` pixels per axis (Python's round: half to even). Output index k reads the input at
 //  k * (n - 1) / (m - 1) (the corners of the first and last pixel coincide; `gridMode` false, SciPy's default) or at

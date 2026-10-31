@@ -70,8 +70,8 @@ public nonisolated enum ShiftOrder: Int, Sendable, Equatable, Hashable, CaseIter
     case nearest = 0
     /// Bilinear on the four neighbours.
     case linear = 1
-    /// B-spline of degree 2 to 5 (SciPy's prefilter, `prefilter=True`); modes `gridConstant`, `nearest`, `reflect`, `mirror`
-    /// and `gridWrap` only (`AlignmentError.splineMode` for `constant` and `wrap`).
+    /// B-spline of degree 2 to 5 (SciPy's prefilter, `prefilter=True`), in every mode for a shift; `ImageResampling` refuses
+    /// `wrap` at these orders (`AlignmentError.splineMode`).
     case quadratic = 2, cubic = 3, quartic = 4, quintic = 5
 }
 
@@ -130,7 +130,7 @@ public nonisolated enum AlignmentError: Error, Equatable, Sendable, LocalizedErr
     case shiftCount(expected: Int, actual: Int)
     /// The Fourier transform of a `width × height` image could not be set up.
     case fftSetup(width: Int, height: Int)
-    /// A spline order (2 to 5) was asked with the `constant` or `wrap` mode, whose spline coordinate rule is not ported.
+    /// A zoom or rotation at a spline order (2 to 5) was asked with the `wrap` mode, whose resampling rule is not ported.
     case splineMode(ShiftMode)
     /// A zoom factor or angle that is not finite, or an output size outside what a call produces.
     case invalidResampling(String)
@@ -158,7 +158,7 @@ public nonisolated enum AlignmentError: Error, Equatable, Sendable, LocalizedErr
         case .fftSetup(let w, let h):
             "The Fourier transform of a \(w) × \(h) image could not be set up."
         case .splineMode(let mode):
-            "The \(mode.rawValue) mode is not available at spline orders 2 to 5; use grid-constant, nearest, reflect, mirror or grid-wrap."
+            "The \(mode.rawValue) mode is not available for zoom or rotate at spline orders 2 to 5; use grid-wrap or another mode."
         case .invalidResampling(let why):
             "The resampling cannot be done: \(why)."
         case .emptyMask:
