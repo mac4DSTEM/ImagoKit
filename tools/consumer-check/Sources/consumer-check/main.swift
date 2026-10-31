@@ -44,6 +44,8 @@ check(ImageMeasurement.distance(PixelPoint(x: 0, y: 0), PixelPoint(x: 3, y: 4), 
 check((try? IntensityHistogram.histogram([0, 1, 2, 3], bins: 3))?.counts == [1, 1, 2], "a histogram")
 check((try? LineProfile.sample(image, from: PixelPoint(x: 0, y: 0), to: PixelPoint(x: 5, y: 0), reduce: .max))?.samples.count == 6,
       "a line profile")
+check((try? LineProfile.sample(channels: [image, image], from: PixelPoint(x: 0, y: 0), to: PixelPoint(x: 5, y: 0)))?.count == 2,
+      "a multichannel line profile")
 check(image.cropped(PixelCrop(row: 0, col: 0, height: 32, width: 32))?.width == 32, "a crop")
 
 // ImagoFFT: the spectrum, its axes, the profile, two spots, their spacings and angle.
