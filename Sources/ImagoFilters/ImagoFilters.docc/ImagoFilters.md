@@ -47,7 +47,8 @@ scikit-image's `peak_local_max`, and the symmetry of a spectrum's peaks.
 
 ### Denoising
 
-scikit-image's total-variation (Chambolle, Bregman) and non-local-means denoisers, 2D single-channel.
+scikit-image's total-variation (Chambolle, Bregman) and non-local-means denoisers for 2D images, single-channel or
+channel-last multichannel, float or integer.
 
 - ``Denoise``
 - ``DenoiseError``

@@ -1,8 +1,23 @@
 // SPDX-License-Identifier: GPL-3.0-only
 //
 //  Denoise.swift (ImagoFilters)
-//  scikit-image 0.26.0's `restoration.denoise_tv_chambolle`, `denoise_tv_bregman` and `denoise_nl_means` for one 2D
-//  single-channel image, Float32 and Float64 (scikit-image keeps a float32 image float32).
+//  scikit-image 0.26.0's `restoration.denoise_tv_chambolle`, `denoise_tv_bregman` and `denoise_nl_means` for a 2D image,
+//  single-channel or channel-last multichannel (`channel_axis=-1`), Float32 and Float64 (scikit-image keeps a float32 image
+//  float32), or any fixed-width integer type (converted as `img_as_float` does, to Float64).
+//
+//  CHANNELS. `channels` above 1 reads the samples as `image[(row * columns + column) * channels + k]`. Both total-variation
+//  methods run one channel at a time, as scikit-image does with `channel_axis` set: Chambolle per slice; Bregman one
+//  compiled call per channel, each with its own stop test, all writing into one reused padded buffer, and the kernel
+//  starts dx, dy, bx and by as copies of that buffer, so from the second channel on they start from the previous
+//  channel's padded result (replayed here; only the first channel equals a single-channel call). Non-local means is
+//  joint, as its compiled kernels are: the patch distance sums every channel and is divided by the channel count, and
+//  one weight per patch pair averages every channel. `channel_axis=None` on a 3D array (Bregman stopping on one rmse
+//  over all channels, Chambolle in 3D) is not ported.
+//
+//  INTEGERS. `img_as_float`: an unsigned sample becomes x * (1 / max), a signed one max(x * (1 / max), -1), computed in
+//  Float64; non-local means can keep the values instead (`preserve_range=True`, a plain conversion to Float64). The
+//  integer overloads are disfavoured, so an integer array literal still means a Float64 image. Types wider than 64 bits
+//  have no scikit-image dtype; they convert by the same rule.
 //
 //  Chambolle is the NumPy code of `_denoise_tv_chambolle_nd` in the image's own precision, every sum a NumPy pairwise sum,
 //  so the stop test sees the same energies. Bregman is the Gauss-Seidel loop of the compiled `_denoise_tv_bregman`
@@ -23,7 +38,7 @@ import Foundation
 
 /// Why a denoising call was refused.
 public nonisolated enum DenoiseError: Error, Equatable, Sendable {
-    /// `rows` or `columns` below 1, or the sample count is not `rows * columns`.
+    /// `rows`, `columns` or `channels` below 1, or the sample count is not `rows * columns * channels`.
     case shape
     /// A sample is NaN or infinite.
     case nonFinite
@@ -38,15 +53,38 @@ public nonisolated enum Denoise {
 
     /// `skimage.restoration.denoise_tv_chambolle(image, weight=0.1, eps=2e-4, max_num_iter=200)` for a 2D image (row-major).
     /// `weight`, `eps` and `maxNumIter` must be positive. The result has the image's precision.
+    /// `channels` above 1 reads the image channel-last, as `channel_axis=-1`, and denoises each channel alone.
     @_specialize(where S == Float)
     @_specialize(where S == Double)
     public static func totalVariationChambolle<S: BinaryFloatingPoint & Sendable>(
-        _ image: [S], rows: Int, columns: Int, weight: Double = 0.1, eps: Double = 2.0e-4, maxNumIter: Int = 200
+        _ image: [S], rows: Int, columns: Int, channels: Int = 1, weight: Double = 0.1, eps: Double = 2.0e-4,
+        maxNumIter: Int = 200
     ) throws -> [S] {
-        try checkImage(image, rows: rows, columns: columns)
+        try checkImage(image, rows: rows, columns: columns, channels: channels)
         try requirePositive(weight, "weight")
         try requirePositive(eps, "eps")
         guard maxNumIter >= 1 else { throw DenoiseError.parameter("maxNumIter must be at least 1") }
+        return perChannel(image, rows: rows, columns: columns, channels: channels) {
+            chambolle($0, rows: rows, columns: columns, weight: weight, eps: eps, maxNumIter: maxNumIter)
+        }
+    }
+
+    /// `denoise_tv_chambolle` of an integer image: converted as `img_as_float` does (unsigned x * (1 / max), signed
+    /// max(x * (1 / max), -1), in Float64), then denoised in Float64; the result is Float64, as in scikit-image.
+    @_disfavoredOverload
+    public static func totalVariationChambolle<I: FixedWidthInteger>(
+        _ image: [I], rows: Int, columns: Int, channels: Int = 1, weight: Double = 0.1, eps: Double = 2.0e-4,
+        maxNumIter: Int = 200
+    ) throws -> [Double] {
+        try totalVariationChambolle(imageAsFloat(image), rows: rows, columns: columns, channels: channels, weight: weight,
+                                    eps: eps, maxNumIter: maxNumIter)
+    }
+
+    @_specialize(where S == Float)
+    @_specialize(where S == Double)
+    private static func chambolle<S: BinaryFloatingPoint>(
+        _ image: [S], rows: Int, columns: Int, weight: Double, eps: Double, maxNumIter: Int
+    ) -> [S] {
         let n = rows * columns
         var p0 = [S](repeating: 0, count: n), p1 = p0, g0 = p0, g1 = p0, d = p0, norm = p0, tmp = p0
         var out = image
@@ -99,19 +137,49 @@ public nonisolated enum Denoise {
     /// `skimage.restoration.denoise_tv_bregman(image, weight=5.0, max_num_iter=100, eps=1e-3, isotropic=True)` for a 2D
     /// image (row-major). `weight`, `eps` and `maxNumIter` must be positive and the image at least 2 x 2: the compiled
     /// kernel reflects the border from the second row and column and reads outside a 1-pixel axis.
+    /// `channels` above 1 reads the image channel-last, as `channel_axis=-1`, and runs one channel at a time with its own
+    /// stop test. As in scikit-image, the second and later channels start their split variables (dx, dy, bx, by) from the
+    /// previous channel's padded result, not from zero, so only the first channel equals a single-channel call.
     @_specialize(where S == Float)
     @_specialize(where S == Double)
     public static func totalVariationBregman<S: BinaryFloatingPoint & Sendable>(
-        _ image: [S], rows: Int, columns: Int, weight: Double = 5.0, maxNumIter: Int = 100, eps: Double = 1.0e-3,
-        isotropic: Bool = true
+        _ image: [S], rows: Int, columns: Int, channels: Int = 1, weight: Double = 5.0, maxNumIter: Int = 100,
+        eps: Double = 1.0e-3, isotropic: Bool = true
     ) throws -> [S] {
-        try checkImage(image, rows: rows, columns: columns)
+        try checkImage(image, rows: rows, columns: columns, channels: channels)
         try requirePositive(weight, "weight")
         try requirePositive(eps, "eps")
         guard maxNumIter >= 1 else { throw DenoiseError.parameter("maxNumIter must be at least 1") }
         guard rows >= 2, columns >= 2 else { throw DenoiseError.tooSmall("total variation (Bregman) needs at least 2 rows and 2 columns") }
-        let nc = columns + 2, size = (rows + 2) * nc
-        var out = [S](repeating: 0, count: size), dx = out, dy = out, bx = out, by = out
+        // scikit-image passes one padded output buffer to every channel's compiled call, and the kernel starts dx, dy, bx
+        // and by as copies of that buffer: from the second channel on they start as the previous channel's padded result.
+        var buffer = [S](repeating: 0, count: (rows + 2) * (columns + 2))
+        return perChannel(image, rows: rows, columns: columns, channels: channels) {
+            bregman($0, rows: rows, columns: columns, weight: weight, maxNumIter: maxNumIter, eps: eps, isotropic: isotropic,
+                    buffer: &buffer)
+        }
+    }
+
+    /// `denoise_tv_bregman` of an integer image: converted as `img_as_float` does (unsigned x * (1 / max), signed
+    /// max(x * (1 / max), -1), in Float64), then denoised in Float64; the result is Float64, as in scikit-image.
+    @_disfavoredOverload
+    public static func totalVariationBregman<I: FixedWidthInteger>(
+        _ image: [I], rows: Int, columns: Int, channels: Int = 1, weight: Double = 5.0, maxNumIter: Int = 100,
+        eps: Double = 1.0e-3, isotropic: Bool = true
+    ) throws -> [Double] {
+        try totalVariationBregman(imageAsFloat(image), rows: rows, columns: columns, channels: channels, weight: weight,
+                                  maxNumIter: maxNumIter, eps: eps, isotropic: isotropic)
+    }
+
+    @_specialize(where S == Float)
+    @_specialize(where S == Double)
+    private static func bregman<S: BinaryFloatingPoint>(
+        _ image: [S], rows: Int, columns: Int, weight: Double, maxNumIter: Int, eps: Double, isotropic: Bool,
+        buffer: inout [S]
+    ) -> [S] {
+        let nc = columns + 2
+        var out = buffer, dx = buffer, dy = buffer, bx = buffer, by = buffer
+        defer { buffer = out }
         for r in 0..<rows { for c in 0..<columns { out[(r + 1) * nc + c + 1] = image[r * columns + c] } }
         for c in 0..<columns {
             out[c + 1] = image[columns + c]
@@ -172,34 +240,63 @@ public nonisolated enum Denoise {
     /// a 2D image (row-major). `patchSize` (at least 2; an even size is raised by one, as scikit-image does) and
     /// `patchDistance` are in pixels and at most 1024, `h` is positive and `sigma` is not negative.
     /// `fastMode` computes in Float64 (rounded once at the end), the exact mode in the image's own precision.
+    /// `channels` above 1 reads the image channel-last, as `channel_axis=-1`: the patch distance runs over every channel
+    /// (divided by the channel count) and each patch pair's one weight averages every channel, as the compiled kernels do.
     @_specialize(where S == Float)
     @_specialize(where S == Double)
     public static func nonLocalMeans<S: BinaryFloatingPoint & Sendable>(
-        _ image: [S], rows: Int, columns: Int, patchSize: Int = 7, patchDistance: Int = 11, h: Double = 0.1,
-        fastMode: Bool = true, sigma: Double = 0.0
+        _ image: [S], rows: Int, columns: Int, channels: Int = 1, patchSize: Int = 7, patchDistance: Int = 11,
+        h: Double = 0.1, fastMode: Bool = true, sigma: Double = 0.0
     ) throws -> [S] {
-        try checkImage(image, rows: rows, columns: columns)
+        try checkImage(image, rows: rows, columns: columns, channels: channels)
         guard patchSize >= 2, patchSize <= 1024 else { throw DenoiseError.parameter("patchSize must be between 2 and 1024") }
         guard patchDistance >= 1, patchDistance <= 1024 else { throw DenoiseError.parameter("patchDistance must be between 1 and 1024") }
         try requirePositive(h, "h")
         guard sigma.isFinite, sigma >= 0 else { throw DenoiseError.parameter("sigma must be finite and not negative") }
         let s = patchSize % 2 == 0 ? patchSize + 1 : patchSize
         let variance = sigma * sigma
+        // the kernels are inlined, so a literal channel count of 1 lets the compiler drop the channel loops
         if fastMode {
             let wide = image.map { Double($0) }
-            return nonLocalMeansFast(wide, rows: rows, columns: columns, s: s, d: patchDistance, h: h, variance: variance).map { S($0) }
+            let out = channels == 1
+                ? nonLocalMeansFast(wide, rows: rows, columns: columns, channels: 1, s: s, d: patchDistance, h: h, variance: variance)
+                : nonLocalMeansFast(wide, rows: rows, columns: columns, channels: channels, s: s, d: patchDistance, h: h,
+                                    variance: variance)
+            return out.map { S($0) }
         }
-        return nonLocalMeansExact(image, rows: rows, columns: columns, s: s, d: patchDistance, h: h, variance: variance)
+        if channels == 1 {
+            return nonLocalMeansExact(image, rows: rows, columns: columns, channels: 1, s: s, d: patchDistance, h: h,
+                                      variance: variance)
+        }
+        return nonLocalMeansExact(image, rows: rows, columns: columns, channels: channels, s: s, d: patchDistance, h: h,
+                                  variance: variance)
+    }
+
+    /// `denoise_nl_means` of an integer image, in Float64 with a Float64 result as in scikit-image: converted as
+    /// `img_as_float` does (unsigned x * (1 / max), signed max(x * (1 / max), -1)), or with `preserveRange`
+    /// (`preserve_range=True`) kept at its integer values.
+    @_disfavoredOverload
+    public static func nonLocalMeans<I: FixedWidthInteger>(
+        _ image: [I], rows: Int, columns: Int, channels: Int = 1, patchSize: Int = 7, patchDistance: Int = 11,
+        h: Double = 0.1, fastMode: Bool = true, sigma: Double = 0.0, preserveRange: Bool = false
+    ) throws -> [Double] {
+        let wide = preserveRange ? image.map { Double($0) } : imageAsFloat(image)
+        return try nonLocalMeans(wide, rows: rows, columns: columns, channels: channels, patchSize: patchSize,
+                                 patchDistance: patchDistance, h: h, fastMode: fastMode, sigma: sigma)
     }
 
     // MARK: - Non-local means, fast mode (integral images, Float64)
 
-    private static func nonLocalMeansFast(_ image: [Double], rows: Int, columns: Int, s: Int, d: Int, h: Double, variance: Double) -> [Double] {
+    @inline(__always)
+    private static func nonLocalMeansFast(_ image: [Double], rows: Int, columns: Int, channels nch: Int, s: Int, d: Int,
+                                          h: Double, variance: Double) -> [Double] {
         let off = s / 2, pad = off + d + 1
         let nr = rows + 2 * pad, nc = columns + 2 * pad
-        let padded = reflectPad(image, rows: rows, columns: columns, pad: pad)
-        var result = [Double](repeating: 0, count: nr * nc), weights = result, integral = result
-        let h2s2 = ((h * 1.0 * h) * Double(s)) * Double(s)
+        let padded = reflectPad(image, rows: rows, columns: columns, channels: nch, pad: pad)
+        var weights = [Double](repeating: 0, count: nr * nc), integral = weights
+        var result = [Double](repeating: 0, count: nr * nc * nch)
+        let channelCount = Double(nch)
+        let h2s2 = ((h * channelCount * h) * Double(s)) * Double(s)
         let twoVar = variance + variance
         for tRow in -d...d {
             let rowStart = max(off, off - tRow), rowEnd = min(nr - off, nr - off - tRow)
@@ -211,9 +308,13 @@ public nonisolated enum Denoise {
                 if rLo < rHi && cLo < cHi {
                     for r in rLo..<rHi {
                         for c in cLo..<cHi {
-                            let diff = padded[r * nc + c] - padded[(r + tRow) * nc + c + tCol]
-                            var t = 0.0.addingProduct(diff, diff)
-                            t = t.addingProduct(-1.0, twoVar)
+                            let p = (r * nc + c) * nch, q = ((r + tRow) * nc + c + tCol) * nch
+                            var t = 0.0
+                            for k in 0..<nch {
+                                let diff = padded[p + k] - padded[q + k]
+                                t = t.addingProduct(diff, diff)
+                            }
+                            t = t.addingProduct(-channelCount, twoVar)
                             integral[r * nc + c] = ((t + integral[(r - 1) * nc + c]) + integral[r * nc + c - 1]) - integral[(r - 1) * nc + c - 1]
                         }
                     }
@@ -230,17 +331,20 @@ public nonisolated enum Denoise {
                         let here = r * nc + c, there = (r + tRow) * nc + c + tCol
                         weights[here] += weight
                         weights[there] += weight
-                        result[here] = result[here].addingProduct(weight, padded[there])
-                        result[there] = result[there].addingProduct(weight, padded[here])
+                        for k in 0..<nch {
+                            let a = here * nch + k, b = there * nch + k
+                            result[a] = result[a].addingProduct(weight, padded[b])
+                            result[b] = result[b].addingProduct(weight, padded[a])
+                        }
                     }
                 }
             }
         }
-        var out = [Double](repeating: 0, count: rows * columns)
+        var out = [Double](repeating: 0, count: rows * columns * nch)
         for r in 0..<rows {
             for c in 0..<columns {
-                let k = (pad + r) * nc + pad + c
-                out[r * columns + c] = result[k] / weights[k]
+                let p = (pad + r) * nc + pad + c
+                for k in 0..<nch { out[(r * columns + c) * nch + k] = result[p * nch + k] / weights[p] }
             }
         }
         return out
@@ -248,14 +352,16 @@ public nonisolated enum Denoise {
 
     // MARK: - Non-local means, exact mode (Gaussian-weighted patches, image precision)
 
+    @inline(__always)
     @_specialize(where S == Float)
     @_specialize(where S == Double)
     private static func nonLocalMeansExact<S: BinaryFloatingPoint>(
-        _ image: [S], rows: Int, columns: Int, s: Int, d: Int, h: Double, variance: Double
+        _ image: [S], rows: Int, columns: Int, channels nch: Int, s: Int, d: Int, h: Double, variance: Double
     ) -> [S] {
         let off = s / 2, pad = off + d + 1
         let nc = columns + 2 * pad
-        let padded = reflectPad(image, rows: rows, columns: columns, pad: pad)
+        let padded = reflectPad(image, rows: rows, columns: columns, channels: nch, pad: pad)
+        let rowStride = nc * nch
         // the Gaussian patch weights, built the way the kernel's NumPy lines build them, in the image's precision
         let a = (Double(s) - 1.0) / 4.0
         let twoASquared = S(2.0 * a * a)
@@ -266,31 +372,35 @@ public nonisolated enum Denoise {
                 w[i * s + j] = expOf(-(xr * xr + xc * xc) / twoASquared)
             }
         }
-        let normaliser = S(1.0) / (((S(1) * pairwiseSum(w)) * S(h)) * S(h))
+        let normaliser = S(1.0) / (((S(nch) * pairwiseSum(w)) * S(h)) * S(h))
         for k in 0..<w.count { w[k] *= normaliser }
         let minusTwoVar = S(-(2.0 * variance))
         let five = S(5)
-        var out = [S](repeating: 0, count: rows * columns)
+        var out = [S](repeating: 0, count: rows * columns * nch)
         padded.withUnsafeBufferPointer { P in
-            w.withUnsafeBufferPointer { W in
+            w.withUnsafeBufferPointer { W in out.withUnsafeMutableBufferPointer { O in
                 for row in 0..<rows {
                     let i0 = row - min(d, row), i1 = row + min(d + 1, rows - row)
                     for col in 0..<columns {
                         let j0 = col - min(d, col), j1 = col + min(d + 1, columns - col)
-                        var weightSum: S = 0, newValue: S = 0
-                        let centre = (pad + row - off) * nc + pad + col - off
+                        var weightSum: S = 0
+                        let target = (row * columns + col) * nch  // accumulates the new values, divided at the end
+                        let centre = ((pad + row - off) * nc + pad + col - off) * nch
                         for i in i0..<i1 {
                             for j in j0..<j1 {
-                                let other = (pad + i - off) * nc + pad + j - off
+                                let other = ((pad + i - off) * nc + pad + j - off) * nch
                                 var distance: S = 0
                                 var complete = true
                                 for pr in 0..<s {
                                     if distance > five { complete = false; break }
-                                    let c1 = centre + pr * nc, c2 = other + pr * nc
+                                    let c1 = centre + pr * rowStride, c2 = other + pr * rowStride
                                     for pc in 0..<s {
-                                        let t = P[c1 + pc] - P[c2 + pc]
-                                        let sq = minusTwoVar.addingProduct(t, t)
-                                        distance = distance.addingProduct(W[pr * s + pc], sq)
+                                        let wk = W[pr * s + pc]
+                                        for k in 0..<nch {
+                                            let t = P[c1 + pc * nch + k] - P[c2 + pc * nch + k]
+                                            let sq = minusTwoVar.addingProduct(t, t)
+                                            distance = distance.addingProduct(wk, sq)
+                                        }
                                     }
                                 }
                                 var weight: S = 0
@@ -298,24 +408,52 @@ public nonisolated enum Denoise {
                                     weight = S(schraudolphExp(distance > 0 ? Double(distance) : 0))
                                 }
                                 weightSum += weight
-                                newValue = newValue.addingProduct(weight, P[(pad + i) * nc + pad + j])
+                                let value = ((pad + i) * nc + pad + j) * nch
+                                for k in 0..<nch { O[target + k] = O[target + k].addingProduct(weight, P[value + k]) }
                             }
                         }
-                        out[row * columns + col] = newValue / weightSum
+                        for k in 0..<nch { O[target + k] /= weightSum }
                     }
                 }
-            }
+            } }
         }
         return out
     }
 
     // MARK: - Shared helpers
 
-    private static func checkImage<S: BinaryFloatingPoint>(_ image: [S], rows: Int, columns: Int) throws {
-        guard rows >= 1, columns >= 1 else { throw DenoiseError.shape }
-        let (count, overflow) = rows.multipliedReportingOverflow(by: columns)
-        guard !overflow, image.count == count else { throw DenoiseError.shape }
+    private static func checkImage<S: BinaryFloatingPoint>(_ image: [S], rows: Int, columns: Int, channels: Int) throws {
+        guard rows >= 1, columns >= 1, channels >= 1 else { throw DenoiseError.shape }
+        let (pixels, overflow) = rows.multipliedReportingOverflow(by: columns)
+        guard !overflow else { throw DenoiseError.shape }
+        let (count, overflow2) = pixels.multipliedReportingOverflow(by: channels)
+        guard !overflow2, image.count == count else { throw DenoiseError.shape }
         for v in image where !v.isFinite { throw DenoiseError.nonFinite }
+    }
+
+    /// A channel-last image (`image[(row * columns + column) * channels + k]`) denoised one channel at a time; one channel
+    /// passes straight through. The shape is already checked.
+    private static func perChannel<S>(_ image: [S], rows: Int, columns: Int, channels: Int, _ denoise: ([S]) -> [S]) -> [S] {
+        if channels == 1 { return denoise(image) }
+        let n = rows * columns
+        var out = image
+        var plane = [S]()
+        plane.reserveCapacity(n)
+        for k in 0..<channels {
+            plane.removeAll(keepingCapacity: true)
+            for i in 0..<n { plane.append(image[i * channels + k]) }
+            let done = denoise(plane)
+            for i in 0..<n { out[i * channels + k] = done[i] }
+        }
+        return out
+    }
+
+    /// `skimage.img_as_float` of an integer image (scikit-image's `_convert` to float64): an unsigned sample times
+    /// (1 / max), a signed one the same and then clipped below at -1 (the most negative value maps to -1), in Float64.
+    private static func imageAsFloat<I: FixedWidthInteger>(_ image: [I]) -> [Double] {
+        let scale = 1.0 / Double(I.max)
+        if I.isSigned { return image.map { max(Double($0) * scale, -1.0) } }
+        return image.map { Double($0) * scale }
     }
 
     private static func requirePositive(_ value: Double, _ name: String) throws {
@@ -370,12 +508,18 @@ public nonisolated enum Denoise {
 
     /// `np.pad(image, pad, mode='reflect')` of a 2D array: NumPy fills wide pads by repeated reflection (and an axis of
     /// length 1 by its single value), which is not the periodic triangle wave, so its index bookkeeping is replayed.
-    private static func reflectPad<S>(_ image: [S], rows: Int, columns: Int, pad: Int) -> [S] {
+    /// A channel-last image is padded along its two spatial axes only (pad width 0 on the channel axis).
+    private static func reflectPad<S>(_ image: [S], rows: Int, columns: Int, channels: Int, pad: Int) -> [S] {
         let ri = reflectIndices(rows, pad), ci = reflectIndices(columns, pad)
         let nc = columns + 2 * pad
         var out = [S]()
-        out.reserveCapacity(ri.count * nc)
-        for r in ri { for c in ci { out.append(image[r * columns + c]) } }
+        out.reserveCapacity(ri.count * nc * channels)
+        for r in ri {
+            for c in ci {
+                let base = (r * columns + c) * channels
+                for k in 0..<channels { out.append(image[base + k]) }
+            }
+        }
         return out
     }
 
