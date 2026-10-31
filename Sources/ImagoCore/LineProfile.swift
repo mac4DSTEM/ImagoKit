@@ -14,7 +14,7 @@
 //
 //  ARITHMETIC. scikit-image runs on the image's dtype. `.float32` is that run on the Micrograph's float32 pixels:
 //  SciPy forms each sample in double and writes it as float32; the reduction is NumPy's float32 reduction along the
-//  profile's width (first value, then NumPy's pairwise sum of the rest; the median of two is their float32 mean).
+//  profile's width (NumPy's pairwise sum of the flipped row; the median of two is their float32 mean).
 //  `.float64` keeps every sample in Double and reduces in Double: scikit-image on the same pixels widened to float64, to
 //  rounding of the sum. The tests state both gaps against the pinned NumPy output.
 //
@@ -27,7 +27,8 @@
 //  and "wrap" fold the coordinate and the tap indices. The whole image is filtered on every call: at order 2 to 5 a
 //  profile costs one pass over the image (and 8 bytes per pixel), as in SciPy.
 //
-//  Absent: multichannel images, modes other than scikit-image's five.
+//  MULTICHANNEL. A 3D (channel-last) image is a list of `Micrograph`s, one per channel; each is profiled alone, as
+//  scikit-image maps each channel separately. Absent: modes other than scikit-image's five.
 //
 //  DEVIATION from scikit-image: a width below 1 (an empty axis, a NaN mean), a segment with a non-finite end, an end
 //  beyond 1e15 px or more than 2²⁴ samples throw (scikit-image would produce NaN, raise, lose every digit of the fold, or
@@ -78,6 +79,8 @@ public nonisolated enum LineProfileError: Error, Equatable, Sendable {
     case invalidWidth(Int)
     /// An end that is not finite or lies beyond 1e15 px, or a line of more than `LineProfile.maxSamples` samples.
     case invalidSegment
+    /// A multichannel profile was given no channel, or channels of different sizes.
+    case channelShape
 }
 
 public nonisolated struct LineProfile: Sendable {
@@ -131,6 +134,37 @@ public nonisolated struct LineProfile: Sendable {
         let flat = try perpendicularValues(image, from: from, to: to, linewidth: linewidth, order: order, mode: mode,
                                            cval: cval, arithmetic: arithmetic)
         return stride(from: 0, to: flat.count, by: linewidth).map { Array(flat[$0..<($0 + linewidth)]) }
+    }
+
+    /// `profile_line` of a multichannel image (scikit-image's 3D input, channel-last), one `Micrograph` per channel, all of
+    /// one size: each channel is read on the same perpendicular lines and reduced along the width, which is what scikit-image
+    /// does (one `map_coordinates` per channel, then `reduce_func(pixels, axis=1)`). One profile per channel, in order; each
+    /// takes its `positions` and `unit` from its own channel's calibration (give the channels one calibration for one axis).
+    public static func sample(channels: [Micrograph], from: PixelPoint, to: PixelPoint, linewidth: Int = 1,
+                              order: ProfileOrder = .linear, mode: ProfileMode = .reflect, cval: Double = 0,
+                              reduce: ProfileReduction = .mean,
+                              arithmetic: ProfileArithmetic = .float32) throws -> [LineProfile] {
+        try checkChannels(channels)
+        return try channels.map {
+            try sample($0, from: from, to: to, linewidth: linewidth, order: order, mode: mode, cval: cval, reduce: reduce,
+                       arithmetic: arithmetic)
+        }
+    }
+
+    /// `profile_line(..., reduce_func=None)` of a multichannel image: per channel, the n rows of `linewidth` values that
+    /// `unreduced` gives (scikit-image's (n, w, channels) array, indexed [channel][sample][k]).
+    public static func unreduced(channels: [Micrograph], from: PixelPoint, to: PixelPoint, linewidth: Int = 1,
+                                 order: ProfileOrder = .linear, mode: ProfileMode = .reflect, cval: Double = 0,
+                                 arithmetic: ProfileArithmetic = .float32) throws -> [[[Double]]] {
+        try checkChannels(channels)
+        return try channels.map {
+            try unreduced($0, from: from, to: to, linewidth: linewidth, order: order, mode: mode, cval: cval, arithmetic: arithmetic)
+        }
+    }
+
+    private static func checkChannels(_ channels: [Micrograph]) throws {
+        guard let first = channels.first,
+              channels.allSatisfy({ $0.width == first.width && $0.height == first.height }) else { throw LineProfileError.channelShape }
     }
 
     // MARK: coordinates and sampling

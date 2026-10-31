@@ -33,6 +33,7 @@ the script that writes it. A regenerated fixture that changes is its own commit,
 | `measure` | `pins.py`, `spline_pins.py` | histograms, line profiles, measurement |
 | `peaks` | `pins.py`, `inf_pins.py` | `peak_local_max` |
 | `precipitation` | `pins.py` | thresholds, binary morphology, `regionprops` |
+| `profile-multichannel` | `pins.py` | `profile_line` of a channel-last image |
 | `radialchart` | `pins.py` | radial-chart samples and marks |
 | `registration-drift` | `pins.py`, `full-parity.sh` | phase correlation, shifts, drift series and aligned sums; `full-parity.sh` runs the parity tests on the full case set |
 | `resampling` | `pins.py` | `ndimage.zoom` and `rotate` |
