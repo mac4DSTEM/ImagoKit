@@ -20,7 +20,7 @@ each with its cause as far as it is known (diagnose before changing a number).
 - **1.0 item, naming:** the new surface takes `rows`/`columns` (decided 2026-10-22: `DistanceTransform`, `Segmentation.watershed`/`markers`, `RollingBall`, `Denoise`, `GeometricPhaseAnalysis`, `ImageResampling`); `LabelImage`, `Micrograph` and the older morphology and segmentation API still say `width`/`height`. Unify at 1.0 (a break). Four error enums carry a `.shape` case (`MorphologyError`, `RestorationError`, `DenoiseError`, `GeometricPhaseAnalysisError`); `RestorationError` and `DenoiseError` have no `LocalizedError` text yet.
 
 - 0.8.0 gaps, none blocking: mixed radix has radices 2, 3, 5, 7 only (11 and 13, a Float32 plan and a generic odd-radix pass are open: Float32 500² runs Bluestein at 1.53 ms, 0.8x NumPy); 1D `rfft`/`irfft` take power-of-two lengths only; `hfft`/`ihfft` missing;
-  `watershed` has no `compactness` or `watershed_line`; `distance_transform_edt` is 2D without `return_indices`; `zoom`/`rotate` are 2D; the denoisers are 2D single-channel, float only, and Bregman refuses an axis of length 1;
+  `watershed` has no `compactness` or `watershed_line`; `distance_transform_edt` is 2D; `zoom`/`rotate` are 2D; the denoisers are 2D single-channel, float only, and Bregman refuses an axis of length 1;
   GPA is Float64 CPU, two reflections, `validation: "none"` until one dataset with truth passes (the apps should show the amplitude maps).
 
 - 0.7.0 (precipitation) gaps, none blocking: the thresholds, binary morphology, `ObjectStatistics`, `regionProperties` and `arealDensity` are CPU
