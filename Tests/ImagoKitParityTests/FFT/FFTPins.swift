@@ -1,4 +1,4 @@
-// The FFT, spot and angle pins: the committed subset in Fixtures/slice-1a-pins.json (NumPy 2.5.4 on planted lattices,
+// The FFT, spot and angle pins: the committed subset in Fixtures/fft-spot-angle-pins.json (NumPy 2.5.4 on planted lattices,
 // frozen: the generator read macTEM's parity harnesses from a commit whose history was squashed, so it was retired), or,
 // when IMAGOKIT_PINS_FULL names a folder holding the full case set, every case, read from the harness manifests there.
 import Foundation
@@ -59,7 +59,7 @@ enum FFTPins {
     private struct Harness<C: Decodable>: Decodable { let cases: [C] }
 
     private static let committed: Committed = {
-        let data = try! Data(contentsOf: fixtures.appendingPathComponent("slice-1a-pins.json"))
+        let data = try! Data(contentsOf: fixtures.appendingPathComponent("fft-spot-angle-pins.json"))
         return try! JSONDecoder().decode(Committed.self, from: data)
     }()
 

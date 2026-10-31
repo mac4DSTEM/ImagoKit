@@ -1,6 +1,6 @@
 // The registration and drift pins (tools/registration-drift/pins.py): the committed subset in
-// Fixtures/slice-2-pins.json, or, when IMAGOKIT_PINS_FULL names a folder (tools/registration-drift/full-parity.sh sets it to
-// .build/pins-full), every case, read from alignment/slice-2-pins.json there.
+// Fixtures/registration-drift-pins.json, or, when IMAGOKIT_PINS_FULL names a folder (tools/registration-drift/full-parity.sh sets it to
+// .build/pins-full), every case, read from alignment/registration-drift-pins.json there.
 import Foundation
 import ImagoKitTestSupport
 import ImagoAlignment
@@ -74,7 +74,7 @@ enum AlignmentPins {
     /// The full set, when IMAGOKIT_PINS_FULL names a folder that holds it (one `--filter ImagoKitParityTests` serves every full-parity script).
     static let full: URL? = ProcessInfo.processInfo.environment["IMAGOKIT_PINS_FULL"].map {
         URL(fileURLWithPath: $0).appendingPathComponent("alignment")
-    }.flatMap { FileManager.default.fileExists(atPath: $0.appendingPathComponent("slice-2-pins.json").path) ? $0 : nil }
+    }.flatMap { FileManager.default.fileExists(atPath: $0.appendingPathComponent("registration-drift-pins.json").path) ? $0 : nil }
     static var folder: URL { full ?? fixtures }
 
     private struct Manifest: Decodable {
@@ -85,7 +85,7 @@ enum AlignmentPins {
     }
 
     private static let manifest: Manifest = {
-        let data = try! Data(contentsOf: folder.appendingPathComponent("slice-2-pins.json"))
+        let data = try! Data(contentsOf: folder.appendingPathComponent("registration-drift-pins.json"))
         return try! JSONDecoder().decode(Manifest.self, from: data)
     }()
 

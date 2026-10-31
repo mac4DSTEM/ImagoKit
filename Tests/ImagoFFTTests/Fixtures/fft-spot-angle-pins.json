@@ -1,5 +1,5 @@
 {
- "generator": "tools/slice-1/pins.py",
+ "generator": "retired, frozen (see Tests/Fixtures/README.md)",
  "mactem_commit": "3d17311",
  "versions": {
   "python": "3.14.7",

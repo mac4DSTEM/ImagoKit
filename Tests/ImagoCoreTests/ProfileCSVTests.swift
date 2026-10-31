@@ -8,7 +8,7 @@ import Testing
     private let nmX = AxisCalibration(scale: 0.5, unit: "nm")
     private let nmY = AxisCalibration(scale: 0.8, unit: "nm")
     private let validation = "samples compared with scikit-image 0.26.0 profile_line(order=1, mode=\"reflect\", "
-        + "reduce_func=mean), V1-5 P2 (1e-5 relative; 1e-5 of the image's largest magnitude near zero); "
+        + "reduce_func=mean) (1e-5 relative;1e-5 of the image's largest magnitude near zero); "
         + "calibration: as the file states it"
 
     /// v = 100 + 3 r + 2 c on 8 x 6 pixels, the line (1, 2) to (5, 2): five samples on row 2, 0.5 nm apart, 106 + 2 c.
@@ -44,7 +44,7 @@ import Testing
                 + "mean of 1 samples 1 px apart along the perpendicular on the pixel grid",
             "# notes: none",
             "# validation: " + validation,
-            "# lineage: none \u{2014} marks carry no lineage id until V1-2; the mark's parameters above stand in",
+            "# lineage: none \u{2014} marks carry no lineage id; the mark's parameters above stand in",
             "# numbers: %.17g (exact round trip); nan where a NaN pixel enters a sample",
             "position (nm),value",
             "0,108", "0.5,110", "1,112", "1.5,114", "2,116",

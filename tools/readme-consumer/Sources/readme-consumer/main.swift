@@ -69,6 +69,31 @@ let particles = try Segmentation.watershed(image: smooth.map { -Double($0) }, ma
                                            mask: foreground)
 print("particles:", Set(particles.filter { $0 > 0 }).count, "above Otsu's level", level)
 
+// The field's background by a rolling ball of radius 20 px, and the mask cleaned by a binary opening.
+let background = try RollingBall.background(image: blobs, rows: n, columns: n, radius: 20)
+let cleaned = try BinaryMorphology.opening(foreground, width: n, height: n)
+print("background at a corner:", background[0], "; mask pixels before and after the opening:",
+      foreground.filter { $0 }.count, cleaned.filter { $0 }.count)
+
+// GPA strain of the lattice image from its two strongest reflections (planted truth only; not validated on real data).
+let lattice = pixels.map(Double.init)
+let reflections = try GeometricPhaseAnalysis.findReflections(lattice, rows: n, columns: n)
+let strain = try GeometricPhaseAnalysis.analyze(lattice, rows: n, columns: n, g1: reflections.g1, g2: reflections.g2)
+print("GPA reflections:", reflections.g1, reflections.g2, "; strain at the centre:", strain.strainRR[n / 2 * n + n / 2])
+
+// The checks on the steps after the README's program. Rolling ball: the background never exceeds the image and is the
+// flat 5 far from the blobs. Opening: the cleaned mask lies inside the foreground and keeps the three particles.
+// GPA: the reflections are the planted (12, 40) and (−35, 15) cycles over 256 px; the lattice is perfect, so the strain
+// is small everywhere it is defined.
+let backgroundOK = zip(background, blobs).allSatisfy { $0 <= $1 + 1e-3 } && abs(background[0] - 5) < 1e-3
+let cleanedOK = zip(cleaned, foreground).allSatisfy { !$0 || $1 } && cleaned.contains(true)
+    && [(60, 70), (120, 180), (190, 90)].allSatisfy { cleaned[$0.0 * n + $0.1] }
+let plantedG1 = (12.0 / 256, 40.0 / 256), plantedG2 = (-35.0 / 256, 15.0 / 256)
+let reflectionsOK = abs(reflections.g1.row - plantedG1.0) < 1e-6 && abs(reflections.g1.column - plantedG1.1) < 1e-6
+    && abs(reflections.g2.row - plantedG2.0) < 1e-6 && abs(reflections.g2.column - plantedG2.1) < 1e-6
+let worstStrain = (strain.strainRR + strain.strainCC + strain.strainRC).filter(\.isFinite).map(abs).max() ?? .infinity
+print("checks: largest |strain| of the perfect lattice", worstStrain)
+
 // The planted truth: d = 1/|q| with q = (40, 12) and (−15, 35) cycles over 5.12 nm; the angle between them.
 let qa = (40.0 / 5.12, 12.0 / 5.12), qb = (-15.0 / 5.12, 35.0 / 5.12)
 let plantedAngle = try SpotMeasurement.angle(qa: qa, qb: qb)
@@ -82,5 +107,6 @@ let ok = real[0] == 64 && real.dropFirst().allSatisfy { $0 == 0 }
     && Set(peaks.map { [$0.row, $0.column] }) == [[60, 70], [120, 180], [190, 90]]
     && Set(particles) == [0, 1, 2, 3]
     && [(60, 70), (120, 180), (190, 90)].allSatisfy { particles[$0.0 * n + $0.1] > 0 }
+    && backgroundOK && cleanedOK && reflectionsOK && worstStrain < 1e-3
 print("readme-consumer summary: \(ok ? "passed" : "FAILED")")
 if !ok { exit(1) }
