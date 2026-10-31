@@ -9,8 +9,13 @@
 //  kernel cells of (padded image + D). Computed in the image's own type (Double or Float; the kernel is built in Double and
 //  converted, as scikit-image does with `kernel.astype(float_type)`). Results are held to `assert_allclose` dtype defaults.
 //
-//  DEVIATIONS. `nansafe` is not ported: NaN input is refused (`RestorationError.nonFinite`). 2D only; the cost is polynomial in the
-//  radius (a 2D image is N^2 times the kernel area), as scikit-image's.
+//  `nanSafe` is scikit-image's `nansafe=True` (`apply_kernel_nan`): every kernel cell is visited, the ones outside the ball (D =
+//  +infinity) and the padding (+infinity) included, and the background is NaN as soon as one (padded image + D) is NaN. So a NaN
+//  anywhere in the kernel's rectangle makes the pixel NaN, and so does -infinity under a cell outside the ball (-inf + inf).
+//
+//  DEVIATIONS. Without `nanSafe` a NaN in the image is refused (`RestorationError.nonFinite`; scikit-image documents that case as
+//  unsupported and answers whatever its comparisons give). 2D only; the cost is polynomial in the radius (a 2D image is N^2 times the
+//  kernel area), as scikit-image's.
 //
 
 import Foundation
@@ -19,7 +24,7 @@ public nonisolated enum RestorationError: Error, Equatable, Sendable {
     /// Counts that do not match `width * height`, a non-positive dimension, or a kernel that is empty or not rows * columns.
     case shape
     case parameter(String)
-    /// A NaN in the image (`nansafe` is not ported).
+    /// A NaN in the image without `nanSafe`.
     case nonFinite
 }
 
@@ -78,41 +83,80 @@ public nonisolated enum RollingBall {
 
     /// `rolling_ball(image, radius=)`. The ball's cells beyond the image can never land inside it, so only the cells within
     /// the image's size of the centre are visited; the centre height is the ball's own (`radius`), whatever the image size.
-    public static func background<S: BinaryFloatingPoint & Sendable>(image: [S], rows height: Int, columns width: Int, radius: Double) throws -> [S] {
+    /// `nanSafe` is `nansafe=True`: NaN samples are accepted; a pixel is NaN when any cell of the kernel's rectangle, inside the
+    /// ball or not, holds a NaN.
+    public static func background<S: BinaryFloatingPoint & Sendable>(image: [S], rows height: Int, columns width: Int, radius: Double,
+                                                                     nanSafe: Bool = false) throws -> [S] {
         guard radius.isFinite, radius >= 0 else { throw RestorationError.parameter("radius must be finite and not negative") }
-        if radius <= maximumRadius { return try background(image: image, rows: height, columns: width, kernel: ballKernel(radius: radius)) }
+        if radius <= maximumRadius {
+            return try background(image: image, rows: height, columns: width, kernel: ballKernel(radius: radius), nanSafe: nanSafe)
+        }
         let (n, overflow) = width.multipliedReportingOverflow(by: height)
         guard width > 0, height > 0, !overflow, image.count == n else { throw RestorationError.shape }
-        guard !image.contains(where: \.isNaN) else { throw RestorationError.nonFinite }
+        guard nanSafe || !image.contains(where: \.isNaN) else { throw RestorationError.nonFinite }
         let centre = S(radius)
+        // With nanSafe the cells outside the ball stay, with D = +infinity (a NaN or -infinity under them still counts); the cells
+        // beyond the image's size only ever see the +infinity padding plus a D that is finite and not negative, or +infinity.
         var cells: [(dr: Int, dc: Int, d: S)] = []
         for dr in -(height - 1)...(height - 1) {
             for dc in -(width - 1)...(width - 1) {
                 let sumOfSquares = Double(dr) * Double(dr) + Double(dc) * Double(dc)
-                if sumOfSquares.squareRoot() > radius { continue }
+                if sumOfSquares.squareRoot() > radius {
+                    if nanSafe { cells.append((dr, dc, .infinity)) }
+                    continue
+                }
                 cells.append((dr, dc, centre - S(max(radius * radius - sumOfSquares, 0).squareRoot())))
             }
         }
-        return scan(image, width, height, cells)
+        return nanSafe ? scanNaNSafe(image, width, height, cells) : scan(image, width, height, cells)
     }
 
-    /// `rolling_ball(image, kernel=)`.
-    public static func background<S: BinaryFloatingPoint & Sendable>(image: [S], rows height: Int, columns width: Int, kernel: Kernel) throws -> [S] {
+    /// `rolling_ball(image, kernel=)`; `nanSafe` as for `background(image:rows:columns:radius:nanSafe:)`, and with it a NaN kernel
+    /// value makes the whole background NaN.
+    public static func background<S: BinaryFloatingPoint & Sendable>(image: [S], rows height: Int, columns width: Int, kernel: Kernel,
+                                                                     nanSafe: Bool = false) throws -> [S] {
         let (n, overflow) = width.multipliedReportingOverflow(by: height)
         guard width > 0, height > 0, !overflow, image.count == n else { throw RestorationError.shape }
-        guard !image.contains(where: \.isNaN) else { throw RestorationError.nonFinite }
+        guard nanSafe || !image.contains(where: \.isNaN) else { throw RestorationError.nonFinite }
         let centreR = kernel.rows / 2, centreC = kernel.columns / 2
         let centre = S(kernel.values[centreR * kernel.columns + centreC])
-        // Offsets D = K(centre) - K in the image's type; +infinity cells are dropped (they would add infinity).
+        // Offsets D = K(centre) - K in the image's type. Without nanSafe the infinite cells are dropped (they would add +infinity);
+        // with it every cell stays and K = +infinity gives D = +infinity, as scikit-image's `intensity_difference[kernel == inf] = inf`.
         var cells: [(dr: Int, dc: Int, d: S)] = []
         for r in 0..<kernel.rows {
             for c in 0..<kernel.columns {
                 let k = kernel.values[r * kernel.columns + c]
+                if nanSafe {
+                    // Tested after the conversion, as scikit-image does: a Double that overflows Float becomes +infinity.
+                    let ks = S(k)
+                    cells.append((r - centreR, c - centreC, ks == .infinity ? .infinity : centre - ks))
+                    continue
+                }
                 if k.isInfinite { continue }
                 cells.append((r - centreR, c - centreC, centre - S(k)))
             }
         }
-        return scan(image, width, height, cells)
+        return nanSafe ? scanNaNSafe(image, width, height, cells) : scan(image, width, height, cells)
+    }
+
+    /// `apply_kernel_nan`: the minimum of (padded image + D) over every cell, NaN as soon as one sum is NaN; outside the image the
+    /// padded value is +infinity.
+    private static func scanNaNSafe<S: BinaryFloatingPoint>(_ image: [S], _ width: Int, _ height: Int, _ cells: [(dr: Int, dc: Int, d: S)]) -> [S] {
+        var out = [S](repeating: 0, count: width * height)
+        for r in 0..<height {
+            for c in 0..<width {
+                var best = S.infinity
+                for cell in cells {
+                    let rr = r + cell.dr, cc = c + cell.dc
+                    let inside = rr >= 0 && rr < height && cc >= 0 && cc < width
+                    let v = (inside ? image[rr * width + cc] : S.infinity) + cell.d
+                    if v.isNaN { best = .nan; break }
+                    if v < best { best = v }
+                }
+                out[r * width + c] = best
+            }
+        }
+        return out
     }
 
     private static func scan<S: BinaryFloatingPoint>(_ image: [S], _ width: Int, _ height: Int, _ cells: [(dr: Int, dc: Int, d: S)]) -> [S] {
