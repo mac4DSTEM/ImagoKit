@@ -310,6 +310,8 @@ check((try? SeparableFilters.gaussianFilter([Float](repeating: 5, count: 20), ro
 check((try? BandpassFilters.butterworth([Double](repeating: 3, count: 64), rows: 8, columns: 8, cutoffFrequencyRatio: 0.2, highPass: true))?
     .allSatisfy { abs($0) < 1e-12 } == true, "public high-pass Butterworth removes a constant")
 check(abs(((try? WindowFunction.window2D(.hann, rows: 9, columns: 9))?[40] ?? 0) - 1) < 1e-12, "public window")
+check((try? WindowFunction.window1D(.dpss(nw: 2.5), count: 9))?.max() == 1 && (try? WindowFunction.window1D(.taylor(), count: 9))?.count == 9
+      && (try? WindowFunction.window1D(.kaiserBesselDerived(beta: 4), count: 7)) == nil, "public window families")
 let peakImage: [Float] = (0..<49).map { $0 == 24 ? 2 : ($0 == 10 ? 1 : 0) }
 check((try? PeakLocalMax.find(peakImage, rows: 7, columns: 7, minDistance: 1))?.map { [$0.row, $0.column] } == [[3, 3], [1, 3]],
       "public peak_local_max")
