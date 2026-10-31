@@ -357,7 +357,8 @@ let ellipsoid = try RollingBall.ellipsoidKernel(rows: 3, columns: 5, intensity: 
 check(ellipsoid.values.count == ellipsoid.rows * ellipsoid.columns, "public ellipsoid kernel")
 check((try? RollingBall.background(image: [Double](repeating: 3, count: 64), rows: 8, columns: 8, radius: 5))?
     .allSatisfy { abs($0 - 3) < 1e-9 } == true, "public rolling ball: a constant is all background")
-let nanBackground = try RollingBall.background(image: [1, .nan, 1, 1, 1, 1, 1, 1], rows: 1, columns: 8, radius: 1, nanSafe: true)
+let nanImage: [Double] = [1, .nan, 1, 1, 1, 1, 1, 1]
+let nanBackground = try RollingBall.background(image: nanImage, rows: 1, columns: 8, radius: 1, nanSafe: true)
 check(nanBackground[0].isNaN && nanBackground[2].isNaN && nanBackground[4] == 1, "public rolling ball nanSafe: a NaN spreads over the kernel")
 let zoomed = try ImageResampling.zoom(image, zoom: (rows: 0.5, columns: 0.5))
 check(zoomed.width == w / 2 && zoomed.height == h / 2 && abs(zoomed.x!.scale - 2 * dx) < 1e-12 && abs(zoomed.y!.scale - 2 * dy) < 1e-12,
