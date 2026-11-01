@@ -1,7 +1,7 @@
 # Roadmap
 
-ImagoKit is pre-1.0: a minor version may change the API, and its CHANGELOG entry says how to migrate. The detailed list of
-gaps is [`docs/open-items.md`](docs/open-items.md); the function-by-function state is [`docs/parity.md`](docs/parity.md).
+ImagoKit is pre-1.0: a minor version may change the API, and its CHANGELOG entry says how to migrate. Open work is in the GitHub
+issues; the function-by-function state and the known limits are in [`docs/parity.md`](docs/parity.md).
 
 ## Next
 

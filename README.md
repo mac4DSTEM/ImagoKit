@@ -82,7 +82,7 @@ NumPy 2.5.4 pins cover lengths 1, 2, 4, 8, 64, 256 and 1024. The tests state the
 ```text
 // Package.swift
 dependencies: [
-    .package(url: "https://github.com/mac4DSTEM/ImagoKit.git", exact: "0.8.0"),
+    .package(url: "https://github.com/mac4DSTEM/ImagoKit.git", from: "0.8.0"),
 ],
 targets: [
     .target(name: "MyApp", dependencies: [
@@ -196,7 +196,7 @@ reference within its own tolerance; `docs/parity.md` lists each function, its st
 - iOS 18 builds but has never been run on a device or simulator; macOS 15 is declared but built and tested on macOS 27 only.
 - A first call of a vDSP 1D FFT or DFT size can differ by one Float32 ulp.
 - Float32 tolerances are claims on the planted and pinned cases, not proofs for every input.
-- Zoom and rotate refuse the `wrap` mode at spline orders 2 to 5; the masked registration returns the shift only, and a symmetric pair with exactly tied maxima is not reproducible (`docs/open-items.md`).
+- Zoom and rotate refuse the `wrap` mode at spline orders 2 to 5; the masked registration returns the shift only, and a symmetric pair with exactly tied maxima is not reproducible (`docs/parity.md`, known limits).
 - No number is validated on a microscope; the HRTEM filters have never been compared with DigitalMicrograph.
 - Not yet checked on a raw (counts) HRTEM image; the available TIFFs are 8-bit renders.
 
