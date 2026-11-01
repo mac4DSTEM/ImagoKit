@@ -48,10 +48,10 @@ public nonisolated enum GeometricPhaseAnalysis {
 
     /// Full-size, row-major, `rows * columns` arrays.
     ///
-    /// `validation` is "none": the result agrees with planted fields (tools/gpa/planted.py) and has not been checked on a
-    /// dataset with truth, so an app must show it as unvalidated until one passes.
+    /// Tested against planted displacement fields (tools/gpa/planted.py); not yet checked on a recorded dataset with known
+    /// strain. An app that exports it names that method and reference. `validation` keeps the value "none" for that state.
     public nonisolated struct Result: Sendable {
-        /// The badge every result carries until a dataset with truth passes.
+        /// The value of `validation` while the only check is the planted fields.
         public static let validationNone = "none"
         public let validation: String = "none"
         public var rows: Int
@@ -209,7 +209,7 @@ public nonisolated enum GeometricPhaseAnalysis {
     /// plane g_col > 0 (or g_col = 0 and g_row > 0), the stronger first. The spectrum is taken after the mean is removed and a
     /// Hann window applied; each peak is refined by a parabola through the log magnitudes of the three bins on each axis.
     /// Peaks within `minRadius` cycles per pixel of the origin are skipped; the second peak must be at least 3 bins from the
-    /// first with |sin angle| >= 0.2. Unvalidated beyond the planted images.
+    /// first with |sin angle| >= 0.2. Tested on the planted images only.
     public static func findReflections(_ image: [Double], rows: Int, columns: Int, minRadius: Double = 0.02) throws
         -> (g1: (row: Double, column: Double), g2: (row: Double, column: Double)) {
         typealias E = GeometricPhaseAnalysisError

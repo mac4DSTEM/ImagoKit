@@ -9,7 +9,7 @@
 //  axes' unit as the FILE states it (a Velox metre axis stays in metres), `px` when the image is not calibrated; `shown`
 //  only adds a line saying what the app shows them in. HEADER values pass `CSVText.headerValue`, the column header
 //  `CSVText.quoted`. The title, the validation sentence and the lineage sentence are the caller's (the kit authors no claim);
-//  when a note of the source says "unvalidated" (any case) `TidyResultsCSV.unvalidatedClause` follows the validation.
+//  when the source has reader notes, `; reader note: ` and the notes (joined by `; `) follow the validation.
 //
 //  UTF-8, LF line ends, tested byte for byte. Same lines, in the same order, as macTEM's former app copy.
 //
@@ -33,7 +33,7 @@ public nonisolated enum ProfileCSV {
     ///   - appName: names the app in the `# shown in <appName> as:` line ("macTEM").
     ///   - start, end: the line's ends in image pixels (x column, y row, pixel centres at integers).
     ///   - source: the file and its calibration as the file states them.
-    ///   - validation: the validation sentence (the clause for an unvalidated source is added).
+    ///   - validation: the validation sentence (the source's reader notes are quoted after it).
     ///   - method: the `# method:` sentence; `method(width:)` for order 1, `reflect`, mean.
     ///   - lineage: the `# lineage:` sentence.
     ///   - shown: the unit and factor the app shows positions in when it differs from the file's; nil when the same.
@@ -42,7 +42,6 @@ public nonisolated enum ProfileCSV {
                             lineage: String = noLineage, shown: (unit: String, factor: Double)? = nil) -> String? {
         guard let length = profile.positions.last, !profile.samples.isEmpty else { return nil }
         let unit = CSVText.headerValue(profile.unit)
-        let unvalidated = source.notes.contains { $0.lowercased().contains("unvalidated") }
         let notes = source.notes.isEmpty ? "none" : source.notes.map(CSVText.headerValue).joined(separator: "; ")
 
         var header: [String] = []
@@ -65,8 +64,7 @@ public nonisolated enum ProfileCSV {
         }
         header.append("# method: \(CSVText.headerValue(method ?? Self.method(width: profile.width)))")
         header.append("# notes: \(notes)")
-        header.append("# validation: \(CSVText.headerValue(validation))"
-                      + (unvalidated ? TidyResultsCSV.unvalidatedClause : ""))
+        header.append("# validation: \(CSVText.headerValue(validation + TidyResultsCSV.readerNoteClause(source.notes)))")
         header.append("# lineage: \(CSVText.headerValue(lineage))")
         header.append("# numbers: %.17g (exact round trip); nan where a NaN pixel enters a sample")
         header.append(CSVText.quoted("position (\(unit))") + ",value")

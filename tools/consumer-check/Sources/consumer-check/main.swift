@@ -402,7 +402,7 @@ check(foundSet == [[0, 0.125], [0.125, 0]], "public GPA finds the two reflection
 let gpa = try GeometricPhaseAnalysis.analyze(lattice, rows: 64, columns: 64, g1: (0, 0.125), g2: (0.125, 0))
 let worst = (gpa.strainRR + gpa.strainCC + gpa.strainRC + gpa.rotation).map(abs).max() ?? .nan
 check(gpa.validation == GeometricPhaseAnalysis.Result.validationNone && worst < 1e-8,
-      "public GPA of a perfect lattice: zero strain and rotation, badged unvalidated (worst \(worst))")
+      "public GPA of a perfect lattice: zero strain and rotation, validation value none (worst \(worst))")
 do { _ = try GeometricPhaseAnalysis.analyze(lattice, rows: 64, columns: 64, g1: (0, 0.125), g2: (0, 0.25)); check(false, "collinear g") }
 catch let e as GeometricPhaseAnalysisError { check(e == .collinearReflections, "public GPA refuses collinear reflections") }
 catch { check(false, "collinear g: another error \(error)") }

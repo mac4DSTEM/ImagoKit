@@ -1,5 +1,5 @@
 // ProfileCSV: the whole text of a planted profile byte for byte (the lines and order macTEM's app copy wrote), the shown
-// line, the unvalidated clause, header sanitising, nan, and an empty profile that is not a file. Text is tested exact.
+// line, the reader note after the validation, header sanitising, nan, and an empty profile that is not a file. Text is tested exact.
 import Foundation
 import ImagoCore
 import Testing
@@ -53,13 +53,14 @@ import Testing
         #expect(try planted() == expected)
     }
 
-    @Test func shownLineAndUnvalidatedClauseAndSanitising() throws {
-        let text = try #require(try planted(notes: ["scale UNVALIDATED\r\nnext"], fileName: "a\u{2028}b.dm4",
+    @Test func shownLineAndReaderNoteAndSanitising() throws {
+        let text = try #require(try planted(notes: ["scale from the tag\r\nnext", "second"], fileName: "a\u{2028}b.dm4",
                                             shown: (unit: "nm", factor: 1e9)))
         let lines = text.components(separatedBy: "\n")
         #expect(lines.contains("# shown in macTEM as: nm (x 1000000000.0)"))
-        #expect(lines.contains("# notes: scale UNVALIDATED  next"))
-        #expect(lines.contains("# validation: " + validation + ", unvalidated (reader note)"))
+        #expect(lines.contains("# notes: scale from the tag  next; second"))
+        #expect(lines.contains("# validation: " + validation + "; reader note: scale from the tag  next; second"))
+        #expect(!text.lowercased().contains("unvalidated"))
         #expect(lines.contains("# file: a b.dm4"))
         let keys = lines.prefix { $0.hasPrefix("#") }.compactMap { $0.dropFirst(2).components(separatedBy: ": ").first }
         #expect(keys.contains("shown in macTEM as"))
