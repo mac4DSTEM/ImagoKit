@@ -190,3 +190,25 @@ Numerics are never held stricter than that; readers, I/O, indices and metadata a
 | Function or option group | State | Kit symbol | Counterpart tolerance (source) | Priority | Notes |
 |---|---|---|---|---|---|
 | GPA strain from two reflections of a lattice image (Hytch, Snoeck and Kilaas 1998) | present, validation none (0.8.0) | `GeometricPhaseAnalysis.analyze`, `findReflections` | the planted field of `tools/gpa/planted.py` (no upstream package): 2x the plain-numpy selfcheck error per case (uniform 9.8e-4, bump 3.12e-3, bump_oblique 2.97e-3, perfect 1e-6), floor 1e-6, interior only | study | Float64 CPU only; measured errors equal the numpy GPA's (4.89e-4, 1.56e-3, 1.48e-3, 2.5e-11 at size 128); badged `validation: "none"` until one dataset with truth passes |
+
+## Known limits and decisions
+
+Open work is in the [issues](https://github.com/mac4DSTEM/ImagoKit/issues), including the ones closed as *not planned* and
+parked for later (`label` speed #6, upsampled registration #7, FFT gaps #8, 1.0 naming #9, precipitation benchmarks #11).
+Speed against Python is in `docs/benchmarks.md`.
+
+- **`fft2` Float64 on the vDSP lengths** (2^n x {3, 5, 15}) is up to 1.12x NumPy (480²: 1.53 ms against 1.37); the remainder
+  is the transposes around the vDSP calls. The kit keeps the vDSP path by design.
+- **Naming before 1.0:** the newer surface takes `rows`/`columns`; `LabelImage`, `Micrograph` and the older morphology and
+  segmentation API still say `width`/`height` (unified at 1.0, a break).
+- **`BinaryMorphology`** refuses even structures and an all-false structure (SciPy shifts the origin and answers) and runs a
+  per-pixel loop (fine at 512², slow for a 4096² mask).
+- **`Thresholding.yen`** can differ from scikit-image on an image of more than 2^24 pixels whose last histogram bin is nearly
+  empty (Float32 `P1` reaches 1 and NumPy's `argmax` returns the first NaN).
+- **`regionProperties`** computes every property per object; use `objectMoments` alone for just the moments.
+- **`zoom` and `rotate` with `wrap`** at spline orders 2 to 5 are refused by name; the shifts measured the rule (prefilter
+  and taps as `mirror`, the coordinate mapped with period n − 1), the resampling coordinate path has not been checked against it.
+- **Masked registration:** scikit-image's `xcorr == xcorr.max()` tie rule is reproducible only for a unique maximum; the
+  kit's fast length is the next 7-smooth length, SciPy's also allows 11, so symmetric pairs decide on rounding noise.
+- **Metal Float32 paths** (FFT, then the separable filters) are not written; the break-even at 2048² to 8192² is measured in
+  the nightly review first.
