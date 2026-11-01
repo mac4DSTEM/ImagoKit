@@ -6,6 +6,44 @@ Every number is held by regression tests against NumPy 2.5.4, SciPy 1.18.1 and s
 Entries from 0.8.1 on are written by release-please from the merged pull requests' titles. A moved fixture is listed under
 "Fixtures and tests" (a `test:` title, or one `test:` line per fixture in the pull request's commit override).
 
+## [0.9.0](https://github.com/mac4DSTEM/ImagoKit/compare/0.8.0...0.9.0) (2026-10-31)
+
+
+### ⚠ BREAKING CHANGES
+
+* profile_line of a multichannel image ([#53](https://github.com/mac4DSTEM/ImagoKit/issues/53))
+* the 14 remaining get_window families ([#51](https://github.com/mac4DSTEM/ImagoKit/issues/51))
+
+### Features
+
+* butterworth and difference_of_gaussians take channels (channel_axis) ([#52](https://github.com/mac4DSTEM/ImagoKit/issues/52)) ([8596fea](https://github.com/mac4DSTEM/ImagoKit/commit/8596feacdbaf5ce8de8a1e698c062d02739c81b5))
+* distance_transform_edt return_indices (euclideanWithIndices) ([#45](https://github.com/mac4DSTEM/ImagoKit/issues/45)) ([df342c1](https://github.com/mac4DSTEM/ImagoKit/commit/df342c1e0a8062d6eef340d4861a03c5ba836adb))
+* multichannel and integer images in the denoisers ([#58](https://github.com/mac4DSTEM/ImagoKit/issues/58)) ([1e8c23e](https://github.com/mac4DSTEM/ImagoKit/commit/1e8c23eb9c9633ddf9eff26527aba515721f8e4b))
+* peak_local_max with footprint, labels and num_peaks_per_label ([#54](https://github.com/mac4DSTEM/ImagoKit/issues/54)) ([dd4522f](https://github.com/mac4DSTEM/ImagoKit/commit/dd4522fb162f31d6645229c60a54cc423bfb1543))
+* profile_line of a multichannel image ([#53](https://github.com/mac4DSTEM/ImagoKit/issues/53)) ([e0d3415](https://github.com/mac4DSTEM/ImagoKit/commit/e0d3415629466b9019543d1051c07ce7e2c019d7))
+* rolling_ball nansafe (nanSafe: on both overloads) ([#44](https://github.com/mac4DSTEM/ImagoKit/issues/44)) ([7f13af1](https://github.com/mac4DSTEM/ImagoKit/commit/7f13af18a99f02345a0224431ebd1aa66b271f9f))
+* spline shifts in the constant and wrap modes (orders 2 to 5) ([#55](https://github.com/mac4DSTEM/ImagoKit/issues/55)) ([d550b7f](https://github.com/mac4DSTEM/ImagoKit/commit/d550b7fbe3a7ac0825428d96dc3bef9eb58f8edf))
+* the 14 remaining get_window families ([#51](https://github.com/mac4DSTEM/ImagoKit/issues/51)) ([216c3d2](https://github.com/mac4DSTEM/ImagoKit/commit/216c3d2b845b9fed281116fb4049d3fcb7b5b016))
+* watershed compactness and watershed_line ([#46](https://github.com/mac4DSTEM/ImagoKit/issues/46)) ([a619db6](https://github.com/mac4DSTEM/ImagoKit/commit/a619db6ccc015b9ea983657f777fec9fb356aa93))
+
+
+### Bug Fixes
+
+* rolling_ball computes a Float16 image in Float, as scikit-image does ([#57](https://github.com/mac4DSTEM/ImagoKit/issues/57)) ([72bc7d7](https://github.com/mac4DSTEM/ImagoKit/commit/72bc7d7ae72c6f87090e3f91787fcc129d382de0)), closes [#48](https://github.com/mac4DSTEM/ImagoKit/issues/48)
+* rolling_ball converts the kernel to the image type before the infinity test ([#47](https://github.com/mac4DSTEM/ImagoKit/issues/47)) ([40101f6](https://github.com/mac4DSTEM/ImagoKit/commit/40101f6c576beaa7df403665ca0951075e99d78c))
+* the line-profile CSV lineage sentence names no internal milestone ([#40](https://github.com/mac4DSTEM/ImagoKit/issues/40)) ([81e1b4c](https://github.com/mac4DSTEM/ImagoKit/commit/81e1b4c18d134c140ce5325e1dd6c14c2740ba59)), closes [#27](https://github.com/mac4DSTEM/ImagoKit/issues/27)
+
+
+### Fixtures and tests
+
+* peak-pins.json stores each input image once, 6.4 MB to 206 KB (the same 166 cases and peaks) ([1094965](https://github.com/mac4DSTEM/ImagoKit/commit/1094965ee60cf42de837c51ebbb1c7c1bd8ccf70))
+* regionprops-needle-pins.json drops an internal task number (metadata only, no number changes) ([123e262](https://github.com/mac4DSTEM/ImagoKit/commit/123e262dbd475f3f8d83f5467b02dbdba13922a1))
+* slice-1a-pins.json is now fft-spot-angle-pins.json (the FFT, spot and angle pins; a name, no number changes) ([1094965](https://github.com/mac4DSTEM/ImagoKit/commit/1094965ee60cf42de837c51ebbb1c7c1bd8ccf70))
+* slice-1b-pins.json is now hrtem-filter-pins.json (the HRTEM filter pins; a name, no number changes) ([1094965](https://github.com/mac4DSTEM/ImagoKit/commit/1094965ee60cf42de837c51ebbb1c7c1bd8ccf70))
+* slice-2-pins.json is now registration-drift-pins.json (the registration and drift pins; a name, no number changes) ([1094965](https://github.com/mac4DSTEM/ImagoKit/commit/1094965ee60cf42de837c51ebbb1c7c1bd8ccf70))
+* the CSV export pins carry the sentences the application writes today ([#56](https://github.com/mac4DSTEM/ImagoKit/issues/56)) ([d5563a5](https://github.com/mac4DSTEM/ImagoKit/commit/d5563a53fa75a11300690044b7b9f75461abbdc5)), closes [#42](https://github.com/mac4DSTEM/ImagoKit/issues/42)
+* threshold-morphology-pins.json drops an internal task number (metadata only, no number changes) ([123e262](https://github.com/mac4DSTEM/ImagoKit/commit/123e262dbd475f3f8d83f5467b02dbdba13922a1))
+
 ## [0.8.0](https://github.com/mac4DSTEM/ImagoKit/compare/0.7.0...0.8.0) (2026-10-22)
 
 The segmentation, restoration and strain release : distance transform, watershed and rolling ball; zoom and rotate; TV and non-local-means denoising; the real-input transform and a mixed-radix Float64 plan; GPA strain. Pinned against NumPy 2.5.4, SciPy 1.18.1 and scikit-image 0.26.0 (`tools/segmentation-k1`, `tools/resampling`, `tools/denoise`, `tools/fft-real`) and planted truth (`tools/gpa`); `docs/parity.md` goes from 87 to 93 rows (36 present).
