@@ -6,6 +6,13 @@ Every number is held by regression tests against NumPy 2.5.4, SciPy 1.18.1 and s
 Entries from 0.8.1 on are written by release-please from the merged pull requests' titles. A moved fixture is listed under
 "Fixtures and tests" (a `test:` title, or one `test:` line per fixture in the pull request's commit override).
 
+## [0.9.1](https://github.com/mac4DSTEM/ImagoKit/compare/0.9.0...0.9.1) (2026-11-01)
+
+
+### Bug Fixes
+
+* results and profile CSVs quote the reader note instead of an unvalidated clause ([#62](https://github.com/mac4DSTEM/ImagoKit/issues/62)) ([e6f6e73](https://github.com/mac4DSTEM/ImagoKit/commit/e6f6e73de6ef2812a7c36e5bbe2464a79c4d6a50))
+
 ## [0.9.0](https://github.com/mac4DSTEM/ImagoKit/compare/0.8.0...0.9.0) (2026-10-31)
 
 
