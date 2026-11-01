@@ -9,8 +9,9 @@
 //  cell and its words in `text`. Text cells and header values go through `CSVText.quoted` and `CSVText.headerValue`.
 //
 //  VALIDATION: the `validation` column holds the product's own sentence, and the header holds one `# validation (<product>):`
-//  line for each product present, in the order `validations` lists them. When a note of the source says "unvalidated" (any
-//  case), `unvalidatedClause` follows every sentence. The kit authors no claim: the caller supplies the sentences.
+//  line for each product present, in the order `validations` lists them. When the source has reader notes, every sentence is
+//  followed by `; reader note: ` and the notes as the reader wrote them, joined by `; `, so the file states what the reader
+//  said about its own numbers. The kit authors no claim: the caller supplies the sentences, the reader the notes.
 //
 //  Pure text: exact, tested byte for byte. UTF-8, LF line ends.
 //
@@ -18,8 +19,16 @@
 import Foundation
 
 public nonisolated enum TidyResultsCSV {
-    /// Added to every validation sentence when the source's notes say it is unvalidated.
+    /// No writer uses this any more: the CSVs quote the reader notes after each validation sentence instead.
+    @available(*, deprecated, message: "The CSV writers now quote the reader notes after each validation sentence; this clause is no longer written.")
     public static let unvalidatedClause = ", unvalidated (reader note)"
+
+    /// What follows every validation sentence: `; reader note: <notes joined by "; ">`, or nothing without a note. Each note
+    /// passes `CSVText.headerValue` (so a cell keeps one line), and blank notes are left out.
+    static func readerNoteClause(_ notes: [String]) -> String {
+        let said = notes.map(CSVText.headerValue).filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+        return said.isEmpty ? "" : "; reader note: " + said.joined(separator: "; ")
+    }
 
     public static let columns = ["group", "id", "label", "quantity", "value", "unit", "text", "validation", "lineage"]
 
@@ -103,7 +112,7 @@ public nonisolated enum TidyResultsCSV {
         lines.append("# session: \(CSVText.headerValue(session))")
         lines.append("# notes: \(notes)")
         lines.append(contentsOf: descriptionLines)
-        let flagged = source.notes.contains { $0.lowercased().contains("unvalidated") } ? unvalidatedClause : ""
+        let flagged = readerNoteClause(source.notes)
         let present = Set(rows.map(\.product))
         var written = Set<String>()
         for v in validations where present.contains(v.product) && written.insert(v.product).inserted {

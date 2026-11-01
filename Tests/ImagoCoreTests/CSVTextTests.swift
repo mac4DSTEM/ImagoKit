@@ -94,6 +94,33 @@ private struct TidyPins: Decodable, Sendable {
         #expect(written >= 12)
     }
 
+    /// A source with reader notes: every validation sentence (header line and cell) is followed by the notes as the reader
+    /// wrote them, and nothing is called unvalidated. Without notes the sentence stands alone.
+    @Test func tidyQuotesTheReaderNoteAfterEachValidation() throws {
+        let row = TidyResultsCSV.Row(group: "g", id: "i", label: "l", product: "known", entries: [TidyResultsCSV.Entry("d", 1)])
+        func text(_ notes: [String]) throws -> String {
+            let source = TidyResultsCSV.Source(software: "s", fileName: "f", object: "o", width: 1, height: 1, x: nil, y: nil,
+                                               notes: notes)
+            return try #require(try TidyResultsCSV.text([row], source: source, title: "t", session: "s", descriptionLines: [],
+                                                        validations: [(product: "known", sentence: "closed form")],
+                                                        lineageLine: "# lineage: none"))
+        }
+        let noted = try text(["scale from the tag", "UNVALIDATED"])
+        let lines = noted.components(separatedBy: "\n")
+        #expect(lines.contains("# validation (known): closed form; reader note: scale from the tag; UNVALIDATED"))
+        #expect(lines.contains("g,i,l,d,1,,,closed form; reader note: scale from the tag; UNVALIDATED,"))
+        #expect(!noted.contains("unvalidated"))     // the reader's own word is quoted, never a lower-case verdict
+        let plain = try text(["origin from the header"])
+        #expect(plain.contains("closed form; reader note: origin from the header"))
+        #expect(!plain.lowercased().contains("unvalidated"))
+        let bare = try text([])
+        #expect(bare.contains("# validation (known): closed form\n") && bare.hasSuffix("g,i,l,d,1,,,closed form,\n"))
+        // a cell keeps one line (the note passes headerValue) and a blank note adds nothing
+        let multi = try text(["cr\r\nlf", "", " "])
+        #expect(multi.hasSuffix("g,i,l,d,1,,,closed form; reader note: cr  lf,\n"))
+        #expect(try text(["", "\n"]) == bare.replacingOccurrences(of: "# notes: none", with: "# notes: ;  "))
+    }
+
     @Test func tidyRefusesAProductWithoutASentenceAndWritesNothingForNoRow() throws {
         let source = TidyResultsCSV.Source(software: "s", fileName: "f", object: "o", width: 1, height: 1, x: nil, y: nil, notes: [])
         let row = TidyResultsCSV.Row(group: "g", id: "i", label: "l", product: "mystery", entries: [])
