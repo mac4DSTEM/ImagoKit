@@ -6,12 +6,6 @@ import ImagoAlignment
 import ImagoCore
 import Testing
 
-private func relative(_ got: [Double], _ want: [Double]) -> Double {
-    let top = want.map(abs).max() ?? 0
-    let worst = zip(got, want).map { abs($0 - $1) }.max() ?? 0
-    return top > 0 ? worst / top : worst
-}
-
 private func mode(_ name: String) -> ShiftMode { ShiftMode(rawValue: name)! }
 
 @Suite("ndimage.shift against SciPy 1.18.1")

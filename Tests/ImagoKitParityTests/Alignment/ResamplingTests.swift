@@ -2,7 +2,6 @@
 // use decimal 6; the pins are float32, so 1.5e-6 absolute is held in both outputs' range [0, 1) (as the kit's shift pins are).
 // Shapes and the cval pixels (a source coordinate outside the image in constant mode) are exact.
 import Foundation
-import ImagoKitTestSupport
 import ImagoAlignment
 import ImagoCore
 import Testing

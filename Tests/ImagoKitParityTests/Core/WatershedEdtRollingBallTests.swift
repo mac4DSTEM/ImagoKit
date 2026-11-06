@@ -3,7 +3,6 @@
 // scikit-image 0.26.0 ships no tests in its wheel: rolling_ball floats use assert_allclose dtype defaults (rtol 1e-7 Float64, 1e-5
 // Float32); watershed labels are exact.
 import Foundation
-import ImagoKitTestSupport
 import ImagoCore
 import Testing
 

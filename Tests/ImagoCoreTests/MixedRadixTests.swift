@@ -4,7 +4,6 @@
 import Foundation
 import Testing
 @testable import ImagoCore
-import ImagoKitTestSupport
 
 /// The exact DFT by definition, phases reduced modulo n in integers.
 private func direct(_ re: [Double], _ im: [Double], forward: Bool) -> ([Double], [Double]) {

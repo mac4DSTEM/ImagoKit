@@ -45,7 +45,7 @@ extension Segmentation {
         guard compactness.isFinite, compactness >= 0 else { throw MorphologyError.parameter("compactness must be finite and not negative") }
         if compactness > 0 || watershedLine {
             return labelOnPop(image: image, markers: markers, width: width, height: height, mask: mask, connectivity: connectivity,
-                              compactness: compactness, line: watershedLine)
+                              compactness: compactness)
         }
         let pw = width + 2, ph = height + 2
         var padImage = [Double](repeating: 0, count: pw * ph)
@@ -83,7 +83,7 @@ extension Segmentation {
     /// The compact and watershed-line flood: a pixel is labelled when it leaves the queue, not when it enters it, so it can be
     /// queued more than once (each queued copy carries the marker, the source, it came from).
     private static func labelOnPop(image: [Double], markers: [Int32], width: Int, height: Int, mask: [Bool]?,
-                                   connectivity: Connectivity, compactness: Double, line: Bool) -> [Int32] {
+                                   connectivity: Connectivity, compactness: Double) -> [Int32] {
         let n = width * height
         let pw = width + 2, ph = height + 2
         var padImage = [Double](repeating: 0, count: pw * ph)

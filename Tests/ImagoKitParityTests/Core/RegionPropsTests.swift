@@ -3,7 +3,6 @@
 // area, bbox, Euler number, filled and convex areas are exact. SciPy's ndimage measurement tests use decimal 6 (positions and
 // bounding slices exact).
 import Foundation
-import ImagoKitTestSupport
 import ImagoCore
 import Testing
 
