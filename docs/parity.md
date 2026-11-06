@@ -193,7 +193,7 @@ Numerics are never held stricter than that; readers, I/O, indices and metadata a
 
 ## Known limits and decisions
 
-Open work is in the [issues](https://github.com/mac4DSTEM/ImagoKit/issues), including the ones closed as *not planned* and
+Open work is in the [issues](https://github.com/macEMSuite/ImagoKit/issues), including the ones closed as *not planned* and
 parked for later (`label` speed #6, upsampled registration #7, FFT gaps #8, 1.0 naming #9, precipitation benchmarks #11).
 Speed against Python is in `docs/benchmarks.md`.
 

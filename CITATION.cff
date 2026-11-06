@@ -12,7 +12,7 @@ authors:
 license: GPL-3.0-only
 version: 0.9.1 # x-release-please-version
 date-released: 2026-11-01 # x-release-please-date
-repository-code: "https://github.com/mac4DSTEM/ImagoKit"
+repository-code: "https://github.com/macEMSuite/ImagoKit"
 keywords:
   - electron microscopy
   - image analysis
