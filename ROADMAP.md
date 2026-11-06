@@ -5,10 +5,8 @@ issues; the function-by-function state and the known limits are in [`docs/parity
 
 ## Next
 
-- Speed where the kit is slower than Python at 512²: connected-component `label`, the upsampled phase correlation (Float32).
-- Close gaps in shipped functions: mixed-radix plans for radices 11 and 13 and for Float32 (the 0.9.0 release closed the
-  watershed, rolling-ball, window-family and spline-shift gaps).
-- Benchmark the 0.7.0 segmentation functions (thresholds, morphology, object statistics) against the Python packages.
+- The option gaps left in shipped functions: watershed, EDT, rolling ball, denoise and GPA options (#10), the remaining
+  scikit-image and SciPy options (#12), mixed-radix plans for radices 11 and 13 and for Float32.
 
 ## Later
 
