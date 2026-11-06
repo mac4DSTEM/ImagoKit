@@ -12,7 +12,6 @@ import Foundation
 import Accelerate
 
 nonisolated package final class DFTPairD: @unchecked Sendable {
-    package let length: Int
     private let forwardSetup: vDSP_DFT_SetupD
     private let inverseSetup: vDSP_DFT_SetupD
 
@@ -24,7 +23,6 @@ nonisolated package final class DFTPairD: @unchecked Sendable {
             vDSP_DFT_DestroySetupD(forward)
             return nil
         }
-        self.length = length
         forwardSetup = forward
         inverseSetup = inverse
     }

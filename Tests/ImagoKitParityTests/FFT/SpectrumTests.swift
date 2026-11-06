@@ -1,6 +1,5 @@
 // Spectrum and radial profile against NumPy 2.5.4 and the planted truth.
 import Foundation
-import ImagoKitTestSupport
 import ImagoCore
 import ImagoFFT
 import Testing

@@ -1,6 +1,5 @@
 // Spot spacings and the angle between spots against NumPy 2.5.4 and the planted lattices.
 import Foundation
-import ImagoKitTestSupport
 import ImagoCore
 import ImagoFFT
 import Testing

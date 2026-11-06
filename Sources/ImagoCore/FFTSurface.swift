@@ -233,8 +233,6 @@ public nonisolated enum FFTSurface {
 
 /// `Float` and `Double`, so numeric code can be written once over the precision and still reach `FFTSurface`.
 package protocol FFTSurfaceScalar: BinaryFloatingPoint, Sendable {
-    static func fft2(_ x: ComplexImage<Self>, axes: FFTAxes, norm: FFTNorm) throws -> ComplexImage<Self>
-    static func ifft2(_ x: ComplexImage<Self>, axes: FFTAxes, norm: FFTNorm) throws -> ComplexImage<Self>
     static func rfft2(real: [Self], rows: Int, columns: Int, norm: FFTNorm) throws -> ComplexImage<Self>
     static func irfft2(_ x: ComplexImage<Self>, columns: Int?, norm: FFTNorm) throws -> [Self]
 }
@@ -246,12 +244,6 @@ extension Float: FFTSurfaceScalar {
     package static func irfft2(_ x: ComplexImage<Float>, columns: Int?, norm: FFTNorm) throws -> [Float] {
         try FFTSurface.irfft2(x, columns: columns, norm: norm)
     }
-    package static func fft2(_ x: ComplexImage<Float>, axes: FFTAxes, norm: FFTNorm) throws -> ComplexImage<Float> {
-        try FFTSurface.fft2(x, axes: axes, norm: norm)
-    }
-    package static func ifft2(_ x: ComplexImage<Float>, axes: FFTAxes, norm: FFTNorm) throws -> ComplexImage<Float> {
-        try FFTSurface.ifft2(x, axes: axes, norm: norm)
-    }
 }
 
 extension Double: FFTSurfaceScalar {
@@ -260,11 +252,5 @@ extension Double: FFTSurfaceScalar {
     }
     package static func irfft2(_ x: ComplexImage<Double>, columns: Int?, norm: FFTNorm) throws -> [Double] {
         try FFTSurface.irfft2(x, columns: columns, norm: norm)
-    }
-    package static func fft2(_ x: ComplexImage<Double>, axes: FFTAxes, norm: FFTNorm) throws -> ComplexImage<Double> {
-        try FFTSurface.fft2(x, axes: axes, norm: norm)
-    }
-    package static func ifft2(_ x: ComplexImage<Double>, axes: FFTAxes, norm: FFTNorm) throws -> ComplexImage<Double> {
-        try FFTSurface.ifft2(x, axes: axes, norm: norm)
     }
 }

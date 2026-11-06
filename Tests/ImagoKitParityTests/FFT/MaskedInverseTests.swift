@@ -1,6 +1,5 @@
 // The masked inverse FFT against NumPy 2.5.4.
 import Foundation
-import ImagoKitTestSupport
 import ImagoCore
 import ImagoFFT
 import Testing

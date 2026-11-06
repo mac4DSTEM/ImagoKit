@@ -1,7 +1,6 @@
 // Tests for the spot's crop path, the case counts, and the
 // public members and refusals no other test asserts.
 import Foundation
-import ImagoKitTestSupport
 import ImagoCore
 import ImagoFFT
 import Testing

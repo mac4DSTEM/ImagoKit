@@ -2,7 +2,6 @@
 // symmetry. Each test holds the kit to a plain definition written out literally here (the element-wise product, the strict
 // compare, low + fraction x range, the report's counting rules, peaks then centre exclusion and one of each mirror pair).
 import Foundation
-import ImagoKitTestSupport
 import ImagoCore
 import ImagoFilters
 import Testing
