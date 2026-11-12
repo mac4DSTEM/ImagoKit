@@ -443,12 +443,11 @@ public nonisolated final class FFT2DDouble: FFT2DTransform, @unchecked Sendable 
             } else {
             // Columns: transpose so each is a contiguous line, transform the lines, transpose back (strided column
             // gathers were most of the time of the vDSP and Bluestein lengths).
-            var tRe = [Double](repeating: 0, count: nx * ny), tIm = tRe
-            var uRe = tRe, uIm = tRe
-            vDSP_mtransD(horizontalRe, 1, &tRe, 1, vDSP_Length(nx), vDSP_Length(ny))
-            vDSP_mtransD(horizontalIm, 1, &tIm, 1, vDSP_Length(nx), vDSP_Length(ny))
-            tRe.withUnsafeBufferPointer { inputRe in tIm.withUnsafeBufferPointer { inputIm in
-                uRe.withUnsafeMutableBufferPointer { outputRe in uIm.withUnsafeMutableBufferPointer { outputIm in
+            // The transposes reuse the caller's `re`/`im` and the rows' buffers: two full-size pairs in all, not four.
+            vDSP_mtransD(horizontalRe, 1, &re, 1, vDSP_Length(nx), vDSP_Length(ny))
+            vDSP_mtransD(horizontalIm, 1, &im, 1, vDSP_Length(nx), vDSP_Length(ny))
+            re.withUnsafeBufferPointer { inputRe in im.withUnsafeBufferPointer { inputIm in
+                horizontalRe.withUnsafeMutableBufferPointer { outputRe in horizontalIm.withUnsafeMutableBufferPointer { outputIm in
                     for x in 0..<nx {
                         executeAxis(
                             pair: axisPairY, fftSetup: axisYSetup, fftLog: axisYLog,
@@ -462,8 +461,8 @@ public nonisolated final class FFT2DDouble: FFT2DTransform, @unchecked Sendable 
                     }
                 } }
             } }
-            vDSP_mtransD(uRe, 1, &re, 1, vDSP_Length(ny), vDSP_Length(nx))
-            vDSP_mtransD(uIm, 1, &im, 1, vDSP_Length(ny), vDSP_Length(nx))
+            vDSP_mtransD(horizontalRe, 1, &re, 1, vDSP_Length(ny), vDSP_Length(nx))
+            vDSP_mtransD(horizontalIm, 1, &im, 1, vDSP_Length(ny), vDSP_Length(nx))
             }
             }
             }
