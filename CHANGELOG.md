@@ -6,6 +6,13 @@ Every number is held by regression tests against NumPy 2.5.4, SciPy 1.18.1 and s
 Entries from 0.8.1 on are written by release-please from the merged pull requests' titles. A moved fixture is listed under
 "Fixtures and tests" (a `test:` title, or one `test:` line per fixture in the pull request's commit override).
 
+## [0.9.2](https://github.com/mac4DSTEM/ImagoKit/compare/0.9.1...0.9.2) (2026-11-12)
+
+
+### Performance Improvements
+
+* a 2D FFT of a size that is not a power of two holds four full-size arrays, not eight ([#71](https://github.com/mac4DSTEM/ImagoKit/issues/71)) ([6a7c1fd](https://github.com/mac4DSTEM/ImagoKit/commit/6a7c1fd6b819c27fbb623f66f341db6c293b73bf))
+
 ## [0.9.1](https://github.com/mac4DSTEM/ImagoKit/compare/0.9.0...0.9.1) (2026-11-01)
 
 
