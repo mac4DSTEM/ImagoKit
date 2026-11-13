@@ -24,7 +24,7 @@ SciPy" below and the BSD-3-Clause notice is kept.
 Origin of the first modules (the copyright holder's own code)
 ================================================================================
 
-macTEM (github.com/macEMSuite/macTEM) before v1.0.0 (history squashed):
+macTEM (github.com/macEMSuite/macEM) before v1.0.0 (history squashed):
   Sources/TEMCore/Compute/PowerSpectrum.swift, RadialProfile.swift,
   SpotMeasure.swift, MaskedInverseFFT.swift, HRTEMFilter.swift,
   FFTRoomMath.swift (the unit rules), Data/CalibratedImage.swift (the axis
