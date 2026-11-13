@@ -25,7 +25,7 @@ import Testing
         let viaRadius8 = try RollingBall.background(image: image, rows: 3, columns: 3, radius: 8)
         #expect(viaRadius8 == kernel)
         #expect(wide.count == 9)
-        #expect(wide.allSatisfy(\.isFinite))
+        #expect(wide.allSatisfy { $0.isFinite })
     }
 
     @Test func nextPowerOfTwoAbove2To62EndsInsteadOfLooping() {
@@ -42,7 +42,7 @@ import Testing
 
     @Test func aLabelImageClaimingMoreObjectsThanPixelsIsRefused() {
         let labels = Segmentation.LabelImage(width: 2, height: 1, labels: [1, 0], count: Int.max)
-        #expect(throws: Segmentation.SegmentationError.invalidLabelImage) { try ObjectStatistics.measure(image: [1, 2], labels: labels) }
+        #expect(throws: Segmentation.SegmentationError.invalidLabelImage) { try ObjectStatistics.measure(image: [1, 2] as [Double], labels: labels) }
     }
 
     @Test func watershedMarkersOnAnOverflowingGridAreRefused() {
