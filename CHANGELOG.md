@@ -6,6 +6,19 @@ Every number is held by regression tests against NumPy 2.5.4, SciPy 1.18.1 and s
 Entries from 0.8.1 on are written by release-please from the merged pull requests' titles. A moved fixture is listed under
 "Fixtures and tests" (a `test:` title, or one `test:` line per fixture in the pull request's commit override).
 
+## [0.9.3](https://github.com/macEMSuite/ImagoKit/compare/0.9.2...0.9.3) (2026-11-13)
+
+
+### Bug Fixes
+
+* public calls refuse bad parameters instead of trapping or over-allocating ([#86](https://github.com/macEMSuite/ImagoKit/issues/86)) ([6db6464](https://github.com/macEMSuite/ImagoKit/commit/6db6464c068ac7a37215d629cb6d4ec1d4894365))
+
+
+### Fixtures and tests
+
+* hold the aligned float32 stack sum to NumPy's float32 accumulation ([#87](https://github.com/macEMSuite/ImagoKit/issues/87)) ([5daa212](https://github.com/macEMSuite/ImagoKit/commit/5daa21253f4ca30d9a42afd9c57d1d32f0837355))
+* hold the aligned float32 stack sum to NumPy's float32 accumulation and pin the edge weight's placements ([5daa212](https://github.com/macEMSuite/ImagoKit/commit/5daa21253f4ca30d9a42afd9c57d1d32f0837355))
+
 ## [0.9.2](https://github.com/mac4DSTEM/ImagoKit/compare/0.9.1...0.9.2) (2026-11-12)
 
 
