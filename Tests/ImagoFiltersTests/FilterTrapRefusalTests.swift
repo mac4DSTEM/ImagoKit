@@ -18,7 +18,7 @@ import Testing
 
     /// A constant image beyond 2^24 (Float) or 2^53 (Double) loses the ±0.5 the histogram widens it by: no width to bin.
     @Test func histogramThresholdsOnALargeConstantImageAreRefused() {
-        let floats = ThresholdPixels.float32([Float](repeating: 1 << 25, count: 16))
+        let floats = ThresholdPixels.float32([Float](repeating: 0x1p25, count: 16))
         let doubles = ThresholdPixels.float64([Double](repeating: 0x1p54, count: 16))
         for image in [floats, doubles] {
             #expect(throws: ThresholdError.self) { try Thresholding.yen(image) }
@@ -27,7 +27,7 @@ import Testing
         }
     }
 
-    @Test func integerThresholdsOverAnOverflowingRangeAreRefused() {
+    @Test func integerThresholdsOverAnOverflowingRangeAreRefused() throws {
         let extreme = ThresholdPixels.integers([Int.min, Int.max, 0])
         #expect(throws: ThresholdError.parameter("integer range")) { try Thresholding.li(extreme) }
         #expect(throws: ThresholdError.parameter("integer range")) { try Thresholding.yen(extreme) }
