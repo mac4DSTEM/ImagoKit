@@ -3,7 +3,7 @@
 #   * warnings    the compiler's warnings in a debug build of the package and its tests, deduplicated.
 #   * thread      `swift test --sanitize=thread` on the unit targets (the *ParityTests targets skipped): data races.
 #   * address     `swift test --sanitize=address` on the same: out-of-bounds and use-after-free (stops at the first).
-#   * analyze     `xcodebuild analyze` when the package has C, C++ or Objective-C sources (Swift is not analysed by it).
+#   * analyze     (in the warnings job) `xcodebuild analyze` when the package has C, C++ or Objective-C sources (Swift is not analysed by it).
 #   * lint        SwiftLint candidate rules on Sources/ only, counted per rule; the shared config takes those that pay.
 #   * benchmarks  tools/benchmarks/ci.sh <out.json>, if the repo has one: CPU timings compared with the previous
 #                 scheduled run's; a case more than 25 % slower is listed. Runner timings are noisy; GPU timings are
@@ -37,8 +37,14 @@ jobs:
     timeout-minutes: 45
     outputs:
       count: ${{ steps.count.outputs.count }}
+      analyze: ${{ steps.analyze.outputs.count }}
     steps:
       - uses: actions/checkout@v7
+      - name: Metal toolchain (only if the repo has .metal sources)
+        run: |
+          if git ls-files '*.metal' | grep -q .; then
+            xcrun -sdk macosx metal --version >/dev/null 2>&1 || sudo xcodebuild -downloadComponent MetalToolchain
+          fi
       - name: Build the package and its tests (debug)
         run: swift build --build-system native --build-tests 2>&1 | tee build.log || true
       - id: count
@@ -47,6 +53,17 @@ jobs:
           grep -E ': warning: ' build.log | grep -v '/.build/' | sed -E "s|^$PWD/||" | sort -u > warnings.txt || true
           echo "count=$(wc -l < warnings.txt | tr -d ' ')" >> "$GITHUB_OUTPUT"
           { echo "### Compiler warnings: $(wc -l < warnings.txt | tr -d ' ')"; echo '```'; head -200 warnings.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+      - id: analyze
+        name: Static analyzer (C, C++, Objective-C sources only)
+        run: |
+          if [ -z "$(git ls-files '*.c' '*.cc' '*.cpp' '*.m' '*.mm' | grep -v '^References/')" ]; then
+            echo "count=n/a" >> "$GITHUB_OUTPUT"; echo "### Static analyzer: no C, C++ or Objective-C sources" >> "$GITHUB_STEP_SUMMARY"; exit 0
+          fi
+          scheme=$(xcodebuild -list -json | python3 -c 'import json,sys; d=json.load(sys.stdin); w=d.get("workspace") or d.get("project"); s=w["schemes"]; print(next((x for x in s if x.endswith("-Package")), s[0]))')
+          xcodebuild analyze -scheme "$scheme" -destination 'platform=macOS' -quiet > analyze.log 2>&1 || true
+          grep -E '\.(c|cc|cpp|m|mm):[0-9]+:[0-9]+: warning: ' analyze.log | grep -v '/.build/' | sort -u > found.txt || true
+          echo "count=$(wc -l < found.txt | tr -d ' ')" >> "$GITHUB_OUTPUT"
+          { echo "### Static analyzer: $(wc -l < found.txt | tr -d ' ')"; echo '```'; head -100 found.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
 
   thread:
     if: github.event_name != 'schedule' || github.event.schedule == '17 5 * * 6'
@@ -57,6 +74,11 @@ jobs:
       exit: ${{ steps.run.outputs.exit }}
     steps:
       - uses: actions/checkout@v7
+      - name: Metal toolchain (only if the repo has .metal sources)
+        run: |
+          if git ls-files '*.metal' | grep -q .; then
+            xcrun -sdk macosx metal --version >/dev/null 2>&1 || sudo xcodebuild -downloadComponent MetalToolchain
+          fi
       - id: run
         name: Unit tests under the Thread Sanitizer
         run: |
@@ -81,6 +103,11 @@ jobs:
       exit: ${{ steps.run.outputs.exit }}
     steps:
       - uses: actions/checkout@v7
+      - name: Metal toolchain (only if the repo has .metal sources)
+        run: |
+          if git ls-files '*.metal' | grep -q .; then
+            xcrun -sdk macosx metal --version >/dev/null 2>&1 || sudo xcodebuild -downloadComponent MetalToolchain
+          fi
       - id: run
         name: Unit tests under the Address Sanitizer
         run: |
@@ -95,26 +122,6 @@ jobs:
           echo "count=$n" >> "$GITHUB_OUTPUT"
           { echo "### Address Sanitizer reports: $n (tests exit ${{ steps.run.outputs.exit }}; it stops at the first)"; echo '```'
             grep -A20 'ERROR: AddressSanitizer' asan.log | head -200; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
-
-  analyze:
-    if: github.event_name != 'schedule' || github.event.schedule == '17 5 * * 6'
-    runs-on: macos-26
-    timeout-minutes: 45
-    outputs:
-      count: ${{ steps.count.outputs.count }}
-    steps:
-      - uses: actions/checkout@v7
-      - id: count
-        name: Static analyzer (C, C++, Objective-C sources only)
-        run: |
-          if [ -z "$(git ls-files '*.c' '*.cc' '*.cpp' '*.m' '*.mm' | grep -v '^References/')" ]; then
-            echo "count=n/a" >> "$GITHUB_OUTPUT"; echo "### Static analyzer: no C, C++ or Objective-C sources" >> "$GITHUB_STEP_SUMMARY"; exit 0
-          fi
-          scheme=$(xcodebuild -list -json | python3 -c 'import json,sys; d=json.load(sys.stdin); w=d.get("workspace") or d.get("project"); print(next(s for s in w["schemes"] if s.endswith("-Package")))')
-          xcodebuild analyze -scheme "$scheme" -destination 'platform=macOS' -quiet > analyze.log 2>&1 || true
-          grep -E ': warning: ' analyze.log | grep -v '/.build/' | sort -u > found.txt || true
-          echo "count=$(wc -l < found.txt | tr -d ' ')" >> "$GITHUB_OUTPUT"
-          { echo "### Static analyzer: $(wc -l < found.txt | tr -d ' ')"; echo '```'; head -100 found.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
 
   lint:
     if: github.event_name != 'schedule' || github.event.schedule == '17 5 * * 6'
@@ -209,7 +216,7 @@ jobs:
           PY
 
   report:
-    needs: [warnings, thread, address, analyze, lint, benchmarks]
+    needs: [warnings, thread, address, lint, benchmarks]
     if: always()
     runs-on: ubuntu-latest
     permissions:
@@ -229,7 +236,7 @@ jobs:
               echo "| Compiler warnings | ${{ needs.warnings.outputs.count || 'failed' }} |"
               echo "| Thread Sanitizer reports (tests exit ${{ needs.thread.outputs.exit || '?' }}) | ${{ needs.thread.outputs.count || 'failed' }} |"
               echo "| Address Sanitizer reports (tests exit ${{ needs.address.outputs.exit || '?' }}) | ${{ needs.address.outputs.count || 'failed' }} |"
-              echo "| Static analyzer | ${{ needs.analyze.outputs.count || 'failed' }} |"
+              echo "| Static analyzer | ${{ needs.warnings.outputs.analyze || 'failed' }} |"
               echo "| SwiftLint candidates (Sources/) | ${{ needs.lint.outputs.counts || 'failed' }} |"
             fi
             echo "| Benchmarks | ${{ needs.benchmarks.outputs.summary || 'failed' }} |"
