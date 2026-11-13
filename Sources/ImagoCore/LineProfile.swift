@@ -180,6 +180,9 @@ public nonisolated struct LineProfile: Sendable {
         guard hyp.isFinite, hyp + 1 <= Double(maxSamples),
               max(abs(from.x), abs(from.y), abs(to.x), abs(to.y)) <= 1e15 else { throw LineProfileError.invalidSegment }
         let n = Int((hyp + 1).rounded(.up))
+        // n × w samples are held at once: a width that would pass `maxSamples` · 4 of them is refused before the allocation.
+        let total = n.multipliedReportingOverflow(by: w)
+        guard !total.overflow, total.partialValue <= 4 * maxSamples else { throw LineProfileError.invalidWidth(w) }
         let theta = atan2(dRow, dCol)
         let colHalf = Double(w - 1) * sin(-theta) / 2          // skimage's col_width
         let rowHalf = Double(w - 1) * cos(theta) / 2           // skimage's row_width

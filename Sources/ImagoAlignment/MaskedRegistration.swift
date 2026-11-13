@@ -47,7 +47,8 @@ extension PhaseCorrelation {
         }
         let c = try maskedCorrelation(reference: reference, moving: moving, referenceMask: referenceMask, movingMask: mm,
                                       overlapRatio: overlapRatio, precision: precision)
-        let top = c.values.max()!
+        // A correlation with no finite peak (no overlap the masks allow) has no shift: refused, where 0 / 0 gave a NaN one.
+        guard let top = c.values.max(), top.isFinite else { throw AlignmentError.invalidShift(index: 0) }
         var sumR = 0.0, sumC = 0.0, count = 0.0
         for r in 0..<c.rows { for k in 0..<c.columns where c.values[r * c.columns + k] == top {
             sumR += Double(r); sumC += Double(k); count += 1

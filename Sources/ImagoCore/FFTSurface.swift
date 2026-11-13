@@ -90,7 +90,7 @@ public nonisolated enum FFTSurface {
     }
 
     private static func roll<T>(_ a: [T], rows: Int, columns: Int, axes: FFTAxes, inverse: Bool) throws -> [T] {
-        guard rows > 0, columns > 0, a.count == rows * columns else { throw FFTSurfaceError.shape }
+        guard rows > 0, columns > 0, a.count == ImagoSize.area(rows, columns) else { throw FFTSurfaceError.shape }
         // fftshift rolls by n/2 (output[i] = input[(i − n/2) mod n]); ifftshift by −(n/2).
         let sr = axes == .axis1 ? 0 : (inverse ? -(rows / 2) : rows / 2)
         let sc = axes == .axis0 ? 0 : (inverse ? -(columns / 2) : columns / 2)
@@ -131,7 +131,7 @@ public nonisolated enum FFTSurface {
     /// `numpy.fft.rfft2(x, norm=)` of a real `rows × columns` image: `rows × (columns / 2 + 1)`, Float64. Two real rows share
     /// one complex transform (`RealFFT2D.swift`), so it costs about half of `fft2`.
     public static func rfft2(real: [Double], rows: Int, columns: Int, norm: FFTNorm = .backward) throws -> ComplexImage<Double> {
-        guard rows > 0, columns > 0, real.count == rows * columns else { throw FFTSurfaceError.shape }
+        guard rows > 0, columns > 0, real.count == ImagoSize.area(rows, columns) else { throw FFTSurfaceError.shape }
         guard let plan = PlanCache.shared.plan(nx: columns, ny: rows) as FFT2DDouble? else { throw FFTSurfaceError.setup }
         var (re, im) = plan.realForward(real)
         scale(&re, &im, by: scaleFactor(norm, forward: true, count: rows * columns))
@@ -140,7 +140,7 @@ public nonisolated enum FFTSurface {
 
     /// `numpy.fft.rfft2(x, norm=)`, Float32.
     public static func rfft2(real: [Float], rows: Int, columns: Int, norm: FFTNorm = .backward) throws -> ComplexImage<Float> {
-        guard rows > 0, columns > 0, real.count == rows * columns else { throw FFTSurfaceError.shape }
+        guard rows > 0, columns > 0, real.count == ImagoSize.area(rows, columns) else { throw FFTSurfaceError.shape }
         guard let plan = PlanCache.shared.plan(nx: columns, ny: rows) as FFT2D? else { throw FFTSurfaceError.setup }
         var (re, im) = plan.realForward(real)
         scale(&re, &im, by: scaleFactor(norm, forward: true, count: rows * columns))
@@ -191,7 +191,7 @@ public nonisolated enum FFTSurface {
     private static func run<F: FFT2DTransform>(_ x: ComplexImage<F.Scalar>, forward: Bool, axes: FFTAxes, norm: FFTNorm,
                                                make: (Int, Int) -> F?) throws -> ComplexImage<F.Scalar> {
         let h = x.rows, w = x.columns
-        guard h > 0, w > 0, x.re.count == h * w, x.im.count == h * w else { throw FFTSurfaceError.shape }
+        guard h > 0, w > 0, x.re.count == ImagoSize.area(h, w), x.im.count == ImagoSize.area(h, w) else { throw FFTSurfaceError.shape }
         var re = x.re, im = x.im
         switch axes {
         case .both:

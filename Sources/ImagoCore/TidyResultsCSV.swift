@@ -89,7 +89,7 @@ public nonisolated enum TidyResultsCSV {
     ///
     /// - `title`: the first header line's words, written `# <title>`.
     /// - `session`: the sentence that says where the file's marks are kept.
-    /// - `descriptionLines` and `lineageLine` must each be one line (they are written as given).
+    /// - `descriptionLines` and `lineageLine` are each written as one line (a control character, a newline included, becomes a space).
     /// - `descriptionLines`: complete header lines (each starting `# `) that say what the points and units of this table mean,
     ///   written after `# notes:` in the order given.
     /// - `validations`: (product, sentence) in header order; every row's product must appear.
@@ -111,14 +111,15 @@ public nonisolated enum TidyResultsCSV {
         lines.append(CSVText.scaleLine("y", source.y))
         lines.append("# session: \(CSVText.headerValue(session))")
         lines.append("# notes: \(notes)")
-        lines.append(contentsOf: descriptionLines)
+        // Each is one line whatever the caller passes: a newline inside one would end the `# key:` header block early.
+        lines.append(contentsOf: descriptionLines.map(CSVText.headerValue))
         let flagged = readerNoteClause(source.notes)
         let present = Set(rows.map(\.product))
         var written = Set<String>()
         for v in validations where present.contains(v.product) && written.insert(v.product).inserted {
             lines.append("# validation (\(v.product)): \(CSVText.headerValue(v.sentence + flagged))")
         }
-        lines.append(lineageLine)
+        lines.append(CSVText.headerValue(lineageLine))
         lines.append("# numbers: %.17g (exact round trip); nan where the owner holds NaN; value empty where a line is words only")
         lines.append(columns.map(CSVText.quoted).joined(separator: ","))
         var out = lines.joined(separator: "\n")

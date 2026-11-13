@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import ImagoCore
 
 /// The window families of `scipy.signal.get_window`, each with SciPy's parameters under SciPy's names.
 public nonisolated enum WindowType: Sendable, Equatable {
@@ -62,6 +63,7 @@ public nonisolated enum WindowFunction {
                 return n <= half ? 2 * n / Double(m - 1) : 2 - 2 * n / Double(m - 1)
             }
         case .tukey(let alpha):
+            guard !alpha.isNaN else { throw FilterError.parameter("alpha") }
             if alpha <= 0 { return [Double](repeating: 1, count: m) }
             if alpha >= 1 { return cosineSum([0.5, 0.5]) }
             let width = Int(floor(alpha * Double(m - 1) / 2))
@@ -305,14 +307,14 @@ public nonisolated enum WindowFunction {
 
     /// `skimage.filters.window(type, (rows, columns))`.
     public static func window2D(_ type: WindowType, rows: Int, columns: Int) throws -> [Double] {
-        guard rows >= 0, columns >= 0 else { throw FilterError.parameter("shape") }
+        guard rows >= 0, columns >= 0, let area = ImagoSize.area(rows, columns) else { throw FilterError.parameter("shape") }
         let m = max(rows, columns)
         let w = try window1D(type, count: m)
         let center = Double(m) / 2 - 0.5
         // scikit-image builds the distances in Double (a NumPy float64 scalar widens the float32 `arange`) and stores the
         // coordinate in a float32 array, which is what `map_coordinates` reads.
         func g(_ i: Int, _ n: Int) -> Double { Double(i) * (Double(m) / Double(n)) - center }
-        var out = [Double](repeating: 0, count: rows * columns)
+        var out = [Double](repeating: 0, count: area)
         for r in 0..<rows {
             let gr = g(r, rows)
             for c in 0..<columns {

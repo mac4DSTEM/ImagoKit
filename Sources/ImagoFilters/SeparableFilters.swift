@@ -12,6 +12,7 @@
 
 import Foundation
 import Accelerate
+import ImagoCore
 
 /// How a filter reads beyond the edge (SciPy's `mode=`; `grid-constant` is `.constant` and `grid-wrap` is `.wrap` here).
 public nonisolated enum BoundaryMode: String, Sendable, Equatable, Hashable, CaseIterable {
@@ -47,7 +48,7 @@ public nonisolated enum SeparableFilters {
     public static func gaussianFilter<S: BinaryFloatingPoint & Sendable>(_ a: [S], rows: Int, columns: Int,
                                                               sigma: (row: Double, column: Double), truncate: Double = 4,
                                                               mode: BoundaryMode = .reflect, cval: Double = 0) throws -> [S] {
-        guard rows > 0, columns > 0, a.count == rows * columns else { throw FilterError.shape }
+        guard rows > 0, columns > 0, a.count == ImagoSize.area(rows, columns) else { throw FilterError.shape }
         guard sigma.row.isFinite, sigma.column.isFinite, sigma.row >= 0, sigma.column >= 0 else {
             throw FilterError.parameter("sigma")
         }
@@ -64,7 +65,7 @@ public nonisolated enum SeparableFilters {
     @_specialize(where S == Double)
     public static func uniformFilter<S: BinaryFloatingPoint & Sendable>(_ a: [S], rows: Int, columns: Int, size: (row: Int, column: Int),
                                                              mode: BoundaryMode = .reflect, cval: Double = 0) throws -> [S] {
-        guard rows > 0, columns > 0, a.count == rows * columns else { throw FilterError.shape }
+        guard rows > 0, columns > 0, a.count == ImagoSize.area(rows, columns) else { throw FilterError.shape }
         guard size.row >= 1, size.column >= 1, max(size.row, size.column) < (1 << 24) else { throw FilterError.parameter("size") }
         var data = a.map(Double.init)
         if size.row > 1 { data = boxAxis0(data, rows, columns, size.row, mode, cval, S.self) }

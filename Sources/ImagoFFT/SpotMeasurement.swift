@@ -164,7 +164,8 @@ public nonisolated struct SpotMeasurement: Sendable, Equatable {
 
     /// NumPy's `hanning(n)`: 0.5 − 0.5·cos(2πk/(n − 1)); `[1]` for n = 1.
     public static func hanning(_ n: Int) -> [Double] {
-        n == 1 ? [1] : (0..<n).map { 0.5 - 0.5 * cos(2 * .pi * Double($0) / Double(n - 1)) }
+        // NumPy's `hanning(M)` is empty for M below 1.
+        n < 1 ? [] : n == 1 ? [1] : (0..<n).map { 0.5 - 0.5 * cos(2 * .pi * Double($0) / Double(n - 1)) }
     }
 
     /// The angle between two spots' physical q vectors, in degrees, 0 … 180: atan2(|a × b|, a · b) (not acos, which loses

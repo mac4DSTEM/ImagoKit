@@ -112,7 +112,10 @@ public nonisolated enum ObjectStatistics {
 
     private static func validate(_ labels: Segmentation.LabelImage, imageCount: Int) throws {
         let (product, overflow) = labels.width.multipliedReportingOverflow(by: labels.height)
-        guard labels.width > 0, labels.height > 0, labels.count >= 0, !overflow else { throw Segmentation.SegmentationError.invalidLabelImage }
+        // Every object holds a pixel, so more objects than pixels is no label image (and would size the per-object arrays by it).
+        guard labels.width > 0, labels.height > 0, labels.count >= 0, !overflow, labels.count <= product else {
+            throw Segmentation.SegmentationError.invalidLabelImage
+        }
         guard labels.labels.count == product else {
             throw Segmentation.SegmentationError.sizeMismatch(expected: product, got: labels.labels.count)
         }

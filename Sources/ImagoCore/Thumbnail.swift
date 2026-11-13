@@ -19,7 +19,7 @@ public nonisolated struct Thumbnail: Sendable, Equatable {
 
     /// nil when the geometry is not one: a side under 1 px, or a value count that is not `width × height`.
     public init?(width: Int, height: Int, normalized: [Float]) {
-        guard width >= 1, height >= 1, normalized.count == width * height else { return nil }
+        guard width >= 1, height >= 1, normalized.count == ImagoSize.area(width, height) else { return nil }
         self.width = width
         self.height = height
         self.normalized = normalized
@@ -40,7 +40,7 @@ public nonisolated struct Thumbnail: Sendable, Equatable {
     /// the invalid sentinel and non-finite values are left out, and a box with no valid pixel is the sentinel. Sums are in
     /// Double (exact for the sizes thumbnails come from), the mean rounded once to Float32.
     public static func make(normalized: [Float], width: Int, height: Int, maxSide: Int = defaultMaxSide) -> Thumbnail? {
-        guard width >= 1, height >= 1, maxSide >= 1, normalized.count == width * height else { return nil }
+        guard width >= 1, height >= 1, maxSide >= 1, normalized.count == ImagoSize.area(width, height) else { return nil }
         let long = max(width, height)
         if long <= maxSide { return Thumbnail(width: width, height: height, normalized: normalized) }
 

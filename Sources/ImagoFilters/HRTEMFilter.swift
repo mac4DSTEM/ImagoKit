@@ -269,9 +269,9 @@ public nonisolated enum HRTEMFilter {
     }
 
     /// The profile P(ρ), ρ = 0 … n/2 − 1: X sampled bilinearly at (n/2 + ρ cos θ, n/2 + ρ sin θ) (row, column) for 512
-    /// angles θ = 2πk/512 and averaged over them. Requires `x.count == n · n` and n ≥ 2 (it traps otherwise; `filter`
-    /// checks its input before calling it).
+    /// angles θ = 2πk/512 and averaged over them. Empty unless n ≥ 2 and `x.count == n · n` (`filter` checks its input first).
     public static func radialProfile(_ x: [Double], n: Int) -> [Double] {
+        guard n >= 2, x.count == ImagoSize.area(n, n) else { return [] }
         let half = n / 2
         let angles = 512
         var profile = [Double](repeating: 0, count: half)
@@ -289,8 +289,10 @@ public nonisolated enum HRTEMFilter {
     }
 
     /// rot(X): `radialProfile` interpolated linearly at each pixel's r, held at its last value beyond ρ = n/2 − 1.
+    /// `x` unchanged unless n ≥ 2 and `x.count == n · n`.
     public static func rotationalAverage(_ x: [Double], n: Int) -> [Double] {
         let profile = radialProfile(x, n: n)
+        guard !profile.isEmpty else { return x }
         let half = n / 2
         var out = [Double](repeating: 0, count: n * n)
         for row in 0..<n {

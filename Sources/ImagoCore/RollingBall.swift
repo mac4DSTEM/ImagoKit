@@ -38,7 +38,7 @@ public nonisolated enum RollingBall {
         public let values: [Double]
 
         public init(rows: Int, columns: Int, values: [Double]) throws {
-            guard rows > 0, columns > 0, values.count == rows * columns else { throw RestorationError.shape }
+            guard rows > 0, columns > 0, values.count == ImagoSize.area(rows, columns) else { throw RestorationError.shape }
             self.rows = rows; self.columns = columns; self.values = values
         }
     }
@@ -93,7 +93,11 @@ public nonisolated enum RollingBall {
             return promoted
         }
         guard radius.isFinite, radius >= 0 else { throw RestorationError.parameter("radius must be finite and not negative") }
-        if radius <= maximumRadius {
+        // A ball that reaches past the image on both axes (ceil(r) ≥ max(h, w) − 1) gives the same background from the image-sized
+        // walk below, whose cells are fewer: the kernel's cells beyond the image only ever meet the +infinity padding. So a radius far
+        // wider than a small image no longer builds a kernel of gigabytes first.
+        let coversImage = radius.rounded(.up) >= Double(max(height, width) - 1)
+        if radius <= maximumRadius, !coversImage {
             return try background(image: image, rows: height, columns: width, kernel: ballKernel(radius: radius), nanSafe: nanSafe)
         }
         let (n, overflow) = width.multipliedReportingOverflow(by: height)
