@@ -147,8 +147,10 @@ extension Segmentation {
     /// Marker image from peak coordinates, as the usual `markers[tuple(coords.T)] = arange(1, n + 1)`: the k-th coordinate (1-based)
     /// carries label k. Coordinates outside the image are refused; a repeated coordinate keeps the later label.
     public static func markers(peakRows: [Int], peakColumns: [Int], rows height: Int, columns width: Int) throws -> [Int32] {
-        guard width > 0, height > 0, peakRows.count == peakColumns.count else { throw MorphologyError.shape }
-        var out = [Int32](repeating: 0, count: width * height)
+        guard width > 0, height > 0, peakRows.count == peakColumns.count, let area = ImagoSize.area(width, height) else {
+            throw MorphologyError.shape
+        }
+        var out = [Int32](repeating: 0, count: area)
         for (k, rc) in zip(peakRows, peakColumns).enumerated() {
             guard rc.0 >= 0, rc.0 < height, rc.1 >= 0, rc.1 < width else { throw MorphologyError.parameter("peak outside the image") }
             out[rc.0 * width + rc.1] = Int32(k + 1)

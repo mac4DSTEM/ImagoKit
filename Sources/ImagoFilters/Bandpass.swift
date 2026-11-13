@@ -96,6 +96,8 @@ public nonisolated enum BandpassFilters {
     ) throws -> [S] {
         guard rows > 0, columns > 0, rows <= Int.max / columns, a.count == rows * columns else { throw FilterError.shape }
         guard npad >= 0, npad < (1 << 20), cutoff.isFinite, cutoff > 0, cutoff <= 0.5 else { throw FilterError.cutoff }
+        // The padded image is held whole: one past 2^28 pixels (2 GB of Double) is refused, whatever the image's own size.
+        guard let padded = ImagoSize.area(rows + 2 * npad, columns + 2 * npad), padded <= 1 << 28 else { throw FilterError.cutoff }
         var image = a, h = rows, w = columns
         if npad > 0 {
             h = rows + 2 * npad; w = columns + 2 * npad

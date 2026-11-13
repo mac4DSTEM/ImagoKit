@@ -94,10 +94,10 @@ public nonisolated struct IntensityHistogram: Sendable, Equatable {
 
     /// The same histogram without the exceptions, for a caller that wants the statistics even when NumPy refuses the range:
     /// `counts` and `edges` are EMPTY when `histogram` would throw `tooManyBins`, and nil is returned when no pixel is
-    /// finite (NumPy returns an all-zero histogram on (0, 1) there). Other errors (`bins` below 1, a bad supplied range) are programming errors and trap.
+    /// finite (NumPy returns an all-zero histogram on (0, 1) there), and for `bins` below 1 or a bad supplied range (`histogram`
+    /// says which).
     public static func compute(_ pixels: [Float], bins: Int, range: (Float, Float)? = nil) -> IntensityHistogram? {
-        precondition(bins >= 1, "IntensityHistogram: \(bins) bins")
-        guard pixels.contains(where: \.isFinite) else { return nil }
+        guard bins >= 1, pixels.contains(where: \.isFinite) else { return nil }
         do {
             return try histogram(pixels, bins: bins, range: range)
         } catch HistogramError.tooManyBins {
@@ -105,7 +105,7 @@ public nonisolated struct IntensityHistogram: Sendable, Equatable {
             return IntensityHistogram(counts: [], edges: [], minimum: s.lowest, maximum: s.highest,
                                       finiteCount: s.finite, mean: s.mean)
         } catch {
-            preconditionFailure("IntensityHistogram: \(error)")
+            return nil
         }
     }
 

@@ -60,8 +60,9 @@ public nonisolated enum Thresholding {
         guard image.count > 0 else { throw ThresholdError.shape }
         switch image {
         case .integers(let v):
-            let lo = v.min()!, hi = v.max()!
-            guard hi - lo < 1 << 26 else { throw ThresholdError.parameter("integer range") }
+            let lo = v.min()!, hi = v.max()!   // not empty: checked above
+            let span = hi.subtractingReportingOverflow(lo)
+            guard !span.overflow, span.partialValue < 1 << 26 else { throw ThresholdError.parameter("integer range") }
             var counts = [Int](repeating: 0, count: hi - lo + 1)
             for x in v { counts[x - lo] += 1 }
             return Histogram(counts: counts, centers: (lo...hi).map(Double.init))
@@ -82,6 +83,8 @@ public nonisolated enum Thresholding {
         var first = a.min()!, last = a.max()!
         guard (last - first).isFinite else { throw ThresholdError.parameter("the pixel range overflows") }
         if first == last { first -= 0.5; last += 0.5 }
+        // A constant image beyond 2^24 (Float) or 2^53 (Double) loses the ±0.5: no width to bin, where Int(NaN) trapped.
+        guard last > first else { throw ThresholdError.parameter("a constant image of \(first) is too large to bin") }
         // np.linspace(first, last, n + 1, dtype): y = arange * step + start, the last edge set to `last`.
         let step = (last - first) / T(n)
         var edges = (0...n).map { T($0) * step + first }
@@ -281,7 +284,7 @@ public nonisolated enum Thresholding {
         switch image {
         case .float32(let v): return try liFloat(v)
         case .float64(let v): return try liFloat(v)
-        case .integers(let v): return liInteger(v)
+        case .integers(let v): return try liInteger(v)
         }
     }
 
@@ -315,9 +318,12 @@ public nonisolated enum Thresholding {
         return Double(next + minimum)
     }
 
-    private static func liInteger(_ input: [Int]) -> Double {
-        let minimum = input.min()!
-        if input.allSatisfy({ $0 == input[0] }) { return Double(input[0]) }
+    private static func liInteger(_ input: [Int]) throws -> Double {
+        guard let minimum = input.min(), let maximum = input.max() else { throw ThresholdError.shape }
+        if minimum == maximum { return Double(minimum) }
+        // The shifted histogram has max − min + 1 bins: a range that overflows, or one past 2^26 bins, is refused, as `histogram` is.
+        let span = maximum.subtractingReportingOverflow(minimum)
+        guard !span.overflow, span.partialValue < 1 << 26 else { throw ThresholdError.parameter("integer range") }
         let shifted = input.map { $0 - minimum }
         let tolerance = 0.5
         var hist = [Float](repeating: 0, count: shifted.max()! + 1)
@@ -351,7 +357,7 @@ public nonisolated enum Thresholding {
     /// image's float type (integers compute in Double). The mask is `image > surface`.
     public static func local(_ image: ThresholdPixels, width: Int, height: Int, blockSize: Int, method: LocalMethod = .gaussian(),
                              offset: Double = 0, mode: BoundaryMode = .reflect, cval: Double = 0) throws -> [Double] {
-        guard width > 0, height > 0, image.count == width * height else { throw ThresholdError.shape }
+        guard width > 0, height > 0, image.count == ImagoSize.area(width, height) else { throw ThresholdError.shape }
         guard blockSize >= 1, blockSize % 2 == 1 else { throw ThresholdError.parameter("block_size must be odd") }
         func surface<S: BinaryFloatingPoint & Sendable>(_ pixels: [S]) throws -> [Double] {
             let smoothed: [S]
@@ -418,7 +424,7 @@ public nonisolated enum Thresholding {
     /// `apply_hysteresis_threshold(image, low, high)`: the pixels above `low` connected (4-neighbour, `ndimage.label`'s default
     /// structure) to a pixel above `high`; `low` is clipped to at most `high`.
     public static func hysteresis(_ values: [Double], width: Int, height: Int, low: Double, high: Double) throws -> [Bool] {
-        guard width > 0, height > 0, values.count == width * height else { throw ThresholdError.shape }
+        guard width > 0, height > 0, values.count == ImagoSize.area(width, height) else { throw ThresholdError.shape }
         let lo = min(low, high)
         let maskLow = values.map { $0 > lo }
         let labels = try Segmentation.label(maskLow, width: width, height: height, connectivity: .four)

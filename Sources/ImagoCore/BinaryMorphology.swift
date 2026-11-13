@@ -40,7 +40,7 @@ public nonisolated struct StructuringElement: Sendable, Equatable {
     public let cells: [Bool]
 
     public init(rows: Int, columns: Int, cells: [Bool]) throws {
-        guard rows > 0, columns > 0, rows % 2 == 1, columns % 2 == 1, cells.count == rows * columns, cells.contains(true) else {
+        guard rows > 0, columns > 0, rows % 2 == 1, columns % 2 == 1, cells.count == ImagoSize.area(rows, columns), cells.contains(true) else {
             throw MorphologyError.structure
         }
         self.rows = rows; self.columns = columns; self.cells = cells

@@ -748,9 +748,10 @@ public nonisolated final class FFT2DDouble: FFT2DTransform, @unchecked Sendable 
         return remainder == 1 ? exponent : nil
     }
 
+    /// Above 2^62 there is no larger power of two in an Int: 2^62 is returned (the loop never ended there).
     public static func nextPow2(_ v: Int) -> Int {
         var p = 1
-        while p < v { p <<= 1 }
+        while p < v, p < 1 << 62 { p <<= 1 }
         return p
     }
 
