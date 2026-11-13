@@ -2,8 +2,8 @@
 
 # ImagoKit
 
-[![CI](https://github.com/mac4DSTEM/ImagoKit/actions/workflows/ci.yml/badge.svg)](https://github.com/mac4DSTEM/ImagoKit/actions/workflows/ci.yml)
-[![Docs](https://github.com/mac4DSTEM/ImagoKit/actions/workflows/docs.yml/badge.svg)](https://mac4dstem.github.io/ImagoKit/documentation/)
+[![CI](https://github.com/macEMSuite/ImagoKit/actions/workflows/ci.yml/badge.svg)](https://github.com/macEMSuite/ImagoKit/actions/workflows/ci.yml)
+[![Docs](https://github.com/macEMSuite/ImagoKit/actions/workflows/docs.yml/badge.svg)](https://macemsuite.github.io/ImagoKit/documentation/)
 [![Licence: GPL-3.0-only](https://img.shields.io/badge/licence-GPL--3.0--only-blue.svg)](LICENSE)
 
 Image analysis for electron micrographs, in Swift, for macOS and iPadOS: the Fourier transform of an image with its
@@ -15,7 +15,7 @@ packages the field already uses, and checked against planted lattices whose answ
 **Status: pre-release (0.x), current version 0.8.0.** Four modules: `ImagoCore`, `ImagoFFT`, `ImagoFilters` and
 `ImagoAlignment`; most functions have a Float32 and a Float64 path. The supported functions, set against the reference
 packages' documented API, are listed in [`docs/parity.md`](docs/parity.md); the API reference is the
-[DocC site](https://mac4dstem.github.io/ImagoKit/documentation/). The definitions and validation notes behind each number
+[DocC site](https://macemsuite.github.io/ImagoKit/documentation/). The definitions and validation notes behind each number
 are in [`docs/`](docs/).
 
 **Platform.** Apple platforms only today (macOS 15 and iOS 18 or newer): the FFT engine uses Accelerate's vDSP, and the
@@ -82,7 +82,7 @@ NumPy 2.5.4 pins cover lengths 1, 2, 4, 8, 64, 256 and 1024. The tests state the
 ```text
 // Package.swift
 dependencies: [
-    .package(url: "https://github.com/mac4DSTEM/ImagoKit.git", from: "0.9.1"),
+    .package(url: "https://github.com/macEMSuite/ImagoKit.git", from: "0.9.1"),
 ],
 targets: [
     .target(name: "MyApp", dependencies: [
