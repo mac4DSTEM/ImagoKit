@@ -28,6 +28,18 @@
 
 import Foundation
 
+/// A pixel type the histogram counts as it is stored: each value becomes the same Float32 it would be after widening the
+/// image, exactly (every UInt8, UInt16 and Int16 is a float32 integer), so the native route and the Float32 route give the
+/// same histogram bin for bin without a widened copy of the image.
+nonisolated protocol HistogramPixel {
+    var histogramValue: Float { get }
+}
+
+extension Float: HistogramPixel { @inline(__always) var histogramValue: Float { self } }
+extension UInt8: HistogramPixel { @inline(__always) var histogramValue: Float { Float(self) } }
+extension UInt16: HistogramPixel { @inline(__always) var histogramValue: Float { Float(self) } }
+extension Int16: HistogramPixel { @inline(__always) var histogramValue: Float { Float(self) } }
+
 /// Why a histogram cannot be made (NumPy raises the same conditions as `ValueError`).
 public nonisolated enum HistogramError: Error, Equatable, Sendable {
     /// `bins` below 1.
@@ -61,6 +73,26 @@ public nonisolated struct IntensityHistogram: Sendable, Equatable {
     /// `numpy.histogram(a[np.isfinite(a)], bins=bins, range=range)`, with NumPy's own default of 10 bins; `range` nil is
     /// (min, max) of the finite pixels. Throws what NumPy raises.
     public static func histogram(_ pixels: [Float], bins: Int = 10, range: (Float, Float)? = nil) throws -> IntensityHistogram {
+        try make(pixels, bins: bins, range: range)
+    }
+
+    /// The same histogram of an 8-bit image, counted on the stored values: equal, bin for bin, to `histogram` of the pixels
+    /// widened to Float32, without that copy.
+    public static func histogram(stored pixels: [UInt8], bins: Int = 10, range: (Float, Float)? = nil) throws -> IntensityHistogram {
+        try make(pixels, bins: bins, range: range)
+    }
+
+    /// The same histogram of a 16-bit image, counted on the stored values (see the 8-bit form).
+    public static func histogram(stored pixels: [UInt16], bins: Int = 10, range: (Float, Float)? = nil) throws -> IntensityHistogram {
+        try make(pixels, bins: bins, range: range)
+    }
+
+    /// The same histogram of a signed 16-bit image, counted on the stored values (see the 8-bit form).
+    public static func histogram(stored pixels: [Int16], bins: Int = 10, range: (Float, Float)? = nil) throws -> IntensityHistogram {
+        try make(pixels, bins: bins, range: range)
+    }
+
+    private static func make<P: HistogramPixel>(_ pixels: [P], bins: Int, range: (Float, Float)?) throws -> IntensityHistogram {
         guard bins >= 1 else { throw HistogramError.invalidBins(bins) }
         let stats = statistics(pixels)
         // No finite pixel: NumPy's empty array has the range (0, 1) and all-zero counts; the extremes are NaN here.
@@ -80,7 +112,9 @@ public nonisolated struct IntensityHistogram: Sendable, Equatable {
         let denominator = last - first
         let scale = Float(bins)
         var counts = [Int](repeating: 0, count: bins)
-        for p in pixels where p.isFinite && p >= first && p <= last {
+        for stored in pixels {
+            let p = stored.histogramValue
+            guard p.isFinite && p >= first && p <= last else { continue }
             var i = Int(((p - first) / denominator) * scale)
             if i == bins { i -= 1 }                     // a value on the last edge
             if p < edges[i] { i -= 1 }                  // the index is not exact within an ulp of an edge
@@ -97,9 +131,28 @@ public nonisolated struct IntensityHistogram: Sendable, Equatable {
     /// finite (NumPy returns an all-zero histogram on (0, 1) there), and for `bins` below 1 or a bad supplied range (`histogram`
     /// says which).
     public static func compute(_ pixels: [Float], bins: Int, range: (Float, Float)? = nil) -> IntensityHistogram? {
-        guard bins >= 1, pixels.contains(where: \.isFinite) else { return nil }
+        computeAny(pixels, bins: bins, range: range)
+    }
+
+    /// `compute` of an 8-bit image on its stored values (see `histogram(stored: [UInt8], ...)`).
+    public static func compute(stored pixels: [UInt8], bins: Int, range: (Float, Float)? = nil) -> IntensityHistogram? {
+        computeAny(pixels, bins: bins, range: range)
+    }
+
+    /// `compute` of a 16-bit image on its stored values.
+    public static func compute(stored pixels: [UInt16], bins: Int, range: (Float, Float)? = nil) -> IntensityHistogram? {
+        computeAny(pixels, bins: bins, range: range)
+    }
+
+    /// `compute` of a signed 16-bit image on its stored values.
+    public static func compute(stored pixels: [Int16], bins: Int, range: (Float, Float)? = nil) -> IntensityHistogram? {
+        computeAny(pixels, bins: bins, range: range)
+    }
+
+    private static func computeAny<P: HistogramPixel>(_ pixels: [P], bins: Int, range: (Float, Float)?) -> IntensityHistogram? {
+        guard bins >= 1, pixels.contains(where: { $0.histogramValue.isFinite }) else { return nil }
         do {
-            return try histogram(pixels, bins: bins, range: range)
+            return try make(pixels, bins: bins, range: range)
         } catch HistogramError.tooManyBins {
             let s = statistics(pixels)
             return IntensityHistogram(counts: [], edges: [], minimum: s.lowest, maximum: s.highest,
@@ -109,11 +162,13 @@ public nonisolated struct IntensityHistogram: Sendable, Equatable {
         }
     }
 
-    private static func statistics(_ pixels: [Float]) -> (lowest: Float, highest: Float, finite: Int, mean: Double) {
+    private static func statistics<P: HistogramPixel>(_ pixels: [P]) -> (lowest: Float, highest: Float, finite: Int, mean: Double) {
         var lowest = Float.infinity, highest = -Float.infinity
         var finite = 0
         var total = 0.0, block = 0.0
-        for p in pixels where p.isFinite {
+        for stored in pixels {
+            let p = stored.histogramValue
+            guard p.isFinite else { continue }
             if p < lowest || (p == lowest && p.sign == .minus) { lowest = p }
             if p > highest || (p == highest && p.sign == .plus) { highest = p }
             block += Double(p)
