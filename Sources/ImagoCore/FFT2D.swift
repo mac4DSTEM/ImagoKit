@@ -13,7 +13,8 @@
 //
 //  THREADING: an FFTSetup is immutable after creation and Apple documents it as shareable across threads, so one FFT2D
 //  instance can serve concurrent workers — hence the @unchecked Sendable. The transform buffers themselves are
-//  caller-owned (inout), never shared.
+//  caller-owned (inout), never shared. From `parallelElements` up, the row and column passes run in bands on every core,
+//  each band with its own Bluestein scratch; every line goes through the same code, so the result is the serial one's bits.
 //
 
 import Foundation
@@ -361,34 +362,27 @@ public nonisolated final class FFT2D: FFT2DTransform, @unchecked Sendable {
         } else {
             let xSetup = forward ? forwardX : inverseX
             let ySetup = forward ? forwardY : inverseY
-            // Per-call Bluestein scratch (padded length of the larger axis):
-            // caller-owned like the data, so concurrent workers sharing this
-            // plan never share a buffer.
-            let scratchCount = max(bluesteinX?.paddedLength ?? 0,
-                                   bluesteinY?.paddedLength ?? 0)
-            var scratchRe = [Float](repeating: 0, count: scratchCount)
-            var scratchIm = [Float](repeating: 0, count: scratchCount)
+            // Bluestein scratch is per band (`forEachBand`), caller-owned like the data, so the bands and concurrent
+            // callers sharing this plan never share a buffer.
             var horizontalRe = [Float](repeating: 0, count: nx * ny)
             var horizontalIm = [Float](repeating: 0, count: nx * ny)
-            scratchRe.withUnsafeMutableBufferPointer { sr in
-            scratchIm.withUnsafeMutableBufferPointer { si in
-            let scratch = (sr.baseAddress, si.baseAddress)
             re.withUnsafeBufferPointer { inputRe in
                 im.withUnsafeBufferPointer { inputIm in
                     horizontalRe.withUnsafeMutableBufferPointer { outputRe in
                         horizontalIm.withUnsafeMutableBufferPointer { outputIm in
-                            for y in 0..<ny {
-                                executeAxis(
-                                    fftSetup: axisXSetup, fftLog: axisXLog,
-                                    exactPlan: axisXPlan,
-                                    dftSetup: xSetup, bluestein: bluesteinX,
-                                    length: nx, forward: forward,
-                                    inputRe.baseAddress! + y * nx,
-                                    inputIm.baseAddress! + y * nx,
-                                    outputRe.baseAddress! + y * nx,
-                                    outputIm.baseAddress! + y * nx,
-                                    scratch: scratch
-                                )
+                            let (inRe, inIm) = (inputRe.baseAddress!, inputIm.baseAddress!)
+                            let (outRe, outIm) = (outputRe.baseAddress!, outputIm.baseAddress!)
+                            Self.forEachBand(count: ny, length: nx, scratchCount: bluesteinX?.paddedLength ?? 0) { rows, scratch in
+                                for y in rows {
+                                    executeAxis(
+                                        fftSetup: axisXSetup, fftLog: axisXLog,
+                                        exactPlan: axisXPlan,
+                                        dftSetup: xSetup, bluestein: bluesteinX,
+                                        length: nx, forward: forward,
+                                        inRe + y * nx, inIm + y * nx, outRe + y * nx, outIm + y * nx,
+                                        scratch: scratch
+                                    )
+                                }
                             }
                         }
                     }
@@ -402,23 +396,24 @@ public nonisolated final class FFT2D: FFT2DTransform, @unchecked Sendable {
             vDSP_mtrans(horizontalIm, 1, &im, 1, vDSP_Length(nx), vDSP_Length(ny))
             re.withUnsafeBufferPointer { inputRe in im.withUnsafeBufferPointer { inputIm in
                 horizontalRe.withUnsafeMutableBufferPointer { outputRe in horizontalIm.withUnsafeMutableBufferPointer { outputIm in
-                    for x in 0..<nx {
-                        executeAxis(
-                            fftSetup: axisYSetup, fftLog: axisYLog,
-                            exactPlan: axisYPlan,
-                            dftSetup: ySetup, bluestein: bluesteinY,
-                            length: ny, forward: forward,
-                            inputRe.baseAddress! + x * ny, inputIm.baseAddress! + x * ny,
-                            outputRe.baseAddress! + x * ny, outputIm.baseAddress! + x * ny,
-                            scratch: scratch
-                        )
+                    let (inRe, inIm) = (inputRe.baseAddress!, inputIm.baseAddress!)
+                    let (outRe, outIm) = (outputRe.baseAddress!, outputIm.baseAddress!)
+                    Self.forEachBand(count: nx, length: ny, scratchCount: bluesteinY?.paddedLength ?? 0) { columns, scratch in
+                        for x in columns {
+                            executeAxis(
+                                fftSetup: axisYSetup, fftLog: axisYLog,
+                                exactPlan: axisYPlan,
+                                dftSetup: ySetup, bluestein: bluesteinY,
+                                length: ny, forward: forward,
+                                inRe + x * ny, inIm + x * ny, outRe + x * ny, outIm + x * ny,
+                                scratch: scratch
+                            )
+                        }
                     }
                 } }
             } }
             vDSP_mtrans(horizontalRe, 1, &re, 1, vDSP_Length(ny), vDSP_Length(nx))
             vDSP_mtrans(horizontalIm, 1, &im, 1, vDSP_Length(ny), vDSP_Length(nx))
-            }
-            }
         }
         if !forward && scaleInverse {
             var s = 1 / Float(nx * ny)
@@ -451,19 +446,50 @@ public nonisolated final class FFT2D: FFT2DTransform, @unchecked Sendable {
             return
         }
         let bluestein = alongX ? bluesteinX : bluesteinY
-        var scratchRe = [Float](repeating: 0, count: bluestein?.paddedLength ?? 0)
-        var scratchIm = scratchRe
-        scratchRe.withUnsafeMutableBufferPointer { sr in scratchIm.withUnsafeMutableBufferPointer { si in
-            let scratch = (sr.baseAddress, si.baseAddress)
-            for i in 0..<count {
-                executeAxis(fftSetup: alongX ? axisXSetup : axisYSetup, fftLog: alongX ? axisXLog : axisYLog,
-                            exactPlan: alongX ? axisXPlan : axisYPlan,
-                            dftSetup: alongX ? (forward ? forwardX : inverseX) : (forward ? forwardY : inverseY),
+        let fftSetup = alongX ? axisXSetup : axisYSetup, fftLog = alongX ? axisXLog : axisYLog
+        let exactPlan = alongX ? axisXPlan : axisYPlan
+        let dftSetup = alongX ? (forward ? forwardX : inverseX) : (forward ? forwardY : inverseY)
+        Self.forEachBand(count: count, length: length, scratchCount: bluestein?.paddedLength ?? 0) { lines, scratch in
+            for i in lines {
+                executeAxis(fftSetup: fftSetup, fftLog: fftLog, exactPlan: exactPlan, dftSetup: dftSetup,
                             bluestein: bluestein, length: length, forward: forward,
                             inputRe + i * inStride, inputIm + i * inStride, outputRe + i * length, outputIm + i * length,
                             scratch: scratch)
             }
-        } }
+        }
+    }
+
+    /// Line work of at least this many elements (lines × length) runs in bands on every core: below it the threads cost more than
+    /// they save. ImagoKit#92: the 375 MP alite SEM image's Bluestein rows and columns ran on one core (about 20 s, macEM#579).
+    package static let parallelElements = 1 << 20
+
+    /// Calls `body` with contiguous ranges that cover `0..<count`, each with its own Bluestein scratch pair of `scratchCount`
+    /// floats (nil when no axis needs one). At `parallelElements` and above the ranges run at once, one per core; below, one
+    /// range runs on the caller's thread. Lines are independent and each is transformed by the same code, so the result is the
+    /// same bits either way.
+    package static func forEachBand(count: Int, length: Int, scratchCount: Int,
+                                    _ body: (Range<Int>, (UnsafeMutablePointer<Float>?, UnsafeMutablePointer<Float>?)) -> Void) {
+        guard count > 0 else { return }
+        let bands = count * length >= parallelElements ? min(count, ProcessInfo.processInfo.activeProcessorCount) : 1
+        guard bands > 1 else { withScratch(scratchCount) { body(0..<count, $0) }; return }
+        let per = (count + bands - 1) / bands
+        DispatchQueue.concurrentPerform(iterations: bands) { band in
+            let lo = band * per, hi = min(count, lo + per)
+            guard lo < hi else { return }
+            withScratch(scratchCount) { body(lo..<hi, $0) }
+        }
+    }
+
+    /// A zeroed scratch pair of `count` floats for one band, freed when `body` returns.
+    private static func withScratch(_ count: Int,
+                                    _ body: ((UnsafeMutablePointer<Float>?, UnsafeMutablePointer<Float>?)) -> Void) {
+        guard count > 0 else { body((nil, nil)); return }
+        let re = UnsafeMutablePointer<Float>.allocate(capacity: count)
+        let im = UnsafeMutablePointer<Float>.allocate(capacity: count)
+        re.initialize(repeating: 0, count: count)
+        im.initialize(repeating: 0, count: count)
+        defer { re.deallocate(); im.deallocate() }
+        body((re, im))
     }
 
     private func executeAxis(
