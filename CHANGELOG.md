@@ -6,6 +6,18 @@ Every number is held by regression tests against NumPy 2.5.4, SciPy 1.18.1 and s
 Entries from 0.8.1 on are written by release-please from the merged pull requests' titles. A moved fixture is listed under
 "Fixtures and tests" (a `test:` title, or one `test:` line per fixture in the pull request's commit override).
 
+## [0.10.0](https://github.com/macEMSuite/ImagoKit/compare/0.9.3...0.10.0) (2026-11-14)
+
+
+### Features
+
+* count an 8-bit or 16-bit image's histogram on its stored values ([#90](https://github.com/macEMSuite/ImagoKit/issues/90)) ([e7f9b42](https://github.com/macEMSuite/ImagoKit/commit/e7f9b42a522a8d468378480603998bfc422d20dd))
+
+
+### Performance Improvements
+
+* the 2D FFT transforms its rows and columns on every core ([#93](https://github.com/macEMSuite/ImagoKit/issues/93)) ([99d80e6](https://github.com/macEMSuite/ImagoKit/commit/99d80e658ecd94018defd980b3bea203c19426f8))
+
 ## [0.9.3](https://github.com/macEMSuite/ImagoKit/compare/0.9.2...0.9.3) (2026-11-13)
 
 
