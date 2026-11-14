@@ -32,6 +32,7 @@ Numerics are never held stricter than that; readers, I/O, indices and metadata a
 | Function or option group | State | Kit symbol | Counterpart tolerance (source) | Priority | Notes |
 |---|---|---|---|---|---|
 | `histogram(a, bins=int, range=...)` on a float32 array | present | `IntensityHistogram.histogram` | exact counts (numpy/lib/tests/test_histograms.py) | study | array/string `bins`, `weights`, `density`, float64 input absent |
+| the same on a uint8, uint16 or int16 image widened to float32 | present | `IntensityHistogram.histogram(stored:)`, `compute(stored:)` | exact counts, as the float32 row; equal bin for bin to the float32 route on the widened pixels (ImagoKit#85) | study | counted on the stored values, no widened copy |
 | `hanning(n)` | present | `SpotMeasurement.hanning` | numpy/lib/tests/test_function_base.py: assert_almost_equal (decimal 7) | study |  |
 
 ## SciPy 1.18.1, `scipy.ndimage` filters
