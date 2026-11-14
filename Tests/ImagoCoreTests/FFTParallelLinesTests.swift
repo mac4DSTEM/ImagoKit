@@ -16,7 +16,8 @@ import ImagoCore
             #expect(scratch.0 != nil && scratch.1 != nil)
             visits.withLock { for i in lines { $0[i] += 1 } }
         }
-        #expect(visits.withLock { $0 } == [Int](repeating: 1, count: count))
+        let counted = visits.withLock { $0 }
+        #expect(counted == [Int](repeating: 1, count: count))
         FFT2D.forEachBand(count: 3, length: 4, scratchCount: 0) { lines, scratch in
             #expect(lines == 0..<3)
             #expect(scratch.0 == nil && scratch.1 == nil)
